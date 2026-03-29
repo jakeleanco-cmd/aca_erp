@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { List, Button, Tag, message, Avatar, Typography, Card, Input, Space } from 'antd';
+import { List, Button, Tag, message, Avatar, Typography, Card, Input, Space, Segmented } from 'antd';
 import { UserOutlined, PlusOutlined, SearchOutlined, RightOutlined } from '@ant-design/icons';
 import client from '../api/client';
 import dayjs from 'dayjs';
@@ -10,7 +10,7 @@ export default function StudentsPage() {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState([]);
   const [search, setSearch] = useState('');
-  const [showWithdrawn, setShowWithdrawn] = useState(false); // 퇴원생 표시 여부 (기본: 미표시)
+  const [filterStatus, setFilterStatus] = useState('재원'); // 기본값: 재원
 
   const fetchStudents = async () => {
     setLoading(true);
@@ -35,10 +35,10 @@ export default function StudentsPage() {
       r.gradeLabel.includes(search) || 
       r.schoolLevel.includes(search);
     
-    // 2. 퇴원생 필터 (토글 상태에 따라)
-    if (!showWithdrawn && r.status === '퇴원') return false;
+    // 2. 상태 필터
+    const matchesStatus = filterStatus === '전체' || r.status === filterStatus;
     
-    return matchesSearch;
+    return matchesSearch && matchesStatus;
   });
 
   const getStatusTag = (status) => {
@@ -68,7 +68,7 @@ export default function StudentsPage() {
       </div>
 
       {/* 검색 및 필터 바 */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
         <Input
           prefix={<SearchOutlined style={{ color: 'var(--text-muted)' }} />}
           placeholder="이름, 학년 검색"
@@ -77,8 +77,8 @@ export default function StudentsPage() {
           className="glass-effect"
           style={{ 
             flex: 1,
-            height: 48, 
-            borderRadius: 16, 
+            height: 44, 
+            borderRadius: 14, 
             background: 'rgba(255,255,255,0.03)',
             border: '1px solid rgba(255,255,255,0.08)'
           }}
@@ -86,18 +86,40 @@ export default function StudentsPage() {
         <Button 
           className="glass-effect"
           style={{ 
-            height: 48, 
-            borderRadius: 16, 
-            background: showWithdrawn ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255,255,255,0.03)',
+            height: 44, 
+            borderRadius: 14, 
+            background: filterStatus === '전체' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255,255,255,0.03)',
             border: '1px solid rgba(255,255,255,0.08)',
-            color: showWithdrawn ? 'var(--primary-vibrant)' : 'var(--text-muted)',
+            color: filterStatus === '전체' ? 'var(--primary-vibrant)' : 'var(--text-muted)',
+            fontWeight: 600,
             fontSize: 13
           }}
-          onClick={() => setShowWithdrawn(!showWithdrawn)}
+          onClick={() => setFilterStatus('전체')}
         >
-          {showWithdrawn ? '퇴원생 숨기기' : '퇴원생 포함'}
+          전체 보기
         </Button>
       </div>
+
+      {/* 상태 필터 (세그먼트 스타일) */}
+      <Segmented
+        block
+        value={filterStatus === '전체' ? '전체' : filterStatus}
+        onChange={(value) => setFilterStatus(value)}
+        options={[
+          { label: '전체', value: '전체' },
+          { label: '재원', value: '재원' },
+          { label: '대기', value: '대기' },
+          { label: '퇴원', value: '퇴원' },
+        ]}
+        className="glass-effect"
+        style={{ 
+          marginBottom: 24, 
+          padding: 4, 
+          borderRadius: 14,
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.05)'
+        }}
+      />
 
       {/* 학생 목록 (리스트 카드 형식) */}
       <List
