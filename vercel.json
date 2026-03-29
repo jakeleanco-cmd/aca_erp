@@ -9,11 +9,6 @@
       "destination": "/api"
     },
     {
-      "source": "/assets/(.*)",
-      "destination": "/client/dist/assets/$1",
-      "check": true
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
