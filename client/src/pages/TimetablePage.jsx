@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, List, Button, Space, Typography, message, Spin } from 'antd';
+import { Card, List, Button, Space, Typography, message, Spin, Tag, Empty } from 'antd';
+import { ClockCircleOutlined, UserOutlined, RightOutlined } from '@ant-design/icons';
 import client from '../api/client';
 
 export default function TimetablePage() {
@@ -23,53 +24,83 @@ export default function TimetablePage() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: 48 }}>
-        <Spin />
+      <div style={{ height: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Spin size="large" />
       </div>
     );
   }
 
   return (
-    <div>
-      <Typography.Title level={4}>수업시간표 대시보드</Typography.Title>
-      <Typography.Paragraph type="secondary">
-        각 슬롯은 2시간 수업 기준으로 운영한다고 가정합니다. (표시용 라벨·시간은 수업시간 설정에서 관리)
-      </Typography.Paragraph>
-      <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-        {grid.map((slot) => (
-          <Card
-            key={slot._id}
-            title={
-              <span>
-                {slot.weekdayKo} {slot.startTime}
-                {slot.label ? ` · ${slot.label}` : ''}
-              </span>
-            }
-            size="small"
-          >
-            <List
-              size="small"
-              dataSource={slot.students}
-              locale={{ emptyText: '배정된 학생이 없습니다.' }}
-              renderItem={(stu) => (
-                <List.Item>
-                  <Space direction="vertical" style={{ width: '100%' }}>
-                    <Typography.Text strong>{stu.name}</Typography.Text>
-                    <Space wrap>
-                      <Button size="small" onClick={() => navigate(`/students/${stu._id}`)}>
-                        학생 상세
-                      </Button>
-                      <Button size="small" type="primary" onClick={() => navigate(`/students/${stu._id}/learning`)}>
-                        학습관리
-                      </Button>
-                    </Space>
-                  </Space>
-                </List.Item>
-              )}
-            />
-          </Card>
-        ))}
+    <div style={{ paddingBottom: 40 }}>
+      <div style={{ marginBottom: 24 }}>
+        <Typography.Title level={3} style={{ margin: '0 0 8px 0', fontWeight: 800 }}>전체 시간표</Typography.Title>
+        <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+          슬롯별 배정된 학생들을 한눈에 확인하세요.
+        </Typography.Text>
       </div>
+
+      {grid.length === 0 ? (
+        <Card className="glass-effect" style={{ padding: 40, textAlign: 'center' }}>
+          <Empty description="등록된 수업 슬롯이 없습니다." />
+          <Button type="primary" style={{ marginTop: 16 }} onClick={() => navigate('/class-slots')}>
+            슬롯 설정하러 가기
+          </Button>
+        </Card>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {grid.map((slot) => (
+            <Card
+              key={slot._id}
+              className="glass-effect"
+              style={{ border: 'none', borderRadius: 24 }}
+              title={
+                <Space>
+                  <ClockCircleOutlined style={{ color: 'var(--primary-vibrant)' }} />
+                  <span style={{ fontWeight: 700, fontSize: 16 }}>
+                    {slot.weekdayKo} <span style={{ color: 'var(--primary-vibrant)' }}>{slot.startTime}</span>
+                  </span>
+                  {slot.label && <Tag color="blue" bordered={false} style={{ borderRadius: 6, fontSize: 11 }}>{slot.label}</Tag>}
+                </Space>
+              }
+              extra={<Tag color="default">{slot.students.length}명</Tag>}
+            >
+              <List
+                dataSource={slot.students}
+                renderItem={(stu) => (
+                  <List.Item 
+                    style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}
+                    actions={[
+                      <Button 
+                        key="manage"
+                        type="text" 
+                        size="small"
+                        icon={<RightOutlined />}
+                        style={{ color: 'var(--primary-vibrant)' }}
+                        onClick={() => navigate(`/students/${stu._id}/learning`)}
+                      />
+                    ]}
+                  >
+                    <List.Item.Meta
+                      avatar={
+                        <div style={{ 
+                          width: 36, height: 36, borderRadius: 10, 
+                          background: 'rgba(99, 102, 241, 0.1)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}>
+                          <UserOutlined style={{ color: 'var(--primary-vibrant)' }} />
+                        </div>
+                      }
+                      title={<span style={{ fontWeight: 600 }}>{stu.name}</span>}
+                      description={<span style={{ fontSize: 12 }}>{stu.schoolLevel} {stu.gradeLabel}</span>}
+                    />
+                  </List.Item>
+                )}
+                locale={{ emptyText: <Typography.Text type="secondary">배정된 학생이 없습니다.</Typography.Text> }}
+              />
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

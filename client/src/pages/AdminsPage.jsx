@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Card, Typography, Modal, Form, Input, message, Space, Popconfirm } from 'antd';
-import { UserAddOutlined, DeleteOutlined } from '@ant-design/icons';
+import { List, Button, Card, Typography, Modal, Form, Input, message, Space, Popconfirm, Avatar, Tag } from 'antd';
+import { UserAddOutlined, DeleteOutlined, UserOutlined, MailOutlined, CalendarOutlined } from '@ant-design/icons';
 import client from '../api/client';
 import { useAuthStore } from '../store/authStore';
 
@@ -31,7 +31,7 @@ export default function AdminsPage() {
     setLoading(true);
     try {
       await client.post('/auth/register', values);
-      message.success('관리자가 추가되었습니다.');
+      message.success('새 관리자가 추가되었습니다.');
       setModalOpen(false);
       form.resetFields();
       fetchAdmins();
@@ -45,83 +45,91 @@ export default function AdminsPage() {
   const handleDelete = async (id) => {
     try {
       await client.delete(`/auth/${id}`);
-      message.success('삭제되었습니다.');
+      message.success('관리자 계정이 삭제되었습니다.');
       fetchAdmins();
     } catch (err) {
       message.error(err.response?.data?.message || '삭제에 실패했습니다.');
     }
   };
 
-  const columns = [
-    {
-      title: '이름',
-      dataIndex: 'name',
-      key: 'name',
-    },
-    {
-      title: '이메일',
-      dataIndex: 'email',
-      key: 'email',
-    },
-    {
-      title: '등록일',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (date) => new Date(date).toLocaleDateString(),
-    },
-    {
-      title: '관리',
-      key: 'action',
-      render: (_, record) => (
-        <Space size="middle">
-          {record._id === currentAdmin?.id ? (
-            <Typography.Text type="secondary">나</Typography.Text>
-          ) : (
-            <Popconfirm
-              title="관리자를 삭제하시겠습니까?"
-              onConfirm={() => handleDelete(record._id)}
-              okText="삭제"
-              cancelText="취소"
-            >
-              <Button type="text" danger icon={<DeleteOutlined />} />
-            </Popconfirm>
-          )}
-        </Space>
-      ),
-    },
-  ];
-
   return (
-    <div style={{ padding: '24px' }}>
-      <Card
-        title={<Typography.Title level={4}>관리자 설정</Typography.Title>}
-        extra={
-          <Button type="primary" icon={<UserAddOutlined />} onClick={() => setModalOpen(true)}>
-            관리자 추가
-          </Button>
-        }
-      >
-        <Table
-          dataSource={admins}
-          columns={columns}
-          rowKey="_id"
-          loading={loading}
-          pagination={false}
-        />
-      </Card>
+    <div style={{ paddingBottom: 60 }}>
+      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div>
+          <Typography.Title level={3} style={{ margin: 0, fontWeight: 800 }}>관리자 설정</Typography.Title>
+          <Typography.Text type="secondary" style={{ fontSize: 13 }}>시스템을 함께 관리할 계정을 관리합니다.</Typography.Text>
+        </div>
+        <Button 
+          type="primary" 
+          icon={<UserAddOutlined />} 
+          style={{ borderRadius: 12, height: 40, background: 'var(--primary-gradient)', border: 'none' }}
+          onClick={() => setModalOpen(true)}
+        >
+          추가
+        </Button>
+      </div>
+
+      <List
+        loading={loading}
+        dataSource={admins}
+        renderItem={(item) => (
+          <Card 
+            key={item._id}
+            className="glass-effect"
+            style={{ marginBottom: 16, borderRadius: 20, border: 'none' }}
+            bodyStyle={{ padding: '16px 20px' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Space size={16}>
+                <Avatar 
+                  size={48} 
+                  icon={<UserOutlined />} 
+                  style={{ background: item._id === currentAdmin?.id ? 'var(--primary-gradient)' : 'rgba(255,255,255,0.05)' }} 
+                />
+                <div>
+                  <Typography.Text strong style={{ fontSize: 16 }}>
+                    {item.name} {item._id === currentAdmin?.id && <Tag color="blue" bordered={false} style={{ marginLeft: 8, fontSize: 10 }}>나</Tag>}
+                  </Typography.Text>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', fontSize: 12 }}>
+                    <MailOutlined style={{ fontSize: 10 }} />
+                    <span>{item.email}</span>
+                  </div>
+                </div>
+              </Space>
+              
+              {item._id !== currentAdmin?.id && (
+                <Popconfirm
+                  title="관리자를 삭제하시겠습니까?"
+                  onConfirm={() => handleDelete(item._id)}
+                  okText="삭제"
+                  cancelText="취소"
+                >
+                  <Button type="text" danger icon={<DeleteOutlined />} />
+                </Popconfirm>
+              )}
+            </div>
+            <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.3)', fontSize: 11 }}>
+              <CalendarOutlined />
+              <span>등록일: {new Date(item.createdAt).toLocaleDateString()}</span>
+            </div>
+          </Card>
+        )}
+      />
 
       <Modal
-        title="새 관리자 등록"
+        title={<span style={{ fontWeight: 700 }}>새 관리자 등록</span>}
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={() => form.submit()}
         confirmLoading={loading}
-        okText="등록"
+        okText="등록하기"
         cancelText="취소"
+        centered
+        bodyStyle={{ paddingTop: 16 }}
       >
         <Form form={form} layout="vertical" onFinish={handleAdd}>
           <Form.Item name="name" label="이름" rules={[{ required: true, message: '이름을 입력하세요.' }]}>
-            <Input placeholder="관리자 이름" />
+            <Input placeholder="관리자 실명" />
           </Form.Item>
           <Form.Item
             name="email"
@@ -141,7 +149,7 @@ export default function AdminsPage() {
               { min: 6, message: '6자 이상 입력하세요.' },
             ]}
           >
-            <Input.Password placeholder="6자 이상 입력" />
+            <Input.Password placeholder="초기 비밀번호 (6자 이상)" />
           </Form.Item>
         </Form>
       </Modal>

@@ -1,10 +1,81 @@
+:root {
+  /* 프리미엄 다크 모드 색상 */
+  --bg-deep: #0a0e14;
+  --bg-card: rgba(255, 255, 255, 0.05);
+  --primary-vibrant: #4f46e5;
+  --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  --accent-cyan: #06b6d4;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-blur: blur(12px);
+  --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --max-app-width: 500px;
+}
+
 html,
 body,
 #root {
   height: 100%;
   margin: 0;
+  background-color: var(--bg-deep);
+  color: var(--text-main);
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
+/* 폰트 및 글로벌 스타일 */
 body {
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  display: flex;
+  justify-content: center;
+}
+
+#root {
+  width: 100%;
+  max-width: var(--max-app-width);
+  min-height: 100vh;
+  position: relative;
+  box-shadow: 0 0 100px rgba(0,0,0,0.5);
+  background: var(--bg-deep);
+}
+
+/* PC에서 좌우 배경 처리 예시 */
+@media screen and (min-width: 501px) {
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at 20% 30%, #1e1b4b 0%, #0a0e14 100%);
+    z-index: -1;
+  }
+}
+
+/* 글래스모피즘 공통 클래스 */
+.glass-effect {
+  background: var(--bg-card);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--card-shadow);
+}
+
+/* 터치 친화적 버튼 애니메이션 */
+.btn-tap {
+  transition: transform 0.1s ease;
+}
+.btn-tap:active {
+  transform: scale(0.96);
+}
+
+/* 스크롤바 커스텀 */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: 10px;
 }
