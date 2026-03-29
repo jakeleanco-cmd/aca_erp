@@ -14,14 +14,23 @@ router.use(requireAuth);
 router.get('/dashboard', async (req, res) => {
   try {
     const slots = await ClassSlot.find().sort({ weekdayIndex: 1, startTime: 1 }).lean();
-    const students = await Student.find().select('name classSlotIds').lean();
+    // '재원' 상태인 학생만 조회하며, 필요한 필드(name, status, schoolLevel, gradeLabel)를 포함
+    const students = await Student.find({ status: '재원' })
+      .select('name status classSlotIds schoolLevel gradeLabel')
+      .lean();
 
     const slotIdToStudents = {};
     for (const s of students) {
       for (const sid of s.classSlotIds || []) {
         const key = String(sid);
         if (!slotIdToStudents[key]) slotIdToStudents[key] = [];
-        slotIdToStudents[key].push({ _id: s._id, name: s.name });
+        slotIdToStudents[key].push({
+          _id: s._id,
+          name: s.name,
+          status: s.status,
+          schoolLevel: s.schoolLevel,
+          gradeLabel: s.gradeLabel,
+        });
       }
     }
 
