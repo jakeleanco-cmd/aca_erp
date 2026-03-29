@@ -1,0 +1,150 @@
+import { useEffect, useState } from 'react';
+import { Table, Button, DatePicker, message, Space, Tag, Typography } from 'antd';
+import dayjs from 'dayjs';
+import client from '../api/client';
+
+export default function BillingPage() {
+  const [month, setMonth] = useState(() => dayjs());
+  const [loading, setLoading] = useState(false);
+  const [rows, setRows] = useState([]);
+
+  const yearMonth = month.format('YYYY-MM');
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const { data } = await client.get('/bills', { params: { yearMonth } });
+      setRows(data);
+    } catch {
+      message.error('고지 목록을 불러오지 못했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, [yearMonth]);
+
+  const generate = async () => {
+    setLoading(true);
+    try {
+      const { data } = await client.post('/bills/generate', { yearMonth });
+      message.success(data.message || `${data.created}건 생성되었습니다.`);
+      await load();
+    } catch (err) {
+      message.error(err.response?.data?.message || '생성에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const payCard = async (id) => {
+    try {
+      await client.post(`/bills/${id}/pay-card`);
+      message.success('카드 수납 처리되었습니다.');
+      await load();
+    } catch (err) {
+      message.error(err.response?.data?.message || '처리에 실패했습니다.');
+    }
+  };
+
+  const payCash = async (id) => {
+    try {
+      await client.post(`/bills/${id}/pay-cash`);
+      message.success('현금 수납 처리되었습니다.');
+      await load();
+    } catch (err) {
+      message.error(err.response?.data?.message || '처리에 실패했습니다.');
+    }
+  };
+
+  const issueReceipt = async (row) => {
+    try {
+      await client.post(`/bills/${row._id}/issue-receipt`, {});
+      message.success('현금영수증 발행이 기록되었습니다.');
+      await load();
+    } catch (err) {
+      message.error(err.response?.data?.message || '기록에 실패했습니다.');
+    }
+  };
+
+  const columns = [
+    {
+      title: '학생',
+      key: 'name',
+      render: (_, r) => r.student?.name || '-',
+    },
+    {
+      title: '금액',
+      dataIndex: 'amount',
+      render: (v) => `${Number(v).toLocaleString()}원`,
+    },
+    {
+      title: '상태',
+      dataIndex: 'status',
+      render: (s) => (s === '납부완료' ? <Tag color="green">{s}</Tag> : <Tag color="orange">{s}</Tag>),
+    },
+    {
+      title: '결제수단',
+      dataIndex: 'paymentMethod',
+      render: (m) => m || '-',
+    },
+    {
+      title: '현금영수증',
+      key: 'rc',
+      render: (_, r) =>
+        r.receiptIssued ? (
+          <span>{r.receiptIssuedAt ? dayjs(r.receiptIssuedAt).format('YYYY-MM-DD HH:mm') : '발행'}</span>
+        ) : (
+          '-'
+        ),
+    },
+    {
+      title: '작업',
+      key: 'actions',
+      width: 320,
+      render: (_, r) => (
+        <Space wrap size="small">
+          {r.status === '미납' && (
+            <>
+              <Button size="small" type="primary" onClick={() => payCard(r._id)}>
+                카드수납
+              </Button>
+              <Button size="small" onClick={() => payCash(r._id)}>
+                현금수납
+              </Button>
+            </>
+          )}
+          {r.status === '납부완료' && r.paymentMethod === '현금' && !r.receiptIssued && (
+            <Button size="small" onClick={() => issueReceipt(r)}>
+              현금영수증 발행
+            </Button>
+          )}
+          {r.status === '납부완료' && r.paymentMethod === '현금' && r.student?.cashReceiptPhone && (
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              휴대폰: {r.student.cashReceiptPhone}
+            </Typography.Text>
+          )}
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <Typography.Title level={4}>월별 수납</Typography.Title>
+      <Space style={{ marginBottom: 16 }} wrap align="center">
+        <span>대상 월:</span>
+        <DatePicker picker="month" value={month} onChange={(d) => d && setMonth(d)} allowClear={false} />
+        <Button type="primary" onClick={generate} loading={loading}>
+          수강료 고지 생성
+        </Button>
+      </Space>
+      <Typography.Paragraph type="secondary">
+        「고지 생성」은 해당 월에 아직 고지가 없는 재원 학생에게만 월수강료를 복사해 고지서를 만듭니다. 현금 수납 후 「현금영수증 발행」으로 발행 이력을 남깁니다.
+      </Typography.Paragraph>
+      <Table rowKey="_id" loading={loading} columns={columns} dataSource={rows} pagination={{ pageSize: 30 }} />
+    </div>
+  );
+}
