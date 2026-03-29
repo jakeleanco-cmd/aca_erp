@@ -8,3 +8,5 @@ export const SCHOOL_LEVELS = ['초등', '중등', '고등'];
 export const TEXTBOOK_LEVELS = ['연산', '개념', '기초', '기본', '실력', '심화'];
 
 export const ASSESSMENT_TYPES = ['단원평가', '과정평가'];
+
+export const STUDENT_STATUSES = ['대기', '재원', '퇴원'];

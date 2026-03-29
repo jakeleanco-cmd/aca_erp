@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Form, Input, InputNumber, Select, DatePicker, Button, Card, message, Spin, Space } from 'antd';
 import dayjs from 'dayjs';
 import client from '../api/client';
-import { SCHOOL_LEVELS } from '../constants/learning';
+import { SCHOOL_LEVELS, STUDENT_STATUSES } from '../constants/learning';
 
 export default function StudentEditPage() {
   const { id } = useParams();
@@ -29,6 +29,7 @@ export default function StudentEditPage() {
       form.setFieldsValue({
         enrolledAt: dayjs(),
         classSlotIds: [],
+        status: '재원',
       });
       return;
     }
@@ -88,6 +89,9 @@ export default function StudentEditPage() {
         </Form.Item>
         <Form.Item name="schoolLevel" label="학년구분" rules={[{ required: true }]}>
           <Select options={SCHOOL_LEVELS.map((v) => ({ value: v, label: v }))} />
+        </Form.Item>
+        <Form.Item name="status" label="학생 상태" rules={[{ required: true }]}>
+          <Select options={STUDENT_STATUSES.map((v) => ({ value: v, label: v }))} />
         </Form.Item>
         <Form.Item name="gradeLabel" label="학년" rules={[{ required: true }]} extra='예: "3학년", "중2" 등 학원 표기에 맞게'>
           <Input placeholder="3학년" />

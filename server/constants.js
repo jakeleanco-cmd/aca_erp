@@ -25,4 +25,5 @@ module.exports = {
   UNIT_STATUSES,
   ASSESSMENT_TYPES,
   WEEKDAYS_KO,
+  STUDENT_STATUSES: ['대기', '재원', '퇴원'],
 };

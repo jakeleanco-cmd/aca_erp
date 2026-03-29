@@ -10,6 +10,7 @@ export default function StudentsPage() {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState([]);
   const [search, setSearch] = useState('');
+  const [showWithdrawn, setShowWithdrawn] = useState(false); // 퇴원생 표시 여부 (기본: 미표시)
 
   const fetchStudents = async () => {
     setLoading(true);
@@ -27,9 +28,26 @@ export default function StudentsPage() {
     fetchStudents();
   }, []);
 
-  const filteredRows = rows.filter((r) => 
-    r.name.includes(search) || r.gradeLabel.includes(search) || r.schoolLevel.includes(search)
-  );
+  const filteredRows = rows.filter((r) => {
+    // 1. 검색어 필터
+    const matchesSearch = 
+      r.name.includes(search) || 
+      r.gradeLabel.includes(search) || 
+      r.schoolLevel.includes(search);
+    
+    // 2. 퇴원생 필터 (토글 상태에 따라)
+    if (!showWithdrawn && r.status === '퇴원') return false;
+    
+    return matchesSearch;
+  });
+
+  const getStatusTag = (status) => {
+    switch (status) {
+      case '대기': return <Tag color="orange" bordered={false}>대기</Tag>;
+      case '퇴원': return <Tag color="default" bordered={false}>퇴원</Tag>;
+      default: return <Tag color="green" bordered={false}>재원중</Tag>;
+    }
+  };
 
   return (
     <div style={{ paddingBottom: 60 }}>
@@ -49,21 +67,37 @@ export default function StudentsPage() {
         </Button>
       </div>
 
-      {/* 검색 바 */}
-      <Input
-        prefix={<SearchOutlined style={{ color: 'var(--text-muted)' }} />}
-        placeholder="이름, 학교, 학년으로 검색"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="glass-effect"
-        style={{ 
-          marginBottom: 20, 
-          height: 48, 
-          borderRadius: 16, 
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(255,255,255,0.08)'
-        }}
-      />
+      {/* 검색 및 필터 바 */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+        <Input
+          prefix={<SearchOutlined style={{ color: 'var(--text-muted)' }} />}
+          placeholder="이름, 학년 검색"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="glass-effect"
+          style={{ 
+            flex: 1,
+            height: 48, 
+            borderRadius: 16, 
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.08)'
+          }}
+        />
+        <Button 
+          className="glass-effect"
+          style={{ 
+            height: 48, 
+            borderRadius: 16, 
+            background: showWithdrawn ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            color: showWithdrawn ? 'var(--primary-vibrant)' : 'var(--text-muted)',
+            fontSize: 13
+          }}
+          onClick={() => setShowWithdrawn(!showWithdrawn)}
+        >
+          {showWithdrawn ? '퇴원생 숨기기' : '퇴원생 포함'}
+        </Button>
+      </div>
 
       {/* 학생 목록 (리스트 카드 형식) */}
       <List
@@ -98,11 +132,7 @@ export default function StudentsPage() {
                 </div>
               </Space>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                {item.leftAt ? (
-                  <Tag color="default">퇴원</Tag>
-                ) : (
-                  <Tag color="green">재원중</Tag>
-                )}
+                {getStatusTag(item.status)}
                 <Typography.Text type="secondary" style={{ fontSize: 12 }}>
                    {Number(item.monthlyTuition).toLocaleString()}원
                 </Typography.Text>
