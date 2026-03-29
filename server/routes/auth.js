@@ -42,23 +42,34 @@ function handleAuthError(res, err, fallbackMessage) {
   return res.status(500).json({ message: fallbackMessage });
 }
 
-/** 최초 1회만 관리자 생성 (이미 있으면 거부) */
+/** 관리자 가입 (가입 코드 필요) */
 router.post('/register-first', async (req, res) => {
   try {
-    const count = await Admin.countDocuments();
-    if (count > 0) {
-      return res.status(403).json({ message: '이미 관리자가 등록되어 있습니다.' });
+    const { email, password, name, registrationCode } = req.body;
+
+    // 가입 코드 검증 (환경 변수에 설정된 코드와 대조)
+    const secretCode = process.env.ADMIN_REGISTRATION_CODE;
+    if (!secretCode || registrationCode !== secretCode) {
+      return res.status(403).json({ message: '가입 코드가 올바르지 않거나 서버 설정이 미비합니다.' });
     }
-    const { email, password, name } = req.body;
+
     if (!email || !password) {
       return res.status(400).json({ message: '이메일과 비밀번호는 필수입니다.' });
     }
+
+    // 이메일 중복 체크
+    const existing = await Admin.findOne({ email: String(email).trim().toLowerCase() });
+    if (existing) {
+      return res.status(400).json({ message: '이미 가입된 이메일입니다.' });
+    }
+
     const passwordHash = await bcrypt.hash(password, 10);
     const admin = await Admin.create({
       email: String(email).trim().toLowerCase(),
       passwordHash,
       name: name || '관리자',
     });
+
     const token = signToken(admin._id.toString());
     return res.status(201).json({
       token,
@@ -105,6 +116,73 @@ router.get('/me', requireAuth, async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: '조회에 실패했습니다.' });
+  }
+});
+
+/** 모든 관리자 목록 조회 (인증 필요) */
+router.get('/', requireAuth, async (req, res) => {
+  try {
+    const admins = await Admin.find({}, { passwordHash: 0 }).sort({ createdAt: -1 }).lean();
+    return res.json(admins);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: '조회에 실패했습니다.' });
+  }
+});
+
+/** 새로운 관리자 추가 (인증 필요) */
+router.post('/register', requireAuth, async (req, res) => {
+  try {
+    const { email, password, name } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: '이메일과 비밀번호는 필수입니다.' });
+    }
+
+    const existing = await Admin.findOne({ email: String(email).trim().toLowerCase() });
+    if (existing) {
+      return res.status(400).json({ message: '이미 사용 중인 이메일입니다.' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const admin = await Admin.create({
+      email: String(email).trim().toLowerCase(),
+      passwordHash,
+      name: name || '관리자',
+    });
+
+    return res.status(201).json({
+      admin: { id: admin._id, email: admin.email, name: admin.name },
+    });
+  } catch (err) {
+    return handleAuthError(res, err, '관리자 등록에 실패했습니다.');
+  }
+});
+
+/** 관리자 삭제 (인증 필요) */
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 본인 삭제 방지
+    if (id === req.adminId) {
+      return res.status(400).json({ message: '본인 계정은 삭제할 수 없습니다.' });
+    }
+
+    // 최소 1명의 관리자는 유지해야 하므로 확인
+    const count = await Admin.countDocuments();
+    if (count <= 1) {
+      return res.status(400).json({ message: '최소 한 명의 관리자는 시스템에 존재해야 합니다.' });
+    }
+
+    const deleted = await Admin.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ message: '관리자를 찾을 수 없습니다.' });
+    }
+
+    return res.json({ message: '삭제되었습니다.' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: '삭제에 실패했습니다.' });
   }
 });
 

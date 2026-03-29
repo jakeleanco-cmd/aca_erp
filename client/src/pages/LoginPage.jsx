@@ -50,7 +50,7 @@ export default function LoginPage() {
           </Form.Item>
         </Form>
         <Typography.Paragraph type="secondary" style={{ textAlign: 'center', marginBottom: 0 }}>
-          <Link to="/register-first">최초 관리자 등록</Link>
+          <Link to="/register-first">관리자 가입</Link>
         </Typography.Paragraph>
       </Card>
     </div>

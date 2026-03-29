@@ -7,6 +7,7 @@ import {
   ClockCircleOutlined,
   DollarOutlined,
   LogoutOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../store/authStore';
 
@@ -18,6 +19,7 @@ const menuItems = [
   { key: '/textbooks', icon: <BookOutlined />, label: '교재관리' },
   { key: '/class-slots', icon: <ClockCircleOutlined />, label: '수업시간 설정' },
   { key: '/billing', icon: <DollarOutlined />, label: '월별 수납' },
+  { key: '/admins', icon: <SettingOutlined />, label: '관리자 설정' },
 ];
 
 export default function AppLayout() {
