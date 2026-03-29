@@ -121,6 +121,12 @@ export default function StudentsPage() {
         }}
       />
 
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+        <Typography.Text type="secondary" style={{ fontSize: 13, fontWeight: 500 }}>
+          총 <span style={{ color: 'var(--primary-vibrant)', fontWeight: 700 }}>{filteredRows.length}</span>명
+        </Typography.Text>
+      </div>
+
       {/* 학생 목록 (리스트 카드 형식) */}
       <List
         loading={loading}
