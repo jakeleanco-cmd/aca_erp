@@ -210,24 +210,31 @@ export default function LearningPage() {
           pagination={false}
           rowKey={(r) => r.chapterOrder}
           dataSource={L.units || []}
+          scroll={{ x: 'max-content' }}
           columns={[
-            { title: '단원순서', dataIndex: 'chapterOrder', width: 90 },
+            { 
+              title: <span style={{ whiteSpace: 'nowrap' }}>단원순서</span>, 
+              dataIndex: 'chapterOrder', 
+              width: 70,
+              align: 'center'
+            },
             {
-              title: '단원',
+              title: <span style={{ whiteSpace: 'nowrap' }}>단원</span>,
               key: 't',
+              width: 150,
               render: (_, u) => {
                 const ch = (L.textbook?.chapters || []).find((c) => c.order === u.chapterOrder);
                 return ch?.title || '-';
               },
             },
             {
-              title: '상태',
+              title: <span style={{ whiteSpace: 'nowrap' }}>상태</span>,
               dataIndex: 'status',
-              width: 140,
+              width: 120,
               render: (status, u) => (
                 <Select
                   size="small"
-                  style={{ width: 120 }}
+                  style={{ width: '100%' }}
                   value={status}
                   options={UNIT_STATUSES.map((s) => ({ value: s, label: s }))}
                   onChange={(v) => saveUnit(L._id, u.chapterOrder, { status: v })}
@@ -235,30 +242,33 @@ export default function LearningPage() {
               ),
             },
             {
-              title: '시작일',
-              width: 160,
+              title: <span style={{ whiteSpace: 'nowrap' }}>시작일</span>,
+              width: 140,
               render: (_, u) => (
                 <DatePicker
                   size="small"
+                  style={{ width: '100%', minWidth: 110 }}
                   value={u.startedAt ? dayjs(u.startedAt) : null}
                   onChange={(d) => saveUnit(L._id, u.chapterOrder, { startedAt: d ? d.toISOString() : null })}
                 />
               ),
             },
             {
-              title: '완료일',
-              width: 160,
+              title: <span style={{ whiteSpace: 'nowrap' }}>완료일</span>,
+              width: 140,
               render: (_, u) => (
                 <DatePicker
                   size="small"
+                  style={{ width: '100%', minWidth: 110 }}
                   value={u.completedAt ? dayjs(u.completedAt) : null}
                   onChange={(d) => saveUnit(L._id, u.chapterOrder, { completedAt: d ? d.toISOString() : null })}
                 />
               ),
             },
             {
-              title: '단원평가결과',
+              title: <span style={{ whiteSpace: 'nowrap' }}>단원평가결과</span>,
               dataIndex: 'unitEvaluationResult',
+              width: 150,
               render: (t, u) => (
                 <Input
                   size="small"
@@ -273,8 +283,9 @@ export default function LearningPage() {
               ),
             },
             {
-              title: '단원평가',
-              width: 100,
+              title: <span style={{ whiteSpace: 'nowrap' }}>기록</span>,
+              width: 80,
+              align: 'center',
               render: (_, u) => (
                 <Button size="small" onClick={() => openAssess(L, '단원평가', u.chapterOrder)}>
                   기록
