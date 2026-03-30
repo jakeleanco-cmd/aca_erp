@@ -1,7 +1,11 @@
 const express = require('express');
 const StudentLearning = require('../models/StudentLearning');
 const Textbook = require('../models/Textbook');
-const { LEARNING_TYPE_ORDER, UNIT_STATUSES } = require('../constants');
+const {
+  LEARNING_TYPE_ORDER,
+  UNIT_STATUSES,
+  LEARNING_STATUSES,
+} = require('../constants');
 const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -88,6 +92,38 @@ router.post('/', async (req, res) => {
     }
     console.error(err);
     return res.status(400).json({ message: '학습 등록에 실패했습니다.', detail: err.message });
+  }
+});
+
+/**
+ * 학습 전체 정보 수정 (주로 status 변경)
+ */
+router.patch('/:id', async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (status && !LEARNING_STATUSES.includes(status)) {
+      return res.status(400).json({ message: '유효하지 않은 학습 상태입니다.' });
+    }
+
+    const doc = await StudentLearning.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    ).populate('textbook').lean();
+
+    if (!doc) {
+      return res.status(404).json({ message: '학습 정보를 찾을 수 없습니다.' });
+    }
+    
+    const sortUnitsByChapterOrder = (units) => {
+      return [...units].sort((a, b) => a.chapterOrder - b.chapterOrder);
+    };
+    
+    doc.units = sortUnitsByChapterOrder(doc.units || []);
+    return res.json(doc);
+  } catch (err) {
+    console.error(err);
+    return res.status(400).json({ message: '학습 수정에 실패했습니다.' });
   }
 });
 

@@ -1,5 +1,9 @@
 const mongoose = require('mongoose');
-const { LEARNING_TYPE_ORDER, UNIT_STATUSES } = require('../constants');
+const {
+  LEARNING_TYPE_ORDER,
+  UNIT_STATUSES,
+  LEARNING_STATUSES,
+} = require('../constants');
 
 const unitProgressSchema = new mongoose.Schema(
   {
@@ -18,6 +22,7 @@ const studentLearningSchema = new mongoose.Schema(
     student: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
     learningType: { type: String, required: true, enum: LEARNING_TYPE_ORDER },
     textbook: { type: mongoose.Schema.Types.ObjectId, ref: 'Textbook', required: true },
+    status: { type: String, required: true, enum: LEARNING_STATUSES, default: '진행중' },
     units: { type: [unitProgressSchema], default: [] },
   },
   { timestamps: true }

@@ -14,10 +14,17 @@ import {
   Typography,
   Collapse,
   Tag,
+  Popconfirm,
 } from 'antd';
+import { DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import client from '../api/client';
-import { LEARNING_TYPE_ORDER, UNIT_STATUSES, ASSESSMENT_TYPES } from '../constants/learning';
+import { 
+  LEARNING_TYPE_ORDER, 
+  UNIT_STATUSES, 
+  ASSESSMENT_TYPES,
+  LEARNING_STATUSES 
+} from '../constants/learning';
 
 export default function LearningPage() {
   const { id: studentId } = useParams();
@@ -88,6 +95,26 @@ export default function LearningPage() {
     }
   };
 
+  const updateStatus = async (learningId, status) => {
+    try {
+      await client.patch(`/learnings/${learningId}`, { status });
+      message.success('상태가 업데이트되었습니다.');
+      await loadAll();
+    } catch (err) {
+      message.error(err.response?.data?.message || '상태 업데이트에 실패했습니다.');
+    }
+  };
+
+  const deleteLearning = async (learningId) => {
+    try {
+      await client.delete(`/learnings/${learningId}`);
+      message.success('삭제되었습니다.');
+      await loadAll();
+    } catch (err) {
+      message.error(err.response?.data?.message || '삭제에 실패했습니다.');
+    }
+  };
+
   const openAssess = (learningRow, type, chapterOrder = null) => {
     setAssessCtx({ studentLearningId: learningRow._id, type, chapterOrder });
     assessForm.setFieldsValue({
@@ -128,9 +155,39 @@ export default function LearningPage() {
   const items = learnings.map((L) => ({
     key: L._id,
     label: (
-      <span>
-        <Tag color="blue">{L.learningType}</Tag> {L.textbook?.title || '교재'}
-      </span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingRight: 24 }}>
+        <Space>
+          <Tag color="blue" bordered={false}>{L.learningType}</Tag>
+          <Typography.Text strong style={{ fontSize: 15 }}>{L.textbook?.title || '교재'}</Typography.Text>
+          <Tag color={L.status === '완료' ? 'green' : L.status === '보류중' ? 'orange' : 'processing'} bordered={false}>
+            {L.status || '진행중'}
+          </Tag>
+        </Space>
+        <Space onClick={(e) => e.stopPropagation()}>
+          <Select
+            size="small"
+            style={{ width: 90 }}
+            value={L.status || '진행중'}
+            options={LEARNING_STATUSES.map(s => ({ label: s, value: s }))}
+            onChange={(v) => updateStatus(L._id, v)}
+          />
+          <Popconfirm
+            title="학습 삭제"
+            description="이 교재의 모든 학습 기록과 평가 기록이 삭제됩니다. 정말 삭제할까요?"
+            onConfirm={() => deleteLearning(L._id)}
+            okText="삭제"
+            cancelText="취소"
+            okButtonProps={{ danger: true }}
+          >
+            <Button 
+              type="text" 
+              danger 
+              size="small" 
+              icon={<DeleteOutlined />} 
+            />
+          </Popconfirm>
+        </Space>
+      </div>
     ),
     children: (
       <div>

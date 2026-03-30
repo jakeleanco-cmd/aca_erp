@@ -18,6 +18,9 @@ const ASSESSMENT_TYPES = ['단원평가', '과정평가'];
 /** 요일 (한국어, 월~일) */
 const WEEKDAYS_KO = ['월', '화', '수', '목', '금', '토', '일'];
 
+/** 학습 진행 상태 (전체 교재 기준) */
+const LEARNING_STATUSES = ['진행중', '보류중', '완료'];
+
 module.exports = {
   LEARNING_TYPE_ORDER,
   SCHOOL_LEVELS,
@@ -26,4 +29,5 @@ module.exports = {
   ASSESSMENT_TYPES,
   WEEKDAYS_KO,
   STUDENT_STATUSES: ['대기', '재원', '퇴원'],
+  LEARNING_STATUSES,
 };
