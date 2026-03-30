@@ -174,9 +174,18 @@ export default function StudentsPage() {
               justifyContent: 'space-between',
               alignItems: 'center'
             }}>
-               <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                등록일: {item.enrolledAt ? dayjs(item.enrolledAt).format('YYYY-MM-DD') : '-'}
-              </Typography.Text>
+               <Space direction="vertical" size={0}>
+                  {item.enrolledAt && dayjs(item.enrolledAt).year() > 2000 && (
+                    <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                      등록일: {dayjs(item.enrolledAt).format('YYYY-MM-DD')}
+                    </Typography.Text>
+                  )}
+                  {item.status === '퇴원' && item.leftAt && dayjs(item.leftAt).year() > 2000 && (
+                    <Typography.Text type="danger" style={{ fontSize: 11, fontWeight: 600 }}>
+                      퇴원일: {dayjs(item.leftAt).format('YYYY-MM-DD')}
+                    </Typography.Text>
+                  )}
+               </Space>
               <Button type="text" size="small" icon={<RightOutlined />} style={{ color: 'var(--primary-vibrant)' }}>
                 상세보기
               </Button>

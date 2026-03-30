@@ -56,7 +56,8 @@ export default function StudentEditPage() {
     const payload = {
       ...values,
       enrolledAt: values.enrolledAt?.toISOString(),
-      leftAt: values.leftAt ? values.leftAt.toISOString() : null,
+      // '퇴원' 상태가 아니면 퇴원일을 null로 강제 설정
+      leftAt: values.status === '퇴원' && values.leftAt ? values.leftAt.toISOString() : null,
       lastCounselingAt: values.lastCounselingAt ? values.lastCounselingAt.toISOString() : null,
     };
     try {
