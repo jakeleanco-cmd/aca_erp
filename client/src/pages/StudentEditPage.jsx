@@ -121,7 +121,7 @@ export default function StudentEditPage() {
           <DatePicker style={{ width: '100%' }} allowClear />
         </Form.Item>
         <Form.Item name="lastCounselingAt" label="마지막 상담일">
-          <DatePicker style={{ width: '100%' }} showTime allowClear />
+          <DatePicker style={{ width: '100%' }} allowClear />
         </Form.Item>
         <Form.Item>
           <Space wrap>

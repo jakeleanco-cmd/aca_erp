@@ -277,7 +277,7 @@ export default function LearningPage() {
             </Form.Item>
           )}
           <Form.Item name="assessedAt" label="평가일" rules={[{ required: true }]}>
-            <DatePicker showTime style={{ width: '100%' }} />
+            <DatePicker style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item name="result" label="결과" rules={[{ required: true }]}>
             <Input.TextArea rows={3} placeholder="점수 또는 평가 내용" />

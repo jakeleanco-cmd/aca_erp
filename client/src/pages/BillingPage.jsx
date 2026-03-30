@@ -95,7 +95,7 @@ export default function BillingPage() {
       key: 'rc',
       render: (_, r) =>
         r.receiptIssued ? (
-          <span>{r.receiptIssuedAt ? dayjs(r.receiptIssuedAt).format('YYYY-MM-DD HH:mm') : '발행'}</span>
+          <span>{r.receiptIssuedAt ? dayjs(r.receiptIssuedAt).format('YYYY-MM-DD') : '발행'}</span>
         ) : (
           '-'
         ),
