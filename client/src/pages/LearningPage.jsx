@@ -15,6 +15,7 @@ import {
   Collapse,
   Tag,
   Popconfirm,
+  Segmented,
 } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -38,6 +39,7 @@ export default function LearningPage() {
   const [assessOpen, setAssessOpen] = useState(false);
   const [assessForm] = Form.useForm();
   const [assessCtx, setAssessCtx] = useState(null);
+  const [filterMode, setFilterMode] = useState('진행중'); // '진행중' (완료 제외) or '전체'
 
   const loadAll = async () => {
     const [stu, learn, books] = await Promise.all([
@@ -152,17 +154,24 @@ export default function LearningPage() {
     return null;
   }
 
-  const items = learnings.map((L) => ({
-    key: L._id,
-    label: (
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingRight: 24 }}>
-        <Space>
-          <Tag color="blue" bordered={false}>{L.learningType}</Tag>
-          <Typography.Text strong style={{ fontSize: 15 }}>{L.textbook?.title || '교재'}</Typography.Text>
-          <Tag color={L.status === '완료' ? 'green' : L.status === '보류중' ? 'orange' : 'processing'} bordered={false}>
-            {L.status || '진행중'}
-          </Tag>
-        </Space>
+  const items = learnings
+    .filter((L) => {
+      if (filterMode === '진행중') return L.status !== '완료';
+      return true;
+    })
+    .map((L) => ({
+      key: L._id,
+      label: (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingRight: 24 }}>
+          <Space>
+            <Tag color="blue" bordered={false}>{L.learningType}</Tag>
+            <Typography.Text strong style={{ fontSize: 15 }}>
+              {L.textbook?.title || '교재'} — {L.textbook?.gradeLabel || ''}
+            </Typography.Text>
+            <Tag color={L.status === '완료' ? 'green' : L.status === '보류중' ? 'orange' : 'processing'} bordered={false}>
+              {L.status || '진행중'}
+            </Tag>
+          </Space>
         <Space onClick={(e) => e.stopPropagation()}>
           <Select
             size="small"
@@ -298,8 +307,22 @@ export default function LearningPage() {
           </Space>
         </div>
 
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <Segmented
+            value={filterMode}
+            onChange={(v) => setFilterMode(v)}
+            options={[
+              { label: '진행 중인 학습', value: '진행중' },
+              { label: '전체 보기', value: '전체' },
+            ]}
+          />
+          <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+            총 <span style={{ color: 'var(--primary-vibrant)', fontWeight: 700 }}>{items.length}</span>개의 학습
+          </Typography.Text>
+        </div>
+
         {items.length === 0 ? (
-          <Card>등록된 학습이 없습니다. 「학습 등록」으로 교재를 매핑하세요.</Card>
+          <Card>등록된 학습이 없거나 필터와 일치하는 항목이 없습니다.</Card>
         ) : (
           <Collapse items={items} />
         )}
