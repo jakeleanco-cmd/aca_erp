@@ -117,13 +117,13 @@ export default function LearningPage() {
     }
   };
 
-  const openAssess = (learningRow, type, chapterOrder = null) => {
+  const openAssess = (learningRow, type, chapterOrder = null, initialResult = '') => {
     setAssessCtx({ studentLearningId: learningRow._id, type, chapterOrder });
     assessForm.setFieldsValue({
       type,
       chapterOrder: chapterOrder != null ? chapterOrder : undefined,
       assessedAt: dayjs(),
-      result: '',
+      result: initialResult || '',
       memo: '',
     });
     setAssessOpen(true);
@@ -144,6 +144,13 @@ export default function LearningPage() {
       });
       message.success('평가가 저장되었습니다.');
       setAssessOpen(false);
+      
+      // 단원평가인 경우 학습 요약 정보(unitEvaluationResult)도 함께 업데이트
+      if (type === '단원평가' && assessCtx.chapterOrder != null) {
+        await saveUnit(assessCtx.studentLearningId, assessCtx.chapterOrder, { unitEvaluationResult: v.result });
+      } else {
+        await loadAll();
+      }
     } catch (err) {
       if (err?.errorFields) return;
       message.error(err.response?.data?.message || '저장에 실패했습니다.');
@@ -287,8 +294,11 @@ export default function LearningPage() {
               width: 80,
               align: 'center',
               render: (_, u) => (
-                <Button size="small" onClick={() => openAssess(L, '단원평가', u.chapterOrder)}>
-                  기록
+                <Button 
+                  size="small" 
+                  onClick={() => openAssess(L, '단원평가', u.chapterOrder, u.unitEvaluationResult)}
+                >
+                  {u.unitEvaluationResult ? '수정' : '기록'}
                 </Button>
               ),
             },
