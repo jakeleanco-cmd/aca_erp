@@ -259,7 +259,7 @@ export default function LearningPage() {
               optionFilterProp="label"
               options={textbooks.map((b) => ({
                 value: b._id,
-                label: `${b.title} (${b.publishYear})`,
+                label: `[${b.schoolLevel}] ${b.title} - ${b.gradeLabel} (${b.publishYear})`,
               }))}
             />
           </Form.Item>
