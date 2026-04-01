@@ -80,6 +80,7 @@ router.post('/', async (req, res) => {
         status: '학습예정',
         startedAt: null,
         completedAt: null,
+        hasUnitEvaluation: !!topic.hasUnitEvaluation,
         result: ''
       }))
     }));

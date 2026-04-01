@@ -166,6 +166,14 @@ export default function TextbookEditPage() {
                               >
                                 <Input size="small" placeholder="세부 소주제명 입력" />
                               </Form.Item>
+                              <Form.Item
+                                {...subRestField}
+                                name={[subName, 'hasUnitEvaluation']}
+                                valuePropName="checked"
+                                style={{ margin: 0 }}
+                              >
+                                <Switch size="small" checkedChildren="평가" unCheckedChildren="평가" />
+                              </Form.Item>
                               <Button 
                                 type="text" 
                                 size="small" 

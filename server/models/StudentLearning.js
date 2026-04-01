@@ -11,6 +11,7 @@ const topicProgressSchema = new mongoose.Schema(
     status: { type: String, default: '학습예정' },
     startedAt: { type: Date, default: null },
     completedAt: { type: Date, default: null },
+    hasUnitEvaluation: { type: Boolean, default: false },
     result: { type: String, default: '', trim: true },
   },
   { _id: false }

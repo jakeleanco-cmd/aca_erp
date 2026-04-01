@@ -264,12 +264,17 @@ export default function LearningPage() {
                       width: 60,
                       align: 'center'
                     },
-                    {
-                      title: '소주제',
-                      dataIndex: 'title', // t.title 객체 속성 접근
-                      width: 250,
-                      render: (text) => <span style={{ fontSize: '13px' }}>{text}</span>
-                    },
+                  {
+                    title: '소주제',
+                    dataIndex: 'title', // t.title 객체 속성 접근
+                    width: 250,
+                    render: (text, topic) => (
+                      <div style={{ fontSize: '13px', display: 'flex', alignItems: 'center' }}>
+                        {text}
+                        {topic.hasUnitEvaluation && <Tag color="gold" size="small" style={{ marginLeft: 8, fontSize: '10px' }}>평가</Tag>}
+                      </div>
+                    )
+                  },
                     {
                       title: '상태',
                       dataIndex: 'status',
