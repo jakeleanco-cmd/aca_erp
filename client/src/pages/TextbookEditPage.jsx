@@ -154,7 +154,7 @@ export default function TextbookEditPage() {
                       {(subFields, { add: addTopic, remove: removeTopic }) => (
                         <>
                           {subFields.map(({ key: subKey, name: subName, ...subRestField }, subIndex) => (
-                            <div key={subKey} style={{ display: 'flex', gap: '8px', marginBottom: 8, alignItems: 'center' }}>
+                            <div key={subKey} style={{ display: 'flex', gap: '8px', marginBottom: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                               <Form.Item {...subRestField} name={[subName, 'order']} initialValue={subIndex + 1} style={{ margin: 0 }}>
                                 <InputNumber size="small" style={{ width: '45px' }} />
                               </Form.Item>
@@ -162,18 +162,21 @@ export default function TextbookEditPage() {
                                 {...subRestField} 
                                 name={[subName, 'title']} 
                                 rules={[{ required: true, message: '소주제명' }]}
-                                style={{ flex: '1 1 auto', margin: 0 }}
+                                style={{ flex: '1 1 200px', margin: 0 }}
                               >
                                 <Input size="small" placeholder="세부 소주제명 입력" />
                               </Form.Item>
-                              <Form.Item
-                                {...subRestField}
-                                name={[subName, 'hasUnitEvaluation']}
-                                valuePropName="checked"
-                                style={{ margin: 0 }}
-                              >
-                                <Switch size="small" checkedChildren="평가" unCheckedChildren="평가" />
-                              </Form.Item>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', paddingBottom: '4px' }}>
+                                <Typography.Text style={{ fontSize: '11px', color: '#888' }}>평가</Typography.Text>
+                                <Form.Item
+                                  {...subRestField}
+                                  name={[subName, 'hasUnitEvaluation']}
+                                  valuePropName="checked"
+                                  style={{ margin: 0 }}
+                                >
+                                  <Switch size="small" checkedChildren="ON" unCheckedChildren="OFF" />
+                                </Form.Item>
+                              </div>
                               <Button 
                                 type="text" 
                                 size="small" 
@@ -186,7 +189,7 @@ export default function TextbookEditPage() {
                           <Button
                             type="dashed"
                             size="small"
-                            onClick={() => addTopic({ order: subFields.length + 1, title: '' })}
+                            onClick={() => addTopic({ order: subFields.length + 1, title: '', hasUnitEvaluation: false })}
                             icon={<PlusOutlined />}
                             style={{ marginTop: 8 }}
                           >
