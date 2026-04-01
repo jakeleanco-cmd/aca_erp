@@ -50,18 +50,14 @@ export default function TextbooksPage() {
       title: <span style={{ whiteSpace: 'nowrap' }}>교재명</span>, 
       dataIndex: 'title', 
       key: 'title',
-      width: 300,
-      render: (t) => (
-        <div style={{ paddingRight: 16 }}>
-          <Typography.Text strong style={{ fontSize: 15 }}>{t}</Typography.Text>
-        </div>
-      )
+      width: 200,
+      render: (t) => <Typography.Text strong style={{ fontSize: 14 }}>{t}</Typography.Text>
     },
     { 
       title: <span style={{ whiteSpace: 'nowrap' }}>출판년도</span>, 
       dataIndex: 'publishYear', 
       key: 'publishYear',
-      width: 120,
+      width: 100,
       align: 'center',
       render: (y) => <span style={{ color: '#666' }}>{y}년</span>
     },
