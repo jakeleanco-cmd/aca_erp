@@ -20,11 +20,11 @@ import {
 import { DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import client from '../api/client';
-import { 
-  LEARNING_TYPE_ORDER, 
-  UNIT_STATUSES, 
+import {
+  LEARNING_TYPE_ORDER,
+  UNIT_STATUSES,
   ASSESSMENT_TYPES,
-  LEARNING_STATUSES 
+  LEARNING_STATUSES
 } from '../constants/learning';
 
 export default function LearningPage() {
@@ -154,7 +154,7 @@ export default function LearningPage() {
       });
       message.success('평가가 저장되었습니다.');
       setAssessOpen(false);
-      
+
       // 단원평가인 경우 학습 요약 정보(unitEvaluationResult)도 함께 업데이트
       if (type === '단원평가' && assessCtx.chapterOrder != null) {
         await saveUnit(assessCtx.studentLearningId, assessCtx.chapterOrder, { unitEvaluationResult: v.result });
@@ -179,8 +179,8 @@ export default function LearningPage() {
     .map((L) => ({
       key: L._id,
       label: (
-        <div style={{ 
-          display: 'flex', 
+        <div style={{
+          display: 'flex',
           flexDirection: 'column',
           gap: '8px',
           width: '100%',
@@ -188,28 +188,28 @@ export default function LearningPage() {
         }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
             <Tag color="blue" bordered={false} style={{ margin: 0 }}>{L.learningType}</Tag>
-            <Typography.Text strong style={{ 
-              fontSize: 15, 
+            <Typography.Text strong style={{
+              fontSize: 15,
               wordBreak: 'keep-all',
               flex: '1 1 auto'
             }}>
               {L.textbook?.title || '교재'} — {L.textbook?.gradeLabel || ''}
             </Typography.Text>
-            <Tag 
-              color={L.status === '완료' ? 'green' : L.status === '보류중' ? 'orange' : 'processing'} 
+            <Tag
+              color={L.status === '완료' ? 'green' : L.status === '보류중' ? 'orange' : 'processing'}
               bordered={false}
               style={{ margin: 0 }}
             >
               {L.status || '진행중'}
             </Tag>
           </div>
-          <div 
-            style={{ 
-              display: 'flex', 
-              justifyContent: 'flex-end', 
-              alignItems: 'center', 
-              gap: '8px' 
-            }} 
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+              gap: '8px'
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             <Select
@@ -227,194 +227,205 @@ export default function LearningPage() {
               cancelText="취소"
               okButtonProps={{ danger: true }}
             >
-              <Button 
-                type="text" 
-                danger 
-                size="small" 
-                icon={<DeleteOutlined />} 
+              <Button
+                type="text"
+                danger
+                size="small"
+                icon={<DeleteOutlined />}
               />
             </Popconfirm>
           </div>
         </div>
-    ),
-    children: (
-      <div>
-        <Space style={{ marginBottom: 8 }}>
-          <Button size="small" onClick={() => openAssess(L, '과정평가')}>
-            과정평가 기록
-          </Button>
-        </Space>
-        <Table
-          size="small"
-          pagination={false}
-          rowKey={(r) => r.chapterOrder}
-          dataSource={L.units || []}
-          scroll={{ x: 'max-content' }}
-          expandable={{
-            expandedRowRender: (unitRecord) => (
-              <Table
-                size="small"
-                pagination={false}
-                dataSource={unitRecord.topics || []}
-                rowKey={(t, i) => i}
-                columns={[
-                  { title: '소주제', dataIndex: 'title', width: 200 },
-                  { 
-                    title: '상태', 
-                    dataIndex: 'status', 
-                    width: 120,
-                    render: (s, t, i) => (
-                      <Select
-                        size="small"
-                        style={{ width: '100%' }}
-                        value={s}
-                        options={UNIT_STATUSES.map(v => ({ value: v, label: v }))}
-                        onChange={(v) => saveTopic(L._id, unitRecord.chapterOrder, i, { status: v })}
-                      />
-                    )
-                  },
-                  { 
-                    title: '시작일', 
-                    dataIndex: 'startedAt', 
-                    width: 130,
-                    render: (d, t, i) => (
-                      <DatePicker
-                        size="small"
-                        style={{ width: '100%' }}
-                        value={d ? dayjs(d) : null}
-                        onChange={(v) => saveTopic(L._id, unitRecord.chapterOrder, i, { startedAt: v ? v.toISOString() : null })}
-                      />
-                    )
-                  },
-                  { 
-                    title: '완료일', 
-                    dataIndex: 'completedAt', 
-                    width: 130,
-                    render: (d, t, i) => (
-                      <DatePicker
-                        size="small"
-                        style={{ width: '100%' }}
-                        value={d ? dayjs(d) : null}
-                        onChange={(v) => saveTopic(L._id, unitRecord.chapterOrder, i, { completedAt: v ? v.toISOString() : null })}
-                      />
-                    )
-                  },
-                  { 
-                    title: '결과', 
-                    dataIndex: 'result', 
-                    width: 150,
-                    render: (v, t, i) => (
-                      <Input
-                        size="small"
-                        placeholder="점수/메모"
-                        value={v}
-                        onBlur={(e) => saveTopic(L._id, unitRecord.chapterOrder, i, { result: e.target.value })}
-                      />
-                    )
-                  }
-                ]}
-              />
-            )
-          }}
-          columns={[
-            { 
-              title: <span style={{ whiteSpace: 'nowrap' }}>순서</span>, 
-              dataIndex: 'chapterOrder', 
-              width: 50,
-              align: 'center'
-            },
-            {
-              title: <span style={{ whiteSpace: 'nowrap' }}>단원</span>,
-              key: 't',
-              render: (_, u) => {
-                const ch = (L.textbook?.chapters || []).find((c) => c.order === u.chapterOrder);
-                return (
-                  <div style={{ 
-                    minWidth: 100,
-                    maxWidth: 200,
-                    wordBreak: 'keep-all',
-                    whiteSpace: 'normal',
-                    lineHeight: '1.2',
-                    fontSize: '13px'
-                  }}>
-                    <div style={{ fontWeight: 'bold' }}>{ch?.title || '-'}</div>
-                  </div>
-                );
-              },
-            },
-            {
-              title: <span style={{ whiteSpace: 'nowrap' }}>상태</span>,
-              dataIndex: 'status',
-              width: 120,
-              render: (status, u) => (
-                <Select
+      ),
+      children: (
+        <div>
+          <Space style={{ marginBottom: 8 }}>
+            <Button size="small" onClick={() => openAssess(L, '과정평가')}>
+              과정평가 기록
+            </Button>
+          </Space>
+          <Table
+            size="small"
+            pagination={false}
+            rowKey={(r) => r.chapterOrder}
+            dataSource={L.units || []}
+            scroll={{ x: 'max-content' }}
+            expandable={{
+              expandedRowRender: (unitRecord) => (
+                <Table
                   size="small"
-                  style={{ width: '100%' }}
-                  value={status}
-                  options={UNIT_STATUSES.map((s) => ({ value: s, label: s }))}
-                  onChange={(v) => saveUnit(L._id, u.chapterOrder, { status: v })}
-                />
-              ),
-            },
-            {
-              title: <span style={{ whiteSpace: 'nowrap' }}>시작일</span>,
-              width: 140,
-              render: (_, u) => (
-                <DatePicker
-                  size="small"
-                  style={{ width: '100%', minWidth: 110 }}
-                  value={u.startedAt ? dayjs(u.startedAt) : null}
-                  onChange={(d) => saveUnit(L._id, u.chapterOrder, { startedAt: d ? d.toISOString() : null })}
-                />
-              ),
-            },
-            {
-              title: <span style={{ whiteSpace: 'nowrap' }}>완료일</span>,
-              width: 140,
-              render: (_, u) => (
-                <DatePicker
-                  size="small"
-                  style={{ width: '100%', minWidth: 110 }}
-                  value={u.completedAt ? dayjs(u.completedAt) : null}
-                  onChange={(d) => saveUnit(L._id, u.chapterOrder, { completedAt: d ? d.toISOString() : null })}
-                />
-              ),
-            },
-            {
-              title: <span style={{ whiteSpace: 'nowrap' }}>단원평가결과</span>,
-              dataIndex: 'unitEvaluationResult',
-              width: 150,
-              render: (t, u) => (
-                <Input
-                  size="small"
-                  defaultValue={t}
-                  onBlur={(e) => {
-                    const val = e.target.value;
-                    if (val !== (t || '')) {
-                      saveUnit(L._id, u.chapterOrder, { unitEvaluationResult: val });
+                  pagination={false}
+                  dataSource={unitRecord.topics || []}
+                  rowKey={(t) => t.order} // i 대신 고유값인 order 사용 권장
+                  columns={[
+                    {
+                      title: '순서',
+                      dataIndex: 'order',
+                      width: 60,
+                      align: 'center'
+                    },
+                    {
+                      title: '소주제',
+                      dataIndex: 'title', // t.title 객체 속성 접근
+                      width: 250,
+                      render: (text) => <span style={{ fontSize: '13px' }}>{text}</span>
+                    },
+                    {
+                      title: '상태',
+                      dataIndex: 'status',
+                      width: 120,
+                      render: (s, t, i) => (
+                        <Select
+                          size="small"
+                          style={{ width: '100%' }}
+                          value={s || '미진행'} // 기본값 처리
+                          options={UNIT_STATUSES.map(v => ({ value: v, label: v }))}
+                          // i(index)를 사용하여 해당 토픽 업데이트
+                          onChange={(v) => saveTopic(L._id, unitRecord.chapterOrder, i, { status: v })}
+                        />
+                      )
+                    },
+                    {
+                      title: '시작일',
+                      dataIndex: 'startedAt',
+                      width: 130,
+                      render: (d, t, i) => (
+                        <DatePicker
+                          size="small"
+                          style={{ width: '100%' }}
+                          value={d ? dayjs(d) : null}
+                          onChange={(v) => saveTopic(L._id, unitRecord.chapterOrder, i, { startedAt: v ? v.toISOString() : null })}
+                        />
+                      )
+                    },
+                    {
+                      title: '완료일',
+                      dataIndex: 'completedAt',
+                      width: 130,
+                      render: (d, t, i) => (
+                        <DatePicker
+                          size="small"
+                          style={{ width: '100%' }}
+                          value={d ? dayjs(d) : null}
+                          onChange={(v) => saveTopic(L._id, unitRecord.chapterOrder, i, { completedAt: v ? v.toISOString() : null })}
+                        />
+                      )
+                    },
+                    {
+                      title: '결과/메모',
+                      dataIndex: 'result',
+                      width: 150,
+                      render: (v, t, i) => (
+                        <Input
+                          size="small"
+                          placeholder="점수/메모"
+                          defaultValue={v}
+                          onBlur={(e) => {
+                            if (e.target.value !== (v || '')) {
+                              saveTopic(L._id, unitRecord.chapterOrder, i, { result: e.target.value });
+                            }
+                          }}
+                        />
+                      )
                     }
-                  }}
+                  ]}
                 />
-              ),
-            },
-            {
-              title: <span style={{ whiteSpace: 'nowrap' }}>기록</span>,
-              width: 80,
-              align: 'center',
-              render: (_, u) => (
-                <Button 
-                  size="small" 
-                  onClick={() => openAssess(L, '단원평가', u.chapterOrder, u.unitEvaluationResult)}
-                >
-                  {u.unitEvaluationResult ? '수정' : '기록'}
-                </Button>
-              ),
-            },
-          ]}
-        />
-      </div>
-    ),
-  }));
+              )
+            }}
+            columns={[
+              {
+                title: <span style={{ whiteSpace: 'nowrap' }}>순서</span>,
+                dataIndex: 'chapterOrder',
+                width: 50,
+                align: 'center'
+              },
+              {
+                title: <span style={{ whiteSpace: 'nowrap' }}>단원</span>,
+                key: 't',
+                render: (_, u) => {
+                  const ch = (L.textbook?.chapters || []).find((c) => c.order === u.chapterOrder);
+                  return (
+                    <div style={{ fontSize: '13px' }}>
+                      {/* 로마자 숫자 등이 chapter_no에 있다면 함께 표시 */}
+                      <Tag color="default" style={{ marginRight: 4 }}>{ch?.chapter_no || u.chapterOrder}</Tag>
+                      <span style={{ fontWeight: 'bold' }}>{ch?.title || '-'}</span>
+                    </div>
+                  );
+                },
+              },
+              {
+                title: <span style={{ whiteSpace: 'nowrap' }}>상태</span>,
+                dataIndex: 'status',
+                width: 120,
+                render: (status, u) => (
+                  <Select
+                    size="small"
+                    style={{ width: '100%' }}
+                    value={status}
+                    options={UNIT_STATUSES.map((s) => ({ value: s, label: s }))}
+                    onChange={(v) => saveUnit(L._id, u.chapterOrder, { status: v })}
+                  />
+                ),
+              },
+              {
+                title: <span style={{ whiteSpace: 'nowrap' }}>시작일</span>,
+                width: 140,
+                render: (_, u) => (
+                  <DatePicker
+                    size="small"
+                    style={{ width: '100%', minWidth: 110 }}
+                    value={u.startedAt ? dayjs(u.startedAt) : null}
+                    onChange={(d) => saveUnit(L._id, u.chapterOrder, { startedAt: d ? d.toISOString() : null })}
+                  />
+                ),
+              },
+              {
+                title: <span style={{ whiteSpace: 'nowrap' }}>완료일</span>,
+                width: 140,
+                render: (_, u) => (
+                  <DatePicker
+                    size="small"
+                    style={{ width: '100%', minWidth: 110 }}
+                    value={u.completedAt ? dayjs(u.completedAt) : null}
+                    onChange={(d) => saveUnit(L._id, u.chapterOrder, { completedAt: d ? d.toISOString() : null })}
+                  />
+                ),
+              },
+              {
+                title: <span style={{ whiteSpace: 'nowrap' }}>단원평가결과</span>,
+                dataIndex: 'unitEvaluationResult',
+                width: 150,
+                render: (t, u) => (
+                  <Input
+                    size="small"
+                    defaultValue={t}
+                    onBlur={(e) => {
+                      const val = e.target.value;
+                      if (val !== (t || '')) {
+                        saveUnit(L._id, u.chapterOrder, { unitEvaluationResult: val });
+                      }
+                    }}
+                  />
+                ),
+              },
+              {
+                title: <span style={{ whiteSpace: 'nowrap' }}>기록</span>,
+                width: 80,
+                align: 'center',
+                render: (_, u) => (
+                  <Button
+                    size="small"
+                    onClick={() => openAssess(L, '단원평가', u.chapterOrder, u.unitEvaluationResult)}
+                  >
+                    {u.unitEvaluationResult ? '수정' : '기록'}
+                  </Button>
+                ),
+              },
+            ]}
+          />
+        </div>
+      ),
+    }));
 
   return (
     <div>

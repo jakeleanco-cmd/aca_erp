@@ -46,45 +46,55 @@ export default function TextbooksPage() {
   });
 
   const columns = [
-    { 
-      title: '교재명', 
-      dataIndex: 'title', 
+    {
+      title: '교재명',
+      dataIndex: 'title',
       key: 'title',
       render: (t) => <Typography.Text strong style={{ fontSize: 14 }}>{t}</Typography.Text>
     },
-    { 
-      title: '출판년도', 
-      dataIndex: 'publishYear', 
+    {
+      title: '출판년도',
+      dataIndex: 'publishYear',
       key: 'publishYear',
       align: 'center',
       render: (y) => <span style={{ color: '#666', whiteSpace: 'nowrap' }}>{y}년</span>
     },
-    { 
-      title: '학년구분', 
-      dataIndex: 'schoolLevel', 
+    {
+      title: '학년구분',
+      dataIndex: 'schoolLevel',
       key: 'schoolLevel',
       align: 'center',
       render: (v) => <span style={{ whiteSpace: 'nowrap' }}>{v}</span>
     },
-    { 
-      title: '학년', 
-      dataIndex: 'gradeLabel', 
+    {
+      title: '학년',
+      dataIndex: 'gradeLabel',
       key: 'gradeLabel',
       align: 'center',
       render: (v) => <span style={{ whiteSpace: 'nowrap' }}>{v}</span>
     },
-    { 
-      title: '학습수준', 
-      dataIndex: 'learningLevel', 
+    {
+      title: '학습수준',
+      dataIndex: 'learningLevel',
       key: 'learningLevel',
       align: 'center',
       render: (v) => <span style={{ whiteSpace: 'nowrap' }}>{v}</span>
     },
     {
-      title: '단원 수',
-      key: 'ch',
+      title: '구성', // '단원 수' 대신 '구성'으로 변경
+      key: 'structure',
       align: 'center',
-      render: (_, r) => <span style={{ whiteSpace: 'nowrap' }}>{(r.chapters || []).length}</span>,
+      render: (_, r) => {
+        const chapterCount = (r.chapters || []).length;
+        // 모든 단원의 topics 길이를 합산
+        const topicCount = (r.chapters || []).reduce((acc, ch) => acc + (ch.topics || []).length, 0);
+        return (
+          <Space direction="vertical" size={0} style={{ fontSize: '12px', whiteSpace: 'nowrap' }}>
+            <span>단원: {chapterCount}개</span>
+            <span style={{ color: '#8c8c8c' }}>주제: {topicCount}개</span>
+          </Space>
+        );
+      },
     },
     {
       title: '작업',
@@ -135,12 +145,12 @@ export default function TextbooksPage() {
         </Space>
       </div>
 
-      <Table 
-        rowKey="_id" 
-        loading={loading} 
-        columns={columns} 
-        dataSource={filteredRows} 
-        pagination={{ pageSize: 20, showSizeChanger: false }} 
+      <Table
+        rowKey="_id"
+        loading={loading}
+        columns={columns}
+        dataSource={filteredRows}
+        pagination={{ pageSize: 20, showSizeChanger: false }}
         scroll={{ x: 'max-content' }}
         size="middle"
       />
