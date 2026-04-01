@@ -47,53 +47,50 @@ export default function TextbooksPage() {
 
   const columns = [
     { 
-      title: <span style={{ whiteSpace: 'nowrap' }}>교재명</span>, 
+      title: '교재명', 
       dataIndex: 'title', 
       key: 'title',
-      width: 200,
       render: (t) => <Typography.Text strong style={{ fontSize: 14 }}>{t}</Typography.Text>
     },
     { 
-      title: <span style={{ whiteSpace: 'nowrap' }}>출판년도</span>, 
+      title: '출판년도', 
       dataIndex: 'publishYear', 
       key: 'publishYear',
-      width: 100,
       align: 'center',
-      render: (y) => <span style={{ color: '#666' }}>{y}년</span>
+      render: (y) => <span style={{ color: '#666', whiteSpace: 'nowrap' }}>{y}년</span>
     },
     { 
-      title: <span style={{ whiteSpace: 'nowrap' }}>학년구분</span>, 
+      title: '학년구분', 
       dataIndex: 'schoolLevel', 
       key: 'schoolLevel',
-      width: 100,
-      align: 'center'
+      align: 'center',
+      render: (v) => <span style={{ whiteSpace: 'nowrap' }}>{v}</span>
     },
     { 
-      title: <span style={{ whiteSpace: 'nowrap' }}>학년</span>, 
+      title: '학년', 
       dataIndex: 'gradeLabel', 
       key: 'gradeLabel',
-      width: 120,
-      align: 'center'
+      align: 'center',
+      render: (v) => <span style={{ whiteSpace: 'nowrap' }}>{v}</span>
     },
     { 
-      title: <span style={{ whiteSpace: 'nowrap' }}>학습수준</span>, 
+      title: '학습수준', 
       dataIndex: 'learningLevel', 
       key: 'learningLevel',
-      width: 100,
-      align: 'center'
+      align: 'center',
+      render: (v) => <span style={{ whiteSpace: 'nowrap' }}>{v}</span>
     },
     {
-      title: <span style={{ whiteSpace: 'nowrap' }}>단원 수</span>,
+      title: '단원 수',
       key: 'ch',
-      width: 90,
       align: 'center',
-      render: (_, r) => (r.chapters || []).length,
+      render: (_, r) => <span style={{ whiteSpace: 'nowrap' }}>{(r.chapters || []).length}</span>,
     },
     {
-      title: <span style={{ whiteSpace: 'nowrap' }}>작업</span>,
+      title: '작업',
       key: 'a',
-      width: 120,
       align: 'center',
+      width: 100, // 버튼 영역은 최소한의 고정 너비 유지
       render: (_, r) => (
         <Space size="small">
           <Button type="link" onClick={() => navigate(`/textbooks/${r._id}`)} style={{ padding: 0 }}>
