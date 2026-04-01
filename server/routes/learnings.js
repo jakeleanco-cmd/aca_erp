@@ -62,7 +62,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: '유효하지 않은 학습종류입니다.' });
     }
 
-    const textbook = await Textbook.findById(textbookId);
+    const textbook = await Textbook.findById(textbookId).lean();
     if (!textbook) {
       return res.status(404).json({ message: '교재를 찾을 수 없습니다.' });
     }
