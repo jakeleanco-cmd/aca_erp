@@ -261,7 +261,19 @@ export default function LearningPage() {
                     lineHeight: '1.2',
                     fontSize: '13px'
                   }}>
-                    {ch?.title || '-'}
+                    <div style={{ fontWeight: 'bold' }}>{ch?.title || '-'}</div>
+                    {ch?.topics && ch.topics.length > 0 && (
+                      <div style={{ 
+                        marginTop: '4px', 
+                        fontSize: '11px', 
+                        color: '#8c8c8c',
+                        lineHeight: '1.4'
+                      }}>
+                        {ch.topics.map((t, i) => (
+                          <div key={i}>• {t}</div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               },
