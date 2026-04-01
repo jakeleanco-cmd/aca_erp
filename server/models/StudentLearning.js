@@ -7,6 +7,7 @@ const {
 
 const topicProgressSchema = new mongoose.Schema(
   {
+    order: { type: Number, required: true },
     title: { type: String, required: true },
     status: { type: String, default: '학습예정' },
     startedAt: { type: Date, default: null },
