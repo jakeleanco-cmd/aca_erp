@@ -76,6 +76,7 @@ router.post('/', async (req, res) => {
       unitEvaluationResult: '',
       /** 교재에 정의된 소주제 목록으로 초기 상태 생성 */
       topics: (ch.topics || []).map(topic => ({
+        order: topic.order,
         title: topic.title,
         status: '학습예정',
         startedAt: null,
