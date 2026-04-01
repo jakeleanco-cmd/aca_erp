@@ -169,41 +169,63 @@ export default function LearningPage() {
     .map((L) => ({
       key: L._id,
       label: (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingRight: 24 }}>
-          <Space>
-            <Tag color="blue" bordered={false}>{L.learningType}</Tag>
-            <Typography.Text strong style={{ fontSize: 15 }}>
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          gap: '8px',
+          width: '100%',
+          padding: '8px 0'
+        }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
+            <Tag color="blue" bordered={false} style={{ margin: 0 }}>{L.learningType}</Tag>
+            <Typography.Text strong style={{ 
+              fontSize: 15, 
+              wordBreak: 'keep-all',
+              flex: '1 1 auto'
+            }}>
               {L.textbook?.title || '교재'} — {L.textbook?.gradeLabel || ''}
             </Typography.Text>
-            <Tag color={L.status === '완료' ? 'green' : L.status === '보류중' ? 'orange' : 'processing'} bordered={false}>
+            <Tag 
+              color={L.status === '완료' ? 'green' : L.status === '보류중' ? 'orange' : 'processing'} 
+              bordered={false}
+              style={{ margin: 0 }}
+            >
               {L.status || '진행중'}
             </Tag>
-          </Space>
-        <Space onClick={(e) => e.stopPropagation()}>
-          <Select
-            size="small"
-            style={{ width: 90 }}
-            value={L.status || '진행중'}
-            options={LEARNING_STATUSES.map(s => ({ label: s, value: s }))}
-            onChange={(v) => updateStatus(L._id, v)}
-          />
-          <Popconfirm
-            title="학습 삭제"
-            description="이 교재의 모든 학습 기록과 평가 기록이 삭제됩니다. 정말 삭제할까요?"
-            onConfirm={() => deleteLearning(L._id)}
-            okText="삭제"
-            cancelText="취소"
-            okButtonProps={{ danger: true }}
+          </div>
+          <div 
+            style={{ 
+              display: 'flex', 
+              justifyContent: 'flex-end', 
+              alignItems: 'center', 
+              gap: '8px' 
+            }} 
+            onClick={(e) => e.stopPropagation()}
           >
-            <Button 
-              type="text" 
-              danger 
-              size="small" 
-              icon={<DeleteOutlined />} 
+            <Select
+              size="small"
+              style={{ width: 90 }}
+              value={L.status || '진행중'}
+              options={LEARNING_STATUSES.map(s => ({ label: s, value: s }))}
+              onChange={(v) => updateStatus(L._id, v)}
             />
-          </Popconfirm>
-        </Space>
-      </div>
+            <Popconfirm
+              title="학습 삭제"
+              description="이 교재의 모든 학습 기록과 평가 기록이 삭제됩니다. 정말 삭제할까요?"
+              onConfirm={() => deleteLearning(L._id)}
+              okText="삭제"
+              cancelText="취소"
+              okButtonProps={{ danger: true }}
+            >
+              <Button 
+                type="text" 
+                danger 
+                size="small" 
+                icon={<DeleteOutlined />} 
+              />
+            </Popconfirm>
+          </div>
+        </div>
     ),
     children: (
       <div>
