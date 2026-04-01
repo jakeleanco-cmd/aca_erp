@@ -97,6 +97,16 @@ export default function LearningPage() {
     }
   };
 
+  const saveTopic = async (learningId, chapterOrder, topicIndex, patch) => {
+    try {
+      await client.patch(`/learnings/${learningId}/units/${chapterOrder}/topics/${topicIndex}`, patch);
+      message.success('저장되었습니다.');
+      await loadAll();
+    } catch (err) {
+      message.error(err.response?.data?.message || '저장에 실패했습니다.');
+    }
+  };
+
   const updateStatus = async (learningId, status) => {
     try {
       await client.patch(`/learnings/${learningId}`, { status });
@@ -240,11 +250,77 @@ export default function LearningPage() {
           rowKey={(r) => r.chapterOrder}
           dataSource={L.units || []}
           scroll={{ x: 'max-content' }}
+          expandable={{
+            expandedRowRender: (unitRecord) => (
+              <Table
+                size="small"
+                pagination={false}
+                dataSource={unitRecord.topics || []}
+                rowKey={(t, i) => i}
+                columns={[
+                  { title: '소주제', dataIndex: 'title', width: 200 },
+                  { 
+                    title: '상태', 
+                    dataIndex: 'status', 
+                    width: 120,
+                    render: (s, t, i) => (
+                      <Select
+                        size="small"
+                        style={{ width: '100%' }}
+                        value={s}
+                        options={UNIT_STATUSES.map(v => ({ value: v, label: v }))}
+                        onChange={(v) => saveTopic(L._id, unitRecord.chapterOrder, i, { status: v })}
+                      />
+                    )
+                  },
+                  { 
+                    title: '시작일', 
+                    dataIndex: 'startedAt', 
+                    width: 130,
+                    render: (d, t, i) => (
+                      <DatePicker
+                        size="small"
+                        style={{ width: '100%' }}
+                        value={d ? dayjs(d) : null}
+                        onChange={(v) => saveTopic(L._id, unitRecord.chapterOrder, i, { startedAt: v ? v.toISOString() : null })}
+                      />
+                    )
+                  },
+                  { 
+                    title: '완료일', 
+                    dataIndex: 'completedAt', 
+                    width: 130,
+                    render: (d, t, i) => (
+                      <DatePicker
+                        size="small"
+                        style={{ width: '100%' }}
+                        value={d ? dayjs(d) : null}
+                        onChange={(v) => saveTopic(L._id, unitRecord.chapterOrder, i, { completedAt: v ? v.toISOString() : null })}
+                      />
+                    )
+                  },
+                  { 
+                    title: '결과', 
+                    dataIndex: 'result', 
+                    width: 150,
+                    render: (v, t, i) => (
+                      <Input
+                        size="small"
+                        placeholder="점수/메모"
+                        value={v}
+                        onBlur={(e) => saveTopic(L._id, unitRecord.chapterOrder, i, { result: e.target.value })}
+                      />
+                    )
+                  }
+                ]}
+              />
+            )
+          }}
           columns={[
             { 
-              title: <span style={{ whiteSpace: 'nowrap' }}>단원순서</span>, 
+              title: <span style={{ whiteSpace: 'nowrap' }}>순서</span>, 
               dataIndex: 'chapterOrder', 
-              width: 70,
+              width: 50,
               align: 'center'
             },
             {
@@ -262,18 +338,6 @@ export default function LearningPage() {
                     fontSize: '13px'
                   }}>
                     <div style={{ fontWeight: 'bold' }}>{ch?.title || '-'}</div>
-                    {ch?.topics && ch.topics.length > 0 && (
-                      <div style={{ 
-                        marginTop: '4px', 
-                        fontSize: '11px', 
-                        color: '#8c8c8c',
-                        lineHeight: '1.4'
-                      }}>
-                        {ch.topics.map((t, i) => (
-                          <div key={i}>• {t}</div>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 );
               },

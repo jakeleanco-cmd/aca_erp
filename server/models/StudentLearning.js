@@ -5,14 +5,27 @@ const {
   LEARNING_STATUSES,
 } = require('../constants');
 
+const topicProgressSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    status: { type: String, default: '학습예정' },
+    startedAt: { type: Date, default: null },
+    completedAt: { type: Date, default: null },
+    result: { type: String, default: '', trim: true },
+  },
+  { _id: false }
+);
+
 const unitProgressSchema = new mongoose.Schema(
   {
     chapterOrder: { type: Number, required: true },
     status: { type: String, required: true, enum: UNIT_STATUSES },
     startedAt: { type: Date, default: null },
     completedAt: { type: Date, default: null },
-    /** 단원평가 결과 메모/점수 (자유 형식) */
+    /** 단원 전체 요약 결과 */
     unitEvaluationResult: { type: String, default: '', trim: true },
+    /** 개별 소주제별 상세 기록 */
+    topics: { type: [topicProgressSchema], default: [] },
   },
   { _id: false }
 );

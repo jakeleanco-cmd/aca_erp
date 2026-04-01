@@ -74,6 +74,14 @@ router.post('/', async (req, res) => {
       startedAt: null,
       completedAt: null,
       unitEvaluationResult: '',
+      /** 교재에 정의된 소주제 목록으로 초기 상태 생성 */
+      topics: (ch.topics || []).map(topicTitle => ({
+        title: topicTitle,
+        status: '학습예정',
+        startedAt: null,
+        completedAt: null,
+        result: ''
+      }))
     }));
 
     const created = await StudentLearning.create({
@@ -162,6 +170,45 @@ router.patch('/:id/units/:chapterOrder', async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(400).json({ message: '단원 수정에 실패했습니다.', detail: err.message });
+  }
+});
+
+/**
+ * 특정 소주제(topic)의 정보 수정
+ */
+router.patch('/:id/units/:chapterOrder/topics/:topicIndex', async (req, res) => {
+  try {
+    const chapterOrder = Number(req.params.chapterOrder);
+    const topicIndex = Number(req.params.topicIndex);
+    const { status, startedAt, completedAt, result } = req.body;
+
+    const learning = await StudentLearning.findById(req.params.id);
+    if (!learning) {
+      return res.status(404).json({ message: '학습 정보를 찾을 수 없습니다.' });
+    }
+
+    const unit = learning.units.find((u) => u.chapterOrder === chapterOrder);
+    if (!unit) {
+      return res.status(404).json({ message: '단원을 찾을 수 없습니다.' });
+    }
+
+    const topic = unit.topics[topicIndex];
+    if (!topic) {
+      return res.status(404).json({ message: '소주제를 찾을 수 없습니다.' });
+    }
+
+    if (status !== undefined) topic.status = status;
+    if (startedAt !== undefined) topic.startedAt = startedAt ? new Date(startedAt) : null;
+    if (completedAt !== undefined) topic.completedAt = completedAt ? new Date(completedAt) : null;
+    if (result !== undefined) topic.result = result;
+
+    await learning.save();
+    const populated = await StudentLearning.findById(learning._id).populate('textbook').lean();
+    populated.units = sortUnitsByChapterOrder(populated.units || []);
+    return res.json(populated);
+  } catch (err) {
+    console.error(err);
+    return res.status(400).json({ message: '소주제 수정에 실패했습니다.' });
   }
 });
 
