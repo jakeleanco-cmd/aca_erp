@@ -61,29 +61,36 @@ export default function TextbookEditPage() {
   if (loading) return <div style={{ textAlign: 'center', padding: 48 }}><Spin /></div>;
 
   return (
-    <Card title={isNew ? '교재 등록' : '교재 수정'}>
-      <Form form={form} layout="vertical" onFinish={onFinish} style={{ maxWidth: 850 }}>
-        {/* 기본 정보 영역 */}
-        <Space size="large" style={{ display: 'flex', marginBottom: 16 }}>
-          <Form.Item name="publishYear" label="출판년도" rules={[{ required: true }]}>
-            <InputNumber min={1990} max={2100} />
+    <Card title={isNew ? '교재 등록' : '교재 수정'} bordered={false}>
+      <Form form={form} layout="vertical" onFinish={onFinish} style={{ maxWidth: 900 }}>
+        {/* 기본 정보 영역 - 한 줄에 너무 많이 넣지 않음 */}
+        <div style={{ 
+          display: 'flex', 
+          flexWrap: 'wrap', 
+          gap: '16px', 
+          marginBottom: 16,
+          background: 'rgba(0,0,0,0.02)',
+          padding: '16px',
+          borderRadius: '8px'
+        }}>
+          <Form.Item name="publishYear" label="출판년도" rules={[{ required: true }]} style={{ width: '120px', margin: 0 }}>
+            <InputNumber min={1990} max={2100} style={{ width: '100%' }} />
           </Form.Item>
-          <Form.Item name="schoolLevel" label="학년구분" rules={[{ required: true }]} style={{ width: 120 }}>
+          <Form.Item name="schoolLevel" label="학년구분" rules={[{ required: true }]} style={{ width: '120px', margin: 0 }}>
             <Select options={SCHOOL_LEVELS.map((v) => ({ value: v, label: v }))} />
           </Form.Item>
-          <Form.Item name="gradeLabel" label="학년/학기" rules={[{ required: true }]}>
+          <Form.Item name="gradeLabel" label="학년/학기" rules={[{ required: true }]} style={{ width: '180px', margin: 0 }}>
             <Input placeholder="예: 1학년 1학기" />
           </Form.Item>
-          <Form.Item name="learningLevel" label="학습수준" rules={[{ required: true }]} style={{ width: 120 }}>
+          <Form.Item name="learningLevel" label="학습수준" rules={[{ required: true }]} style={{ width: '120px', margin: 0 }}>
             <Select options={TEXTBOOK_LEVELS.map((v) => ({ value: v, label: v }))} />
           </Form.Item>
-        </Space>
+          <Form.Item name="title" label="교재명" rules={[{ required: true }]} style={{ flex: '1 1 250px', margin: 0 }}>
+            <Input placeholder="교재 이름을 입력하세요" />
+          </Form.Item>
+        </div>
 
-        <Form.Item name="title" label="교재명" rules={[{ required: true }]}>
-          <Input placeholder="교재 이름을 입력하세요" />
-        </Form.Item>
-
-        <Divider orientation="left">단원 및 소주제 구성</Divider>
+        <Divider orientation="left" style={{ margin: '24px 0 16px' }}>단원 및 소주제 구성</Divider>
 
         {/* 중단원(Chapters) 리스트 */}
         <Form.List name="chapters">
@@ -92,45 +99,88 @@ export default function TextbookEditPage() {
               {fields.map(({ key, name, ...restField }, index) => (
                 <Card
                   key={key}
-                  type="inner"
                   size="small"
-                  title={`${index + 1}단원`}
-                  extra={<MinusCircleOutlined onClick={() => remove(name)} />}
-                  style={{ marginBottom: 16, backgroundColor: '#fafafa' }}
+                  title={<span style={{ fontWeight: 700 }}>{index + 1}단원 설정</span>}
+                  extra={<Button type="text" danger icon={<MinusCircleOutlined />} onClick={() => remove(name)} />}
+                  style={{ 
+                    marginBottom: 20, 
+                    border: '1px solid #e8e8e8',
+                    borderRadius: '8px',
+                    overflow: 'hidden'
+                  }}
+                  headStyle={{ background: 'rgba(0,0,0,0.03)' }}
                 >
-                  <Space align="baseline" style={{ display: 'flex', marginBottom: 16 }}>
-                    <Form.Item {...restField} name={[name, 'order']} rules={[{ required: true }]} initialValue={index + 1}>
-                      <InputNumber placeholder="순서" />
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: 16, alignItems: 'flex-end' }}>
+                    <Form.Item 
+                      {...restField} 
+                      name={[name, 'order']} 
+                      label="순서"
+                      rules={[{ required: true }]} 
+                      initialValue={index + 1}
+                      style={{ width: '70px', margin: 0 }}
+                    >
+                      <InputNumber style={{ width: '100%' }} />
                     </Form.Item>
-                    <Form.Item {...restField} name={[name, 'title']} rules={[{ required: true, message: '단원명을 입력하세요' }]}>
-                      <Input placeholder="단원명 (예: 소인수분해)" style={{ width: 300 }} />
+                    <Form.Item 
+                      {...restField} 
+                      name={[name, 'title']} 
+                      label="단원명"
+                      rules={[{ required: true, message: '단원명을 입력하세요' }]}
+                      style={{ flex: '1 1 300px', margin: 0 }}
+                    >
+                      <Input placeholder="단원명 (예: 소인수분해)" />
                     </Form.Item>
-                    <Form.Item {...restField} name={[name, 'hasUnitEvaluation']} valuePropName="checked">
+                    <Form.Item 
+                      {...restField} 
+                      name={[name, 'hasUnitEvaluation']} 
+                      valuePropName="checked"
+                      style={{ margin: 0, paddingBottom: '4px' }}
+                    >
                       <Switch checkedChildren="단원평가 있음" unCheckedChildren="평가 없음" />
                     </Form.Item>
-                  </Space>
+                  </div>
 
                   {/* 소주제(Topics) 중첩 리스트 */}
-                  <div style={{ paddingLeft: 24, borderLeft: '2px solid #eee' }}>
+                  <div style={{ 
+                    padding: '16px', 
+                    background: 'rgba(0,0,0,0.01)', 
+                    borderRadius: '6px',
+                    borderLeft: '4px solid #1890ff' 
+                  }}>
+                    <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 12, fontSize: '12px', fontWeight: 600 }}>
+                      └ 소주제 리스트
+                    </Typography.Text>
                     <Form.List name={[name, 'topics']}>
                       {(subFields, { add: addTopic, remove: removeTopic }) => (
                         <>
                           {subFields.map(({ key: subKey, name: subName, ...subRestField }, subIndex) => (
-                            <Space key={subKey} align="baseline" style={{ display: 'flex', marginBottom: 4 }}>
-                              <Form.Item {...subRestField} name={[subName, 'order']} initialValue={subIndex + 1}>
-                                <InputNumber size="small" style={{ width: 50 }} />
+                            <div key={subKey} style={{ display: 'flex', gap: '8px', marginBottom: 8, alignItems: 'center' }}>
+                              <Form.Item {...subRestField} name={[subName, 'order']} initialValue={subIndex + 1} style={{ margin: 0 }}>
+                                <InputNumber size="small" style={{ width: '45px' }} />
                               </Form.Item>
-                              <Form.Item {...subRestField} name={[subName, 'title']} rules={[{ required: true, message: '소주제명' }]}>
-                                <Input size="small" placeholder="소주제명 입력" style={{ width: 350 }} />
+                              <Form.Item 
+                                {...subRestField} 
+                                name={[subName, 'title']} 
+                                rules={[{ required: true, message: '소주제명' }]}
+                                style={{ flex: '1 1 auto', margin: 0 }}
+                              >
+                                <Input size="small" placeholder="세부 소주제명 입력" />
                               </Form.Item>
-                              <MinusCircleOutlined onClick={() => removeTopic(subName)} style={{ color: '#ff4d4f' }} />
-                            </Space>
+                              <Button 
+                                type="text" 
+                                size="small" 
+                                danger 
+                                icon={<MinusCircleOutlined />} 
+                                onClick={() => removeTopic(subName)} 
+                              />
+                            </div>
                           ))}
                           <Button
                             type="dashed"
                             size="small"
                             onClick={() => addTopic({ order: subFields.length + 1, title: '' })}
                             icon={<PlusOutlined />}
+                            style={{ marginTop: 8 }}
                           >
                             소주제 추가
                           </Button>
@@ -140,8 +190,14 @@ export default function TextbookEditPage() {
                   </div>
                 </Card>
               ))}
-              <Button type="primary" ghost onClick={() => add({ order: fields.length + 1, title: '', topics: [] })} block icon={<PlusOutlined />}>
-                새 단원 추가
+              <Button 
+                type="dashed" 
+                onClick={() => add({ order: fields.length + 1, title: '', topics: [] })} 
+                block 
+                icon={<PlusOutlined />}
+                style={{ height: '45px', borderRadius: '8px' }}
+              >
+                새로운 단원 추가하기
               </Button>
             </>
           )}
