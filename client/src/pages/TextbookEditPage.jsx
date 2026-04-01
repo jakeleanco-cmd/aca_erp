@@ -14,15 +14,18 @@ export default function TextbookEditPage() {
 
   useEffect(() => {
     if (isNew) {
-      form.setFieldsValue({ chapters: [{ order: 1, title: '', hasUnitEvaluation: false }] });
+      form.setFieldsValue({ chapters: [{ order: 1, title: '', topics: '', hasUnitEvaluation: false }] });
       return;
     }
     (async () => {
       try {
         const { data } = await client.get(`/textbooks/${id}`);
         const chapters = (data.chapters || []).length
-          ? data.chapters
-          : [{ order: 1, title: '', hasUnitEvaluation: false }];
+          ? data.chapters.map(c => ({
+              ...c,
+              topics: Array.isArray(c.topics) ? c.topics.join(', ') : ''
+            }))
+          : [{ order: 1, title: '', topics: '', hasUnitEvaluation: false }];
         form.setFieldsValue({ ...data, chapters });
       } catch {
         message.error('교재를 불러오지 못했습니다.');
@@ -39,6 +42,9 @@ export default function TextbookEditPage() {
         order: c.order ?? i + 1,
         title: c.title,
         hasUnitEvaluation: !!c.hasUnitEvaluation,
+        topics: typeof c.topics === 'string' 
+          ? c.topics.split(',').map(s => s.trim()).filter(Boolean)
+          : Array.isArray(c.topics) ? c.topics : []
       }))
       .filter((c) => c.title?.trim());
     const payload = { ...values, chapters };
@@ -102,7 +108,14 @@ export default function TextbookEditPage() {
                       label={index === 0 ? '단원명' : undefined}
                       rules={[{ required: true, message: '단원명' }]}
                     >
-                      <Input placeholder="단원 제목" style={{ width: 280 }} />
+                      <Input placeholder="단원 제목" style={{ width: 220 }} />
+                    </Form.Item>
+                    <Form.Item
+                      {...field}
+                      name={[field.name, 'topics']}
+                      label={index === 0 ? '소주제 (쉼표 구분)' : undefined}
+                    >
+                      <Input placeholder="소주제1, 소주제2" style={{ width: 250 }} />
                     </Form.Item>
                     <Form.Item
                       {...field}
