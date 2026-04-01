@@ -228,10 +228,20 @@ export default function LearningPage() {
             {
               title: <span style={{ whiteSpace: 'nowrap' }}>단원</span>,
               key: 't',
-              width: 150,
               render: (_, u) => {
                 const ch = (L.textbook?.chapters || []).find((c) => c.order === u.chapterOrder);
-                return ch?.title || '-';
+                return (
+                  <div style={{ 
+                    minWidth: 100,
+                    maxWidth: 200,
+                    wordBreak: 'keep-all',
+                    whiteSpace: 'normal',
+                    lineHeight: '1.2',
+                    fontSize: '13px'
+                  }}>
+                    {ch?.title || '-'}
+                  </div>
+                );
               },
             },
             {
