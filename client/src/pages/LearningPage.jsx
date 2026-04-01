@@ -256,36 +256,34 @@ export default function LearningPage() {
                   size="small"
                   pagination={false}
                   dataSource={unitRecord.topics || []}
-                  rowKey={(t) => t.order} // i 대신 고유값인 order 사용 권장
+                  rowKey={(t) => t.order}
                   columns={[
                     {
                       title: '순서',
                       dataIndex: 'order',
-                      width: 60,
+                      width: 45,
                       align: 'center'
                     },
-                  {
-                    title: '소주제',
-                    dataIndex: 'title', // t.title 객체 속성 접근
-                    width: 250,
-                    render: (text, topic) => (
-                      <div style={{ fontSize: '13px', display: 'flex', alignItems: 'center' }}>
-                        {text}
-                        {topic.hasUnitEvaluation && <Tag color="gold" size="small" style={{ marginLeft: 8, fontSize: '10px' }}>평가</Tag>}
-                      </div>
-                    )
-                  },
+                    {
+                      title: '소주제',
+                      dataIndex: 'title',
+                      render: (text, topic) => (
+                        <div style={{ fontSize: '12px', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
+                          {text}
+                          {topic.hasUnitEvaluation && <Tag color="gold" size="small" style={{ marginLeft: 4, fontSize: '9px', padding: '0 2px' }}>평가</Tag>}
+                        </div>
+                      )
+                    },
                     {
                       title: '상태',
                       dataIndex: 'status',
-                      width: 120,
+                      width: 95,
                       render: (s, t, i) => (
                         <Select
                           size="small"
-                          style={{ width: '100%' }}
-                          value={s || '미진행'} // 기본값 처리
+                          style={{ width: '100%', fontSize: '12px' }}
+                          value={s || '미진행'}
                           options={UNIT_STATUSES.map(v => ({ value: v, label: v }))}
-                          // i(index)를 사용하여 해당 토픽 업데이트
                           onChange={(v) => saveTopic(L._id, unitRecord.chapterOrder, i, { status: v })}
                         />
                       )
@@ -293,10 +291,11 @@ export default function LearningPage() {
                     {
                       title: '시작일',
                       dataIndex: 'startedAt',
-                      width: 130,
+                      width: 110,
                       render: (d, t, i) => (
                         <DatePicker
                           size="small"
+                          placeholder="시작"
                           style={{ width: '100%' }}
                           value={d ? dayjs(d) : null}
                           onChange={(v) => saveTopic(L._id, unitRecord.chapterOrder, i, { startedAt: v ? v.toISOString() : null })}
@@ -306,10 +305,11 @@ export default function LearningPage() {
                     {
                       title: '완료일',
                       dataIndex: 'completedAt',
-                      width: 130,
+                      width: 110,
                       render: (d, t, i) => (
                         <DatePicker
                           size="small"
+                          placeholder="완료"
                           style={{ width: '100%' }}
                           value={d ? dayjs(d) : null}
                           onChange={(v) => saveTopic(L._id, unitRecord.chapterOrder, i, { completedAt: v ? v.toISOString() : null })}
@@ -319,12 +319,13 @@ export default function LearningPage() {
                     {
                       title: '결과/메모',
                       dataIndex: 'result',
-                      width: 150,
+                      width: 120,
                       render: (v, t, i) => (
                         <Input
                           size="small"
-                          placeholder="점수/메모"
+                          placeholder="결과"
                           defaultValue={v}
+                          style={{ fontSize: '12px' }}
                           onBlur={(e) => {
                             if (e.target.value !== (v || '')) {
                               saveTopic(L._id, unitRecord.chapterOrder, i, { result: e.target.value });
@@ -338,10 +339,10 @@ export default function LearningPage() {
               )
             }}
             columns={[
-              {
+            {
                 title: <span style={{ whiteSpace: 'nowrap' }}>순서</span>,
                 dataIndex: 'chapterOrder',
-                width: 50,
+                width: 45,
                 align: 'center'
               },
               {
@@ -350,9 +351,8 @@ export default function LearningPage() {
                 render: (_, u) => {
                   const ch = (L.textbook?.chapters || []).find((c) => c.order === u.chapterOrder);
                   return (
-                    <div style={{ fontSize: '13px' }}>
-                      {/* 로마자 숫자 등이 chapter_no에 있다면 함께 표시 */}
-                      <Tag color="default" style={{ marginRight: 4 }}>{ch?.chapter_no || u.chapterOrder}</Tag>
+                    <div style={{ fontSize: '13px', whiteSpace: 'nowrap' }}>
+                      <Tag color="default" style={{ marginRight: 4, padding: '0 4px' }}>{ch?.chapter_no || u.chapterOrder}</Tag>
                       <span style={{ fontWeight: 'bold' }}>{ch?.title || '-'}</span>
                     </div>
                   );
@@ -361,11 +361,11 @@ export default function LearningPage() {
               {
                 title: <span style={{ whiteSpace: 'nowrap' }}>상태</span>,
                 dataIndex: 'status',
-                width: 120,
+                width: 100,
                 render: (status, u) => (
                   <Select
                     size="small"
-                    style={{ width: '100%' }}
+                    style={{ width: '100%', fontSize: '12px' }}
                     value={status}
                     options={UNIT_STATUSES.map((s) => ({ value: s, label: s }))}
                     onChange={(v) => saveUnit(L._id, u.chapterOrder, { status: v })}
@@ -374,11 +374,12 @@ export default function LearningPage() {
               },
               {
                 title: <span style={{ whiteSpace: 'nowrap' }}>시작일</span>,
-                width: 140,
+                width: 120,
                 render: (_, u) => (
                   <DatePicker
                     size="small"
-                    style={{ width: '100%', minWidth: 110 }}
+                    placeholder="시작"
+                    style={{ width: '100%' }}
                     value={u.startedAt ? dayjs(u.startedAt) : null}
                     onChange={(d) => saveUnit(L._id, u.chapterOrder, { startedAt: d ? d.toISOString() : null })}
                   />
@@ -386,24 +387,27 @@ export default function LearningPage() {
               },
               {
                 title: <span style={{ whiteSpace: 'nowrap' }}>완료일</span>,
-                width: 140,
+                width: 120,
                 render: (_, u) => (
                   <DatePicker
                     size="small"
-                    style={{ width: '100%', minWidth: 110 }}
+                    placeholder="완료"
+                    style={{ width: '100%' }}
                     value={u.completedAt ? dayjs(u.completedAt) : null}
                     onChange={(d) => saveUnit(L._id, u.chapterOrder, { completedAt: d ? d.toISOString() : null })}
                   />
                 ),
               },
               {
-                title: <span style={{ whiteSpace: 'nowrap' }}>단원평가결과</span>,
+                title: <span style={{ whiteSpace: 'nowrap' }}>결과</span>,
                 dataIndex: 'unitEvaluationResult',
-                width: 150,
+                width: 120,
                 render: (t, u) => (
                   <Input
                     size="small"
+                    placeholder="결과"
                     defaultValue={t}
+                    style={{ fontSize: '12px' }}
                     onBlur={(e) => {
                       const val = e.target.value;
                       if (val !== (t || '')) {
