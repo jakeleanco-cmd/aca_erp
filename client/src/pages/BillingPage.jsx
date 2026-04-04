@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, DatePicker, message, Space, Tag, Typography } from 'antd';
+import { Table, Button, DatePicker, message, Space, Tag, Typography, Popconfirm } from 'antd';
 import dayjs from 'dayjs';
 import client from '../api/client';
 
@@ -34,6 +34,19 @@ export default function BillingPage() {
       await load();
     } catch (err) {
       message.error(err.response?.data?.message || '생성에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cancelGeneration = async () => {
+    setLoading(true);
+    try {
+      const { data } = await client.delete('/bills', { params: { yearMonth } });
+      message.success(data.message || '삭제되었습니다.');
+      await load();
+    } catch (err) {
+      message.error(err.response?.data?.message || '삭제에 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -140,6 +153,17 @@ export default function BillingPage() {
         <Button type="primary" onClick={generate} loading={loading}>
           수강료 고지 생성
         </Button>
+        <Popconfirm
+          title={`${month.format('YYYY년 M월')} 미납 고지서를 모두 삭제하시겠습니까? (납부 완료된 건은 제외됩니다)`}
+          onConfirm={cancelGeneration}
+          okText="네, 삭제합니다"
+          cancelText="취소"
+          okButtonProps={{ danger: true }}
+        >
+          <Button danger loading={loading}>
+            수강료 전체 삭제
+          </Button>
+        </Popconfirm>
       </Space>
       <Typography.Paragraph type="secondary">
         「고지 생성」은 해당 월에 아직 고지가 없는 재원 학생에게만 월수강료를 복사해 고지서를 만듭니다. 현금 수납 후 「현금영수증 발행」으로 발행 이력을 남깁니다.

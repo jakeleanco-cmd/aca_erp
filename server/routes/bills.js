@@ -24,6 +24,26 @@ router.get('/', async (req, res) => {
 });
 
 /**
+ * 해당 월의 미납 고지서 일괄 삭제 (잘못 생성한 경우)
+ */
+router.delete('/', async (req, res) => {
+  try {
+    const { yearMonth } = req.query;
+    if (!yearMonth || !YEAR_MONTH_RE.test(yearMonth)) {
+      return res.status(400).json({ message: 'yearMonth는 YYYY-MM 형식이어야 합니다.' });
+    }
+
+    // 납부 완료된 데이터 보호를 위해 '미납'인 상태만 삭제
+    const result = await MonthlyBill.deleteMany({ yearMonth, status: '미납' });
+
+    return res.json({ message: `해당 월의 미납 고지서 ${result.deletedCount}건이 삭제되었습니다.` });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: '고지서 삭제에 실패했습니다.', detail: err.message });
+  }
+});
+
+/**
  * 해당 월에 아직 고지가 없는 학생에게만 월수강료 스냅샷으로 고지 생성
  */
 router.post('/generate', async (req, res) => {
