@@ -53,7 +53,8 @@ router.post('/generate', async (req, res) => {
       return res.status(400).json({ message: 'yearMonth는 YYYY-MM 형식이어야 합니다.' });
     }
 
-    const students = await Student.find({ leftAt: null }).lean();
+    // 퇴원(leftAt) 뿐만 아니라 대기생 등도 제외하고, 오직 '재원' 상태인 학생만 대상
+    const students = await Student.find({ status: '재원', leftAt: null }).lean();
     const existing = await MonthlyBill.find({ yearMonth }).select('student').lean();
     const existingSet = new Set(existing.map((b) => String(b.student)));
 
