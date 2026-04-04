@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Form, Input, InputNumber, Select, DatePicker, Button, Card, message, Spin, Space } from 'antd';
+import { Form, Input, InputNumber, Select, DatePicker, Button, Card, message, Spin, Space, Tabs } from 'antd';
 import dayjs from 'dayjs';
 import client from '../api/client';
 import { SCHOOL_LEVELS, STUDENT_STATUSES } from '../constants/learning';
+import ExamSheetsStudentTab from './ExamSheetsStudentTab';
 
 export default function StudentEditPage() {
   const { id } = useParams();
@@ -82,8 +83,7 @@ export default function StudentEditPage() {
     );
   }
 
-  return (
-    <Card title={isNew ? '학생 등록' : '학생 정보 수정'}>
+  const formContent = (
       <Form form={form} layout="vertical" onFinish={onFinish} style={{ maxWidth: 560 }}>
         <Form.Item name="name" label="이름" rules={[{ required: true }]}>
           <Input />
@@ -137,6 +137,36 @@ export default function StudentEditPage() {
           </Space>
         </Form.Item>
       </Form>
+  );
+
+  if (isNew) {
+    return (
+      <Card title="학생 등록">
+        {formContent}
+      </Card>
+    );
+  }
+
+  const tabItems = [
+    {
+      key: 'info',
+      label: '기본 정보',
+      children: <Card style={{ border: 'none' }}>{formContent}</Card>,
+    },
+    {
+      key: 'exam',
+      label: '내신 성적',
+      children: <ExamSheetsStudentTab studentId={id} />,
+    },
+  ];
+
+  return (
+    <Card 
+      title="학생 상세 정보" 
+      bodyStyle={{ padding: '0 24px 24px' }}
+      className="glass-effect"
+    >
+      <Tabs defaultActiveKey="info" items={tabItems} size="large" />
     </Card>
   );
 }

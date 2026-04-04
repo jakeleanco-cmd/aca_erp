@@ -20,9 +20,10 @@ app.use(async (req, res, next) => {
   }
 });
 
-app.get('/api/health', (req, res) => {
-  res.json({ ok: true });
-});
+const path = require('path');
+const uploadDir = process.env.VERCEL ? '/tmp/uploads' : path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadDir));
+
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/textbooks', require('./routes/textbooks'));
@@ -32,6 +33,8 @@ app.use('/api/timetable', require('./routes/timetable'));
 app.use('/api/learnings', require('./routes/learnings'));
 app.use('/api/assessments', require('./routes/assessments'));
 app.use('/api/bills', require('./routes/bills'));
+app.use('/api/exam-sheets', require('./routes/examSheets'));
+
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {

@@ -9,6 +9,7 @@ import {
   LogoutOutlined,
   SettingOutlined,
   UserOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../store/authStore';
 
@@ -17,6 +18,7 @@ const { Header, Content, Footer } = Layout;
 const menuItems = [
   { key: '/timetable', icon: <CalendarOutlined />, label: '시간표' },
   { key: '/students', icon: <TeamOutlined />, label: '학생' },
+  { key: '/exam-sheets', icon: <FileTextOutlined />, label: '성적' },
   { key: '/textbooks', icon: <BookOutlined />, label: '교재' },
   { key: '/billing', icon: <DollarOutlined />, label: '수납' },
   { key: '/admins', icon: <SettingOutlined />, label: '관리' },
