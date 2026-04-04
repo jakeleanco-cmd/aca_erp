@@ -52,6 +52,16 @@ export default function BillingPage() {
     }
   };
 
+  const cancelPay = async (id) => {
+    try {
+      await client.post(`/bills/${id}/cancel-pay`);
+      message.success('납부가 취소되었습니다.');
+      await load();
+    } catch (err) {
+      message.error(err.response?.data?.message || '납부 취소에 실패했습니다.');
+    }
+  };
+
   const payCard = async (id) => {
     try {
       await client.post(`/bills/${id}/pay-card`);
@@ -128,6 +138,19 @@ export default function BillingPage() {
                 현금수납
               </Button>
             </>
+          )}
+          {r.status === '납부완료' && !r.receiptIssued && (
+            <Popconfirm
+              title="납부를 취소하시겠습니까?"
+              onConfirm={() => cancelPay(r._id)}
+              okText="네, 취소합니다"
+              cancelText="아니오"
+              okButtonProps={{ danger: true }}
+            >
+              <Button size="small" danger>
+                납부취소
+              </Button>
+            </Popconfirm>
           )}
           {r.status === '납부완료' && r.paymentMethod === '현금' && !r.receiptIssued && (
             <Button size="small" onClick={() => issueReceipt(r)}>

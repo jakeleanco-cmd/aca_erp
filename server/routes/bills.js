@@ -119,6 +119,35 @@ router.post('/:id/pay-cash', async (req, res) => {
 });
 
 /**
+ * 납부 취소: 납부완료 → 미납으로 되돌리고 결제 정보 초기화
+ * 현금영수증이 이미 발행된 경우는 취소 불가 (데이터 무결성 보호)
+ */
+router.post('/:id/cancel-pay', async (req, res) => {
+  try {
+    const bill = await MonthlyBill.findById(req.params.id);
+    if (!bill) {
+      return res.status(404).json({ message: '고지를 찾을 수 없습니다.' });
+    }
+    if (bill.status !== '납부완료') {
+      return res.status(400).json({ message: '납부완료 상태인 고지만 취소할 수 있습니다.' });
+    }
+    // 현금영수증이 발행된 경우 취소 불가 (별도 처리 필요)
+    if (bill.receiptIssued) {
+      return res.status(400).json({ message: '현금영수증이 발행된 건은 취소할 수 없습니다.' });
+    }
+    bill.status = '미납';
+    bill.paymentMethod = null;
+    bill.paidAt = null;
+    await bill.save();
+    const populated = await MonthlyBill.findById(bill._id).populate('student').lean();
+    return res.json(populated);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: '납부 취소에 실패했습니다.' });
+  }
+});
+
+/**
  * 현금영수증 발행 완료 기록 (추후 외부 API 연동 필드 확장 가능)
  */
 router.post('/:id/issue-receipt', async (req, res) => {
