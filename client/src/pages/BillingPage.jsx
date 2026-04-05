@@ -111,29 +111,35 @@ export default function BillingPage() {
     {
       title: '학생',
       key: 'name',
+      width: 80,
+      fixed: 'left',
       render: (_, r) => r.student?.name || '-',
     },
     {
       title: '금액',
       dataIndex: 'amount',
+      width: 100,
       render: (v) => `${Number(v).toLocaleString()}원`,
     },
     {
       title: '상태',
       dataIndex: 'status',
+      width: 85,
       render: (s) => (s === '납부완료' ? <Tag color="green">{s}</Tag> : <Tag color="orange">{s}</Tag>),
     },
     {
       title: '결제수단',
       dataIndex: 'paymentMethod',
+      width: 95,
       render: (m) => m || '-',
     },
     {
       title: '현금영수증',
       key: 'rc',
+      width: 110,
       render: (_, r) =>
         r.receiptIssued ? (
-          <span>{r.receiptIssuedAt ? dayjs(r.receiptIssuedAt).format('YYYY-MM-DD') : '발행'}</span>
+          <span style={{ fontSize: 12 }}>{r.receiptIssuedAt ? dayjs(r.receiptIssuedAt).format('YYYY-MM-DD') : '발행'}</span>
         ) : (
           '-'
         ),
@@ -141,7 +147,7 @@ export default function BillingPage() {
     {
       title: '작업',
       key: 'actions',
-      width: 320,
+      width: 200,
       render: (_, r) => (
         <Space wrap size="small">
           {r.status === '미납' && (
@@ -185,7 +191,7 @@ export default function BillingPage() {
   return (
     <div>
       <Typography.Title level={4}>월별 수납</Typography.Title>
-      <Space style={{ marginBottom: 16 }} wrap align="center">
+      <Space style={{ marginBottom: 16 }} wrap align="center" size={[8, 12]}>
         <span>대상 월:</span>
         <DatePicker picker="month" value={month} onChange={(d) => d && setMonth(d)} allowClear={false} />
         <Button type="primary" onClick={generate} loading={loading}>
@@ -214,10 +220,18 @@ export default function BillingPage() {
           </Button>
         </Popconfirm>
       </Space>
-      <Typography.Paragraph type="secondary">
+      <Typography.Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 20 }}>
         「고지 생성」은 해당 월에 아직 고지가 없는 재원 학생에게만 월수강료를 복사해 고지서를 만듭니다. 현금 수납 후 「현금영수증 발행」으로 발행 이력을 남깁니다.
       </Typography.Paragraph>
-      <Table rowKey="_id" loading={loading} columns={columns} dataSource={rows} pagination={{ pageSize: 30 }} />
+      <Table 
+        rowKey="_id" 
+        loading={loading} 
+        columns={columns} 
+        dataSource={rows} 
+        pagination={{ pageSize: 30 }} 
+        scroll={{ x: 670 }}
+        size="small"
+      />
     </div>
   );
 }
