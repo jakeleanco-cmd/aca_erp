@@ -11,26 +11,44 @@ router.use(requireAuth);
  * 요일·시간 슬롯별로 수강 학생 목록을 묶어 반환한다.
  * 왜: 시간표 대시보드에서 그리드 렌더링을 단순화하기 위함.
  */
+const MonthlyBill = require('../models/MonthlyBill');
+
 router.get('/dashboard', async (req, res) => {
   try {
     const slots = await ClassSlot.find().sort({ weekdayIndex: 1, startTime: 1 }).lean();
-    // '재원' 상태인 학생만 조회하며, 필요한 필드(name, status, schoolLevel, gradeLabel)를 포함
+    
+    // 현재 월(YYYY-MM) 계산
+    const yearMonth = new Date().toISOString().slice(0, 7);
+    
+    // '재원' 상태인 학생만 조회
     const students = await Student.find({ status: '재원' })
       .select('name status classSlotIds schoolLevel gradeLabel')
       .lean();
 
+    // 해당 월의 수납 정보 조회
+    const bills = await MonthlyBill.find({ yearMonth }).lean();
+    const studentIdToBill = {};
+    for (const b of bills) {
+      studentIdToBill[String(b.student)] = b;
+    }
+
     const slotIdToStudents = {};
     for (const s of students) {
+      const bill = studentIdToBill[String(s._id)];
+      const studentData = {
+        _id: s._id,
+        name: s.name,
+        status: s.status,
+        schoolLevel: s.schoolLevel,
+        gradeLabel: s.gradeLabel,
+        billId: bill?._id || null,
+        billStatus: bill?.status || null,
+      };
+
       for (const sid of s.classSlotIds || []) {
         const key = String(sid);
         if (!slotIdToStudents[key]) slotIdToStudents[key] = [];
-        slotIdToStudents[key].push({
-          _id: s._id,
-          name: s.name,
-          status: s.status,
-          schoolLevel: s.schoolLevel,
-          gradeLabel: s.gradeLabel,
-        });
+        slotIdToStudents[key].push(studentData);
       }
     }
 
@@ -38,6 +56,7 @@ router.get('/dashboard', async (req, res) => {
       ...slot,
       weekdayKo: WEEKDAYS_KO[slot.weekdayIndex],
       students: slotIdToStudents[String(slot._id)] || [],
+      yearMonth, // 클라이언트에서 고지서 생성 시 사용하도록 전달
     }));
 
     return res.json(grid);

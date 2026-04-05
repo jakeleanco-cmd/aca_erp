@@ -89,6 +89,46 @@ router.post('/generate', async (req, res) => {
   }
 });
 
+/**
+ * 특정 학생 한 명에 대한 당월 고지 생성
+ */
+router.post('/generate-single', async (req, res) => {
+  try {
+    const { yearMonth, studentId } = req.body;
+    if (!yearMonth || !YEAR_MONTH_RE.test(yearMonth)) {
+      return res.status(400).json({ message: 'yearMonth는 YYYY-MM 형식이어야 합니다.' });
+    }
+    if (!studentId) {
+      return res.status(400).json({ message: '학생 ID가 필요합니다.' });
+    }
+
+    // 이미 고지서가 있는지 확인
+    const existing = await MonthlyBill.findOne({ yearMonth, student: studentId });
+    if (existing) {
+      return res.status(400).json({ message: '해당 학생의 고지서가 이미 존재합니다.' });
+    }
+
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({ message: '학생을 찾을 수 없습니다.' });
+    }
+
+    const bill = new MonthlyBill({
+      yearMonth,
+      student: student._id,
+      amount: student.monthlyTuition,
+      status: '미납',
+    });
+
+    await bill.save();
+    const populated = await MonthlyBill.findById(bill._id).populate('student').lean();
+    return res.status(201).json(populated);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: '낱개 고지 생성에 실패했습니다.' });
+  }
+});
+
 router.post('/:id/pay-card', async (req, res) => {
   try {
     const bill = await MonthlyBill.findById(req.params.id);

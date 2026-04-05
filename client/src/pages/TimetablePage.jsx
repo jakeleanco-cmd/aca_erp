@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, List, Button, Space, Typography, message, Spin, Tag, Empty } from 'antd';
-import { ClockCircleOutlined, UserOutlined, RightOutlined } from '@ant-design/icons';
+import { Card, List, Button, Space, Typography, message, Spin, Tag, Empty, Popconfirm } from 'antd';
+import { ClockCircleOutlined, UserOutlined, RightOutlined, CreditCardOutlined, DollarOutlined, PlusOutlined } from '@ant-design/icons';
 import client from '../api/client';
 
 export default function TimetablePage() {
@@ -9,18 +9,50 @@ export default function TimetablePage() {
   const [loading, setLoading] = useState(true);
   const [grid, setGrid] = useState([]);
 
+  const fetchTimetable = async () => {
+    try {
+      const { data } = await client.get('/timetable/dashboard');
+      setGrid(data);
+    } catch {
+      message.error('시간표를 불러오지 못했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await client.get('/timetable/dashboard');
-        setGrid(data);
-      } catch {
-        message.error('시간표를 불러오지 못했습니다.');
-      } finally {
-        setLoading(false);
-      }
-    })();
+    fetchTimetable();
   }, []);
+
+  const generateBill = async (studentId, yearMonth) => {
+    try {
+      await client.post('/bills/generate-single', { studentId, yearMonth });
+      message.success('고지서가 생성되었습니다.');
+      await fetchTimetable();
+    } catch (err) {
+      message.error(err.response?.data?.message || '고지서 생성에 실패했습니다.');
+    }
+  };
+
+  const payCard = async (billId) => {
+    try {
+      await client.post(`/bills/${billId}/pay-card`);
+      message.success('카드 수납 처리되었습니다.');
+      await fetchTimetable();
+    } catch (err) {
+      message.error(err.response?.data?.message || '처리에 실패했습니다.');
+    }
+  };
+
+  const payCash = async (billId) => {
+    try {
+      await client.post(`/bills/${billId}/pay-cash`);
+      message.success('현금 수납 처리되었습니다.');
+      await fetchTimetable();
+    } catch (err) {
+      message.error(err.response?.data?.message || '처리에 실패했습니다.');
+    }
+  };
 
   if (loading) {
     return (
@@ -94,7 +126,44 @@ export default function TimetablePage() {
                             <UserOutlined style={{ color: 'var(--primary-vibrant)' }} />
                           </div>
                         }
-                        title={<span style={{ fontWeight: 600 }}>{stu.name}</span>}
+                        title={
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 600 }}>{stu.name}</span>
+                            
+                            {/* 수납 상태 및 버튼 영역 */}
+                            {!stu.billId ? (
+                              <Popconfirm 
+                                title="당월 고지서를 생성하시겠습니까?" 
+                                onConfirm={() => generateBill(stu._id, slot.yearMonth)}
+                              >
+                                <Button size="small" type="dashed" icon={<PlusOutlined />} style={{ fontSize: 11 }}>
+                                  고지서 생성
+                                </Button>
+                              </Popconfirm>
+                            ) : stu.billStatus === '미납' ? (
+                              <Space size={4}>
+                                <Button 
+                                  size="small" 
+                                  icon={<CreditCardOutlined />} 
+                                  onClick={() => payCard(stu.billId)}
+                                  style={{ fontSize: 11, padding: '0 4px' }}
+                                >
+                                  카드
+                                </Button>
+                                <Button 
+                                  size="small" 
+                                  icon={<DollarOutlined />} 
+                                  onClick={() => payCash(stu.billId)}
+                                  style={{ fontSize: 11, padding: '0 4px' }}
+                                >
+                                  현금
+                                </Button>
+                              </Space>
+                            ) : (
+                              <Tag color="green" bordered={false} style={{ fontSize: 10, margin: 0 }}>수납완료</Tag>
+                            )}
+                          </div>
+                        }
                         description={<span style={{ fontSize: 12 }}>{stu.schoolLevel} {stu.gradeLabel}</span>}
                       />
                     </List.Item>
