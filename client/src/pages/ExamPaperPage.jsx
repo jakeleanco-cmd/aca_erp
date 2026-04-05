@@ -175,7 +175,15 @@ export default function ExamPaperPage() {
       title: '학기',
       dataIndex: 'semester',
       key: 'semester',
-      width: 80,
+      width: 70,
+      align: 'center',
+      render: (v) => v || '-',
+    },
+    {
+      title: '고사',
+      dataIndex: 'examTerm',
+      key: 'examTerm',
+      width: 70,
       align: 'center',
       render: (v) => v || '-',
     },
@@ -295,21 +303,30 @@ export default function ExamPaperPage() {
           </Row>
 
           <Row gutter={12}>
-            <Col xs={8} sm={8}>
+            <Col xs={12} sm={6}>
               <Form.Item name="schoolLevel" label="학교급">
                 <Select options={SCHOOL_LEVELS.map(l => ({ label: l, value: l }))} />
               </Form.Item>
             </Col>
-            <Col xs={8} sm={8}>
+            <Col xs={12} sm={6}>
               <Form.Item name="gradeLabel" label="학년">
                 <Input placeholder="예: 중2" />
               </Form.Item>
             </Col>
-            <Col xs={8} sm={8}>
+            <Col xs={12} sm={6}>
               <Form.Item name="semester" label="학기">
                 <Select options={[
                   { label: '1학기', value: '1학기' },
                   { label: '2학기', value: '2학기' },
+                  { label: '기타', value: '기타' },
+                ]} placeholder="선택" />
+              </Form.Item>
+            </Col>
+            <Col xs={12} sm={6}>
+              <Form.Item name="examTerm" label="고사">
+                <Select options={[
+                  { label: '중간', value: '중간' },
+                  { label: '기말', value: '기말' },
                   { label: '기타', value: '기타' },
                 ]} placeholder="선택" />
               </Form.Item>

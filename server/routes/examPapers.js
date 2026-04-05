@@ -55,7 +55,7 @@ router.get('/', async (req, res) => {
  */
 router.post('/', upload.array('files', 5), async (req, res) => {
   try {
-    const { title, category, examType, schoolLevel, gradeLabel, semester, level, totalQuestions, memo } = req.body;
+    const { title, category, examType, schoolLevel, gradeLabel, semester, examTerm, level, totalQuestions, memo } = req.body;
     
     const attachments = (req.files || []).map(file => ({
       filename: file.filename,
@@ -66,7 +66,7 @@ router.post('/', upload.array('files', 5), async (req, res) => {
     }));
 
     const paper = await ExamPaper.create({
-      title, category, examType, schoolLevel, gradeLabel, semester, level,
+      title, category, examType, schoolLevel, gradeLabel, semester, examTerm, level,
       totalQuestions: Number(totalQuestions || 0),
       memo,
       attachments
@@ -86,7 +86,7 @@ router.put('/:id', upload.array('files', 5), async (req, res) => {
     const paper = await ExamPaper.findById(req.params.id);
     if (!paper) return res.status(404).json({ message: '찾을 수 없음' });
 
-    const { title, category, examType, schoolLevel, gradeLabel, semester, level, totalQuestions, memo, existingFiles } = req.body;
+    const { title, category, examType, schoolLevel, gradeLabel, semester, examTerm, level, totalQuestions, memo, existingFiles } = req.body;
 
     let parsedExisting = [];
     if (existingFiles) {
@@ -108,6 +108,7 @@ router.put('/:id', upload.array('files', 5), async (req, res) => {
     paper.schoolLevel = schoolLevel || paper.schoolLevel;
     paper.gradeLabel = gradeLabel !== undefined ? gradeLabel : paper.gradeLabel;
     paper.semester = semester !== undefined ? semester : paper.semester;
+    paper.examTerm = examTerm !== undefined ? examTerm : paper.examTerm;
     paper.level = level !== undefined ? level : paper.level;
     paper.totalQuestions = totalQuestions !== undefined ? Number(totalQuestions) : paper.totalQuestions;
     paper.memo = memo !== undefined ? memo : paper.memo;

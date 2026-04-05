@@ -28,6 +28,8 @@ const examPaperSchema = new mongoose.Schema(
     gradeLabel: { type: String, default: '', trim: true },
     /** 학기: 1학기 | 2학기 | 기타 */
     semester: { type: String, enum: ['', '1학기', '2학기', '기타'], default: '' },
+    /** 고사 구분: 중간 | 기말 | 기타 */
+    examTerm: { type: String, enum: ['', '중간', '기말', '기타'], default: '' },
     /** 수준 */
     level: { type: String, default: '', trim: true },
     /** 총 문항수 (기본값) */
