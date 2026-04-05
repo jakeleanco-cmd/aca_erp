@@ -1,18 +1,22 @@
 import { useEffect, useState, useMemo } from 'react';
 import {
   Table, Button, Modal, Form, Input, Select, InputNumber,
-  Space, Typography, Tag, Popconfirm, message, DatePicker,
+  Space, Typography, Tag, Popconfirm, message, DatePicker, Upload,
 } from 'antd';
-import { PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import { 
+  PlusOutlined, DeleteOutlined, EditOutlined, 
+  UploadOutlined, FilePdfOutlined, PictureOutlined 
+} from '@ant-design/icons';
 import dayjs from 'dayjs';
 import client from '../api/client';
 
 /**
  * 형성평가 / 내신준비평가 통합 관리 탭
  * props.category: '형성평가' | '내신준비평가'
+ * props.studentId: 특정 학생 필터링 시 사용 (학생 상세 페이지용)
  */
 
-// ─── 프론트엔드 상수 (서버 상수와 동일하게 유지) ───
+// ─── 프론트엔드 상수 ───
 const FORMATIVE_EXAM_TYPES = ['레벨평가', '과정평가', '단원평가', '내신평가', '임의평가'];
 const MIDTERM_PREP_EXAM_TYPES = [
   '최다빈출', '서술형',
@@ -24,7 +28,6 @@ const UNIT_EXAM_LEVELS = ['개념', '기초', '기본', '실력', '심화'];
 const SCHOOL_EXAM_PERIODS = ['중간고사', '기말고사'];
 const SCHOOL_LEVELS = ['초등', '중등', '고등'];
 
-// 학교급별 기본 문항수
 const DEFAULT_QUESTION_COUNTS = {
   '레벨평가': { '초등': 25, '중등': 25, '고등': 25 },
   '과정평가': { '초등': 15, '중등': 20, '고등': 25 },
@@ -37,61 +40,53 @@ const DEFAULT_QUESTION_COUNTS = {
   '고난이도': { '초등': 15, '중등': 15, '고등': 15 },
 };
 
-/**
- * 평가 종류에 따라 수준(level) 선택 옵션 반환
- */
 function getLevelOptions(examType) {
   if (examType === '과정평가') return COURSE_EXAM_LEVELS;
   if (examType === '단원평가') return UNIT_EXAM_LEVELS;
   return [];
 }
 
-/**
- * 평가 종류 + 학교급으로 기본 문항수 반환
- */
 function getDefaultQuestionCount(examType, schoolLevel) {
   const map = DEFAULT_QUESTION_COUNTS[examType];
   if (!map) return 0;
   return map[schoolLevel] || 0;
 }
 
-export default function FormativeExamTab({ category }) {
+const checkFileIsImage = (filename) => {
+  return filename && filename.match(/\.(jpeg|jpg|gif|png)$/i) != null;
+};
+
+export default function FormativeExamTab({ category, studentId = null }) {
   const [rows, setRows] = useState([]);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [filterType, setFilterType] = useState(null);
+  const [fileList, setFileList] = useState([]);
   const [form] = Form.useForm();
 
-  // 해당 카테고리의 평가 종류 목록
   const examTypeOptions = category === '형성평가'
     ? FORMATIVE_EXAM_TYPES
     : MIDTERM_PREP_EXAM_TYPES;
 
-  // 현재 폼에서 선택된 평가 종류 / 학교급을 감시
   const watchExamType = Form.useWatch('examType', form);
   const watchSchoolLevel = Form.useWatch('schoolLevel', form);
-
-  // 수준 옵션 동적 변경
   const levelOptions = useMemo(() => getLevelOptions(watchExamType), [watchExamType]);
 
-  // 학생 목록 + 평가 목록 로드
   useEffect(() => {
-    loadStudents();
-  }, []);
+    if (!studentId) loadStudents();
+  }, [studentId]);
 
   useEffect(() => {
     loadExams();
-  }, [category, filterType]);
+  }, [category, filterType, studentId]);
 
   const loadStudents = async () => {
     try {
       const { data } = await client.get('/students');
       setStudents(data.filter(s => s.status === '재원'));
-    } catch {
-      // 학생 목록 로딩 실패 시 빈 배열 유지
-    }
+    } catch {}
   };
 
   const loadExams = async () => {
@@ -99,6 +94,7 @@ export default function FormativeExamTab({ category }) {
     try {
       const params = { category };
       if (filterType) params.examType = filterType;
+      if (studentId) params.studentId = studentId;
       const { data } = await client.get('/formative-exams', { params });
       setRows(data);
     } catch {
@@ -108,7 +104,6 @@ export default function FormativeExamTab({ category }) {
     }
   };
 
-  // 평가 종류 변경 시 문항수 자동 세팅
   useEffect(() => {
     if (watchExamType && watchSchoolLevel) {
       const defaultCount = getDefaultQuestionCount(watchExamType, watchSchoolLevel);
@@ -123,7 +118,9 @@ export default function FormativeExamTab({ category }) {
     form.setFieldsValue({
       examDate: dayjs(),
       examType: examTypeOptions[0],
+      student: studentId,
     });
+    setFileList([]);
     setEditingId(null);
     setModalOpen(true);
   };
@@ -135,23 +132,58 @@ export default function FormativeExamTab({ category }) {
       student: record.student?._id || record.student,
     });
     setEditingId(record._id);
+
+    const initialFiles = (record.attachments || []).map((att, i) => ({
+      uid: -i,
+      name: att.filename,
+      status: 'done',
+      url: `/api${att.path}`
+    }));
+    setFileList(initialFiles);
     setModalOpen(true);
   };
 
   const handleSave = async () => {
     try {
       const vals = await form.validateFields();
-      const payload = {
-        ...vals,
-        category,
-        examDate: vals.examDate.toISOString(),
-      };
+      const formData = new FormData();
+      
+      formData.append('category', category);
+      formData.append('examType', vals.examType);
+      formData.append('title', vals.title || '');
+      formData.append('student', vals.student);
+      formData.append('schoolLevel', vals.schoolLevel || '');
+      formData.append('gradeLabel', vals.gradeLabel || '');
+      formData.append('level', vals.level || '');
+      formData.append('totalQuestions', vals.totalQuestions || 0);
+      formData.append('correctCount', vals.correctCount || 0);
+      formData.append('examDate', vals.examDate.toISOString());
+      formData.append('semester', vals.semester || '');
+      formData.append('examPeriod', vals.examPeriod || '');
+      formData.append('schoolName', vals.schoolName || '');
+      formData.append('chapterName', vals.chapterName || '');
+      formData.append('memo', vals.memo || '');
+
+      fileList.forEach((file) => {
+        if (file.originFileObj) {
+          formData.append('files', file.originFileObj);
+        }
+      });
 
       if (editingId) {
-        await client.put(`/formative-exams/${editingId}`, payload);
+        const existingFiles = fileList
+          .filter(f => !f.originFileObj && f.url)
+          .map(f => f.name);
+        formData.append('existingFiles', JSON.stringify(existingFiles));
+        
+        await client.put(`/formative-exams/${editingId}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
         message.success('수정되었습니다.');
       } else {
-        await client.post('/formative-exams', payload);
+        await client.post('/formative-exams', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
         message.success('등록되었습니다.');
       }
 
@@ -172,19 +204,34 @@ export default function FormativeExamTab({ category }) {
     }
   };
 
-  // ─── 테이블 컬럼 정의 ───
+  const uploadProps = {
+    onRemove: (file) => {
+      const index = fileList.indexOf(file);
+      const newFileList = fileList.slice();
+      newFileList.splice(index, 1);
+      setFileList(newFileList);
+    },
+    beforeUpload: (file) => {
+      setFileList([...fileList, file]);
+      return false;
+    },
+    fileList,
+    listType: "picture",
+  };
+
   const columns = [
     {
       title: '학생',
       key: 'student',
       width: 70,
       fixed: 'left',
+      hidden: !!studentId,
       render: (_, r) => r.student?.name || '-',
     },
     {
       title: '평가종류',
       dataIndex: 'examType',
-      width: 110,
+      width: 100,
       render: (v) => <Tag color="blue" bordered={false}>{v}</Tag>,
     },
     {
@@ -212,6 +259,20 @@ export default function FormativeExamTab({ category }) {
       ),
     },
     {
+      title: '첨부',
+      key: 'files',
+      width: 60,
+      render: (_, r) => (
+        <Space size="small">
+          {(r.attachments || []).map(att => (
+            <a key={att.filename} href={`/api${att.path}`} target="_blank" rel="noopener noreferrer">
+              {checkFileIsImage(att.filename) ? <PictureOutlined /> : <FilePdfOutlined style={{ color: '#ff4d4f' }} />}
+            </a>
+          ))}
+        </Space>
+      )
+    },
+    {
       title: '단원/메모',
       key: 'info',
       ellipsis: true,
@@ -236,11 +297,10 @@ export default function FormativeExamTab({ category }) {
         </Space>
       ),
     },
-  ];
+  ].filter(col => !col.hidden);
 
   return (
     <div>
-      {/* 필터 + 등록 버튼 */}
       <Space style={{ marginBottom: 16 }} wrap size={[8, 12]}>
         <Select
           allowClear
@@ -255,7 +315,6 @@ export default function FormativeExamTab({ category }) {
         </Button>
       </Space>
 
-      {/* 평가 목록 테이블 */}
       <Table
         rowKey="_id"
         loading={loading}
@@ -266,7 +325,6 @@ export default function FormativeExamTab({ category }) {
         pagination={{ pageSize: 20 }}
       />
 
-      {/* 등록/수정 모달 */}
       <Modal
         title={editingId ? '평가 수정' : '평가 등록'}
         open={modalOpen}
@@ -276,36 +334,33 @@ export default function FormativeExamTab({ category }) {
         width={480}
       >
         <Form form={form} layout="vertical" size="small">
-          {/* 학생 선택 */}
-          <Form.Item name="student" label="학생" rules={[{ required: true, message: '학생을 선택하세요' }]}>
-            <Select
-              showSearch
-              placeholder="학생 검색"
-              optionFilterProp="label"
-              options={students.map(s => ({ label: `${s.name} (${s.schoolLevel} ${s.gradeLabel})`, value: s._id }))}
-            />
-          </Form.Item>
+          {!studentId && (
+            <Form.Item name="student" label="학생" rules={[{ required: true, message: '학생을 선택하세요' }]}>
+              <Select
+                showSearch
+                placeholder="학생 검색"
+                optionFilterProp="label"
+                options={students.map(s => ({ label: `${s.name} (${s.schoolLevel} ${s.gradeLabel})`, value: s._id }))}
+              />
+            </Form.Item>
+          )}
 
           <Space style={{ display: 'flex' }} align="start">
-            {/* 평가 종류 */}
             <Form.Item name="examType" label="평가 종류" rules={[{ required: true }]}>
               <Select style={{ width: 160 }} options={examTypeOptions.map(t => ({ label: t, value: t }))} />
             </Form.Item>
 
-            {/* 학교급 */}
             <Form.Item name="schoolLevel" label="학교급">
               <Select style={{ width: 90 }} options={SCHOOL_LEVELS.map(l => ({ label: l, value: l }))} />
             </Form.Item>
           </Space>
 
-          {/* 수준 (과정평가/단원평가 시에만 표시) */}
           {levelOptions.length > 0 && (
             <Form.Item name="level" label="수준">
               <Select options={levelOptions.map(l => ({ label: l, value: l }))} />
             </Form.Item>
           )}
 
-          {/* 내신평가 전용 필드 */}
           {watchExamType === '내신평가' && (
             <Space style={{ display: 'flex' }}>
               <Form.Item name="semester" label="학기">
@@ -317,19 +372,16 @@ export default function FormativeExamTab({ category }) {
             </Space>
           )}
 
-          {/* 학교기출 전용 필드 */}
           {watchExamType === '학교기출' && (
             <Form.Item name="schoolName" label="학교명">
               <Input placeholder="학교 이름" />
             </Form.Item>
           )}
 
-          {/* 단원명 */}
           <Form.Item name="chapterName" label="단원명">
             <Input placeholder="예: 1단원 - 일차방정식" />
           </Form.Item>
 
-          {/* 문항수 + 맞은 개수 */}
           <Space style={{ display: 'flex' }}>
             <Form.Item name="totalQuestions" label="총 문항수">
               <InputNumber min={0} style={{ width: '100%' }} />
@@ -339,14 +391,18 @@ export default function FormativeExamTab({ category }) {
             </Form.Item>
           </Space>
 
-          {/* 시험일 */}
           <Form.Item name="examDate" label="시험일" rules={[{ required: true }]}>
             <DatePicker style={{ width: '100%' }} />
           </Form.Item>
 
-          {/* 메모 */}
           <Form.Item name="memo" label="메모">
             <Input.TextArea rows={2} placeholder="특이사항" />
+          </Form.Item>
+
+          <Form.Item label="시험지/결과지 첨부">
+            <Upload {...uploadProps} multiple>
+              <Button icon={<UploadOutlined />}>파일 선택</Button>
+            </Upload>
           </Form.Item>
         </Form>
       </Modal>

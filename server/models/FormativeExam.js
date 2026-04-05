@@ -52,6 +52,14 @@ const formativeExamSchema = new mongoose.Schema(
     chapterName: { type: String, default: '', trim: true },
     /** 메모 */
     memo: { type: String, default: '', trim: true },
+    /** 첨부파일 (이미지, PDF 등) */
+    attachments: [{
+      filename: { type: String, required: true },
+      originalName: { type: String, required: true },
+      mimetype: { type: String, required: true },
+      size: { type: Number, required: true },
+      path: { type: String, required: true },
+    }],
   },
   { timestamps: true }
 );

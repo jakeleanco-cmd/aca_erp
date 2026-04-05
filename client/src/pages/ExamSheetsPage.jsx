@@ -6,13 +6,13 @@ import {
   SolutionOutlined,
 } from '@ant-design/icons';
 import FormativeExamTab from './FormativeExamTab';
-import ExamSheetsStudentTab from './ExamSheetsStudentTab';
+import ExamSheetsDashboardTab from './ExamSheetsDashboardTab';
 
 /**
- * 성적 관리 메인 페이지
- * - 내신 성적: 기존 학교 내신 관리
- * - 형성평가: 학원 자체 평가 (레벨/과정/단원/내신/임의)
- * - 내신준비평가: 시험 대비 평가 (최다빈출, 서술형, 강남3구기출 등)
+ * 성적 관리 메인 페이지 (3탭 구조)
+ * 1. 형성평가: 학원 자체 평가
+ * 2. 내신준비평가: 시험 대비 평가
+ * 3. 내신 성적 대시보드: 기존 학교 내신 관리
  */
 export default function ExamSheetsPage() {
   const [activeTab, setActiveTab] = useState('formative');
@@ -38,16 +38,26 @@ export default function ExamSheetsPage() {
       ),
       children: <FormativeExamTab category="내신준비평가" />,
     },
+    {
+      key: 'school-exam',
+      label: (
+        <span>
+          <FileTextOutlined style={{ marginRight: 6 }} />
+          내신 성적 대시보드
+        </span>
+      ),
+      children: <ExamSheetsDashboardTab />,
+    },
   ];
 
   return (
     <div style={{ paddingBottom: 40 }}>
       <div style={{ marginBottom: 16 }}>
         <Typography.Title level={4} style={{ margin: '0 0 4px 0' }}>
-          평가 시험지 관리
+          평가 시험지 및 성적 관리
         </Typography.Title>
         <Typography.Text type="secondary" style={{ fontSize: 13 }}>
-          형성평가와 내신준비평가를 통합 관리합니다.
+          학원 자체 평가와 학교 내신 성적을 통합 관리합니다.
         </Typography.Text>
       </div>
 

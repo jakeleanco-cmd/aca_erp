@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import client from '../api/client';
 import { SCHOOL_LEVELS, STUDENT_STATUSES } from '../constants/learning';
 import ExamSheetsStudentTab from './ExamSheetsStudentTab';
+import FormativeExamTab from './FormativeExamTab';
 
 export default function StudentEditPage() {
   const { id } = useParams();
@@ -157,6 +158,16 @@ export default function StudentEditPage() {
       key: 'exam',
       label: '내신 성적',
       children: <ExamSheetsStudentTab studentId={id} />,
+    },
+    {
+      key: 'formative',
+      label: '형성평가',
+      children: <FormativeExamTab category="형성평가" studentId={id} />,
+    },
+    {
+      key: 'midterm-prep',
+      label: '내신준비평가',
+      children: <FormativeExamTab category="내신준비평가" studentId={id} />,
     },
   ];
 
