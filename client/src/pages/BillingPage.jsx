@@ -220,6 +220,38 @@ export default function BillingPage() {
           </Button>
         </Popconfirm>
       </Space>
+
+      <div style={{ 
+        marginBottom: 20, 
+        padding: '16px', 
+        background: 'rgba(255, 255, 255, 0.03)', 
+        borderRadius: '12px',
+        border: '1px solid rgba(255, 255, 255, 0.05)',
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '24px'
+      }}>
+        <div>
+          <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>총 고지 금액</Typography.Text>
+          <Typography.Text strong style={{ fontSize: 18, color: 'var(--text-main)' }}>
+            {rows.reduce((acc, r) => acc + (r.amount || 0), 0).toLocaleString()}원
+          </Typography.Text>
+        </div>
+        <div style={{ width: 1, background: 'rgba(255, 255, 255, 0.1)', alignSelf: 'stretch' }} />
+        <div>
+          <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>납부 완료</Typography.Text>
+          <Typography.Text strong style={{ fontSize: 18, color: '#52c41a' }}>
+            {rows.filter(r => r.status === '납부완료').reduce((acc, r) => acc + (r.amount || 0), 0).toLocaleString()}원
+          </Typography.Text>
+        </div>
+        <div>
+          <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>미납 금액</Typography.Text>
+          <Typography.Text strong style={{ fontSize: 18, color: '#faad14' }}>
+            {rows.filter(r => r.status === '미납').reduce((acc, r) => acc + (r.amount || 0), 0).toLocaleString()}원
+          </Typography.Text>
+        </div>
+      </div>
+
       <Typography.Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 20 }}>
         「고지 생성」은 해당 월에 아직 고지가 없는 재원 학생에게만 월수강료를 복사해 고지서를 만듭니다. 현금 수납 후 「현금영수증 발행」으로 발행 이력을 남깁니다.
       </Typography.Paragraph>
