@@ -125,14 +125,20 @@ export default function ExamPaperPage() {
       title: '시험지명',
       dataIndex: 'title',
       key: 'title',
-      render: (text) => <Typography.Text strong>{text}</Typography.Text>,
+      minWidth: 200, // 최소 너비 보장
+      render: (text) => (
+        <Typography.Text strong style={{ display: 'block', minWidth: 180, whiteSpace: 'normal', wordBreak: 'keep-all' }}>
+          {text}
+        </Typography.Text>
+      ),
     },
     {
       title: '분류',
       key: 'type',
+      width: 140,
       render: (_, r) => (
-        <Space>
-          <Tag color="purple">{r.category}</Tag>
+        <Space direction="vertical" size={0}>
+          <Tag color="purple" style={{ marginBottom: 2 }}>{r.category}</Tag>
           <Tag color="blue">{r.examType}</Tag>
         </Space>
       )
@@ -140,16 +146,20 @@ export default function ExamPaperPage() {
     {
       title: '대상',
       key: 'target',
-      render: (_, r) => `${r.schoolLevel} ${r.gradeLabel || ''}`,
+      width: 100,
+      render: (_, r) => <Tag color="default">{r.schoolLevel} {r.gradeLabel || ''}</Tag>,
     },
     {
-      title: '문항수',
+      title: '문항',
       dataIndex: 'totalQuestions',
-      width: 80,
+      width: 60,
+      align: 'center',
     },
     {
       title: '파일',
       key: 'files',
+      width: 60,
+      align: 'center',
       render: (_, r) => (
         <Space>
           {(r.attachments || []).map(att => (
@@ -163,12 +173,14 @@ export default function ExamPaperPage() {
     {
       title: '관리',
       key: 'actions',
-      width: 100,
+      width: 80,
+      fixed: 'right',
+      align: 'center',
       render: (_, r) => (
-        <Space>
-          <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(r)} />
+        <Space size={4}>
+          <Button size="small" type="text" icon={<EditOutlined />} onClick={() => openEdit(r)} />
           <Popconfirm title="정말 삭제하시겠습니까?" onConfirm={() => handleDelete(r._id)}>
-            <Button size="small" danger icon={<DeleteOutlined />} />
+            <Button size="small" type="text" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
       )
@@ -176,10 +188,10 @@ export default function ExamPaperPage() {
   ];
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+    <div style={{ padding: '0 8px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <Typography.Title level={5} style={{ margin: 0 }}>시험지 보관함</Typography.Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openNew}>시험지 등록</Button>
+        <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openNew}>등록</Button>
       </div>
 
       <Table
@@ -188,6 +200,9 @@ export default function ExamPaperPage() {
         columns={columns}
         dataSource={papers}
         size="small"
+        scroll={{ x: 900 }}
+        tableLayout="fixed"
+        pagination={{ pageSize: 15 }}
       />
 
       <Modal
