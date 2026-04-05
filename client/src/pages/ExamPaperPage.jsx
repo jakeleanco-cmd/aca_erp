@@ -20,6 +20,11 @@ const MIDTERM_PREP_EXAM_TYPES = [
   '최다오답', '고난이도', '학교기출',
 ];
 const SCHOOL_LEVELS = ['초등', '중등', '고등'];
+const GRADE_OPTIONS = {
+  '초등': ['초4', '초5', '초6'],
+  '중등': ['중1', '중2', '중3'],
+  '고등': ['고1', '고2', '고3'],
+};
 const FORMATIVE_CATEGORIES = ['형성평가', '내신준비평가'];
 
 const checkFileIsImage = (filename) => {
@@ -36,9 +41,13 @@ export default function ExamPaperPage() {
   const [form] = Form.useForm();
 
   const watchCategory = Form.useWatch('category', form);
+  const watchSchoolLevel = Form.useWatch('schoolLevel', form);
+  
   const examTypeOptions = watchCategory === '형성평가'
     ? FORMATIVE_EXAM_TYPES
     : MIDTERM_PREP_EXAM_TYPES;
+
+  const currentGradeOptions = GRADE_OPTIONS[watchSchoolLevel] || [];
 
   useEffect(() => {
     loadPapers();
@@ -310,7 +319,7 @@ export default function ExamPaperPage() {
             </Col>
             <Col xs={12} sm={6}>
               <Form.Item name="gradeLabel" label="학년">
-                <Input placeholder="예: 중2" />
+                <Select options={currentGradeOptions.map(g => ({ label: g, value: g }))} placeholder="학년 선택" />
               </Form.Item>
             </Col>
             <Col xs={12} sm={6}>
