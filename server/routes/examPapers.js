@@ -8,7 +8,7 @@ const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
 
 // 업로드 디렉토리 설정
-const uploadDir = process.env.VERCEL ? '/tmp/uploads' : path.join(__dirname, '..', 'uploads');
+const uploadDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadDir)) {
   try {
     fs.mkdirSync(uploadDir, { recursive: true });

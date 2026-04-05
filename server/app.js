@@ -21,8 +21,8 @@ app.use(async (req, res, next) => {
 });
 
 const path = require('path');
-const uploadDir = process.env.VERCEL ? '/tmp/uploads' : path.join(__dirname, 'uploads');
-app.use('/uploads', express.static(uploadDir));
+const uploadDir = path.join(__dirname, 'uploads');
+app.use('/api/uploads', express.static(uploadDir));
 
 
 app.use('/api/auth', require('./routes/auth'));
