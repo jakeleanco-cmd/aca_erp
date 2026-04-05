@@ -122,32 +122,43 @@ export default function ExamPaperPage() {
 
   const columns = [
     {
+      title: '대분류',
+      dataIndex: 'category',
+      key: 'category',
+      width: 90,
+      render: (v) => <Tag color="purple" style={{ margin: 0 }}>{v}</Tag>,
+    },
+    {
+      title: '소분류',
+      dataIndex: 'examType',
+      key: 'examType',
+      width: 120,
+      render: (v) => <Tag color="blue" style={{ margin: 0 }}>{v}</Tag>,
+    },
+    {
+      title: '학교급',
+      dataIndex: 'schoolLevel',
+      key: 'schoolLevel',
+      width: 70,
+      align: 'center',
+    },
+    {
+      title: '학년',
+      dataIndex: 'gradeLabel',
+      key: 'gradeLabel',
+      width: 70,
+      align: 'center',
+    },
+    {
       title: '시험지명',
       dataIndex: 'title',
       key: 'title',
-      minWidth: 200, // 최소 너비 보장
+      minWidth: 220,
       render: (text) => (
-        <Typography.Text strong style={{ display: 'block', minWidth: 180, whiteSpace: 'normal', wordBreak: 'keep-all' }}>
+        <Typography.Text strong style={{ display: 'block', minWidth: 200, whiteSpace: 'normal', wordBreak: 'keep-all' }}>
           {text}
         </Typography.Text>
       ),
-    },
-    {
-      title: '분류',
-      key: 'type',
-      width: 140,
-      render: (_, r) => (
-        <Space direction="vertical" size={0}>
-          <Tag color="purple" style={{ marginBottom: 2 }}>{r.category}</Tag>
-          <Tag color="blue">{r.examType}</Tag>
-        </Space>
-      )
-    },
-    {
-      title: '대상',
-      key: 'target',
-      width: 100,
-      render: (_, r) => <Tag color="default">{r.schoolLevel} {r.gradeLabel || ''}</Tag>,
     },
     {
       title: '문항',
@@ -200,7 +211,7 @@ export default function ExamPaperPage() {
         columns={columns}
         dataSource={papers}
         size="small"
-        scroll={{ x: 900 }}
+        scroll={{ x: 1000 }}
         tableLayout="fixed"
         pagination={{ pageSize: 15 }}
       />
