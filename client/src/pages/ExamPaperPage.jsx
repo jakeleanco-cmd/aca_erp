@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Table, Button, Modal, Form, Input, Select, InputNumber,
-  Space, Typography, Tag, Popconfirm, message, Upload,
+  Space, Typography, Tag, Popconfirm, message, Upload, Row, Col
 } from 'antd';
 import { 
   PlusOutlined, DeleteOutlined, EditOutlined, 
@@ -202,32 +202,47 @@ export default function ExamPaperPage() {
             <Input placeholder="예: 2024년 1학기 중3 레벨테스트" />
           </Form.Item>
 
-          <Space style={{ display: 'flex' }}>
-            <Form.Item name="category" label="대분류" rules={[{ required: true }]} style={{ flex: 1 }}>
-              <Select options={FORMATIVE_CATEGORIES.map(c => ({ label: c, value: c }))} />
-            </Form.Item>
-            <Form.Item name="examType" label="소분류" rules={[{ required: true }]} style={{ flex: 1 }}>
-              <Select options={examTypeOptions.map(t => ({ label: t, value: t }))} />
-            </Form.Item>
-          </Space>
+          <Row gutter={12}>
+            <Col xs={24} sm={12}>
+              <Form.Item name="category" label="대분류" rules={[{ required: true }]}>
+                <Select options={FORMATIVE_CATEGORIES.map(c => ({ label: c, value: c }))} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="examType" label="소분류" rules={[{ required: true }]}>
+                <Select 
+                  popupMatchSelectWidth={false}
+                  options={examTypeOptions.map(t => ({ label: t, value: t }))} 
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
-          <Space style={{ display: 'flex' }}>
-            <Form.Item name="schoolLevel" label="학교급" style={{ flex: 1 }}>
-              <Select options={SCHOOL_LEVELS.map(l => ({ label: l, value: l }))} />
-            </Form.Item>
-            <Form.Item name="gradeLabel" label="학년" style={{ flex: 1 }}>
-              <Input placeholder="예: 중2" />
-            </Form.Item>
-          </Space>
+          <Row gutter={12}>
+            <Col xs={12} sm={12}>
+              <Form.Item name="schoolLevel" label="학교급">
+                <Select options={SCHOOL_LEVELS.map(l => ({ label: l, value: l }))} />
+              </Form.Item>
+            </Col>
+            <Col xs={12} sm={12}>
+              <Form.Item name="gradeLabel" label="학년">
+                <Input placeholder="예: 중2" />
+              </Form.Item>
+            </Col>
+          </Row>
 
-          <Space style={{ display: 'flex' }}>
-            <Form.Item name="level" label="수준" style={{ flex: 1 }}>
-              <Input placeholder="예: 심화" />
-            </Form.Item>
-            <Form.Item name="totalQuestions" label="기본 문항수" style={{ flex: 1 }}>
-              <InputNumber style={{ width: '100%' }} />
-            </Form.Item>
-          </Space>
+          <Row gutter={12}>
+            <Col xs={12} sm={12}>
+              <Form.Item name="level" label="수준">
+                <Input placeholder="예: 심화" />
+              </Form.Item>
+            </Col>
+            <Col xs={12} sm={12}>
+              <Form.Item name="totalQuestions" label="기본 문항수">
+                <InputNumber style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Form.Item name="memo" label="메모">
             <Input.TextArea rows={2} />
