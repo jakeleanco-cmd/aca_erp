@@ -38,7 +38,14 @@ export default function ExamPaperPage() {
   const [editingId, setEditingId] = useState(null);
   const [fileList, setFileList] = useState([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [filters, setFilters] = useState({ category: '', semester: '', examTerm: '', title: '' });
+  const [filters, setFilters] = useState({ 
+    category: '', 
+    schoolLevel: '',
+    gradeLabel: '',
+    semester: '', 
+    examTerm: '', 
+    title: '' 
+  });
   const [form] = Form.useForm();
 
   const watchCategory = Form.useWatch('category', form);
@@ -272,6 +279,28 @@ export default function ExamPaperPage() {
       <div style={{ backgroundColor: '#f5f5f5', padding: '12px', borderRadius: '8px', marginBottom: 16 }}>
         <Space wrap size="middle">
           <Select 
+            placeholder="학교급"
+            allowClear
+            style={{ width: 100 }}
+            options={[
+              { label: '전체', value: '' },
+              ...SCHOOL_LEVELS.map(l => ({ label: l, value: l }))
+            ]}
+            value={filters.schoolLevel}
+            onChange={(v) => setFilters(f => ({ ...f, schoolLevel: v, gradeLabel: '' }))}
+          />
+          <Select 
+            placeholder="학년"
+            allowClear
+            style={{ width: 100 }}
+            options={[
+              { label: '전체', value: '' },
+              ...(GRADE_OPTIONS[filters.schoolLevel] || Object.values(GRADE_OPTIONS).flat()).map(g => ({ label: g, value: g }))
+            ]}
+            value={filters.gradeLabel}
+            onChange={(v) => setFilters(f => ({ ...f, gradeLabel: v }))}
+          />
+          <Select 
             placeholder="학기"
             allowClear
             style={{ width: 100 }}
@@ -315,7 +344,14 @@ export default function ExamPaperPage() {
           <Button 
             size="small" 
             type="text" 
-            onClick={() => setFilters({ category: '', semester: '', examTerm: '', title: '' })}
+            onClick={() => setFilters({ 
+              category: '', 
+              schoolLevel: '',
+              gradeLabel: '',
+              semester: '', 
+              examTerm: '', 
+              title: '' 
+            })}
           >
             초기화
           </Button>
