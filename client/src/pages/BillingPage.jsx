@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Table, Button, DatePicker, message, Space, Tag, Typography, Popconfirm } from 'antd';
 import dayjs from 'dayjs';
+import { CloseCircleOutlined } from '@ant-design/icons';
 import client from '../api/client';
 
 export default function BillingPage() {
@@ -144,9 +145,9 @@ export default function BillingPage() {
     {
       title: '상태',
       dataIndex: 'status',
-      width: 85,
+      width: 120,
       render: (s, r) => (
-        <Space size={4}>
+        <Space size={4} align="center">
           {s === '납부완료' ? <Tag color="green">{s}</Tag> : <Tag color="orange">{s}</Tag>}
           {s === '납부완료' && !r.receiptIssued && (
             <Popconfirm
@@ -156,9 +157,14 @@ export default function BillingPage() {
               cancelText="아니오"
               okButtonProps={{ danger: true }}
             >
-              <Button size="small" danger type="text" style={{ padding: '0 4px', fontSize: 11 }}>
-                취소
-              </Button>
+              <CloseCircleOutlined 
+                style={{ 
+                  color: '#ff4d4f', 
+                  fontSize: 16, 
+                  cursor: 'pointer',
+                  transition: 'opacity 0.2s',
+                }} 
+              />
             </Popconfirm>
           )}
         </Space>
