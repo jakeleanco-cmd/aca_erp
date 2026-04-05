@@ -145,7 +145,24 @@ export default function BillingPage() {
       title: '상태',
       dataIndex: 'status',
       width: 85,
-      render: (s) => (s === '납부완료' ? <Tag color="green">{s}</Tag> : <Tag color="orange">{s}</Tag>),
+      render: (s, r) => (
+        <Space size={4}>
+          {s === '납부완료' ? <Tag color="green">{s}</Tag> : <Tag color="orange">{s}</Tag>}
+          {s === '납부완료' && !r.receiptIssued && (
+            <Popconfirm
+              title="납부를 취소하시겠습니까?"
+              onConfirm={() => cancelPay(r._id)}
+              okText="네, 취소합니다"
+              cancelText="아니오"
+              okButtonProps={{ danger: true }}
+            >
+              <Button size="small" danger type="text" style={{ padding: '0 4px', fontSize: 11 }}>
+                취소
+              </Button>
+            </Popconfirm>
+          )}
+        </Space>
+      ),
     },
     {
       title: '결제수단',
@@ -179,19 +196,6 @@ export default function BillingPage() {
                 현금수납
               </Button>
             </>
-          )}
-          {r.status === '납부완료' && !r.receiptIssued && (
-            <Popconfirm
-              title="납부를 취소하시겠습니까?"
-              onConfirm={() => cancelPay(r._id)}
-              okText="네, 취소합니다"
-              cancelText="아니오"
-              okButtonProps={{ danger: true }}
-            >
-              <Button size="small" danger>
-                납부취소
-              </Button>
-            </Popconfirm>
           )}
           {r.status === '납부완료' && r.paymentMethod === '현금' && !r.receiptIssued && (
             <Button size="small" onClick={() => issueReceipt(r)}>
