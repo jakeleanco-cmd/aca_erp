@@ -1,88 +1,63 @@
-import React, { useEffect, useState } from 'react';
-import { Card, Table, Typography, Space, Select, Tag, Button } from 'antd';
-import { useNavigate } from 'react-router-dom';
-import dayjs from 'dayjs';
-import client from '../api/client';
+import { useState } from 'react';
+import { Typography, Tabs } from 'antd';
+import {
+  FileTextOutlined,
+  FormOutlined,
+  SolutionOutlined,
+} from '@ant-design/icons';
+import FormativeExamTab from './FormativeExamTab';
+import ExamSheetsStudentTab from './ExamSheetsStudentTab';
 
+/**
+ * 성적 관리 메인 페이지
+ * - 내신 성적: 기존 학교 내신 관리
+ * - 형성평가: 학원 자체 평가 (레벨/과정/단원/내신/임의)
+ * - 내신준비평가: 시험 대비 평가 (최다빈출, 서술형, 강남3구기출 등)
+ */
 export default function ExamSheetsPage() {
-  const [students, setStudents] = useState([]);
-  const [examSheets, setExamSheets] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filterYear, setFilterYear] = useState(dayjs().year());
-  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('formative');
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [stuRes] = await Promise.all([
-        client.get('/students'),
-      ]);
-      setStudents(stuRes.data);
-      
-      // Load all exam sheets across all students by iterating or we should have made an endpoint for all.
-      // Since we only made by-student/:id, we can fetch for each student or add a global one.
-      // Let's add a global endpoint in the backend or fetch sequentially for now.
-      // Actually, wait, let's just make a global endpoint in the backend. 
-      // I'll fetch `/api/students` then `/api/exam-sheets` if it exists. 
-      // I forgot to make `/api/exam-sheets` GET all. I'll just keep it simple and show students list here,
-      // and redirect to student detail's "Grade" tab.
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const columns = [
+  const items = [
     {
-      title: '학생명',
-      dataIndex: 'name',
-      key: 'name',
-      render: (text, record) => <a onClick={() => navigate(`/students/${record._id}?tab=exam`)}>{text}</a>,
-    },
-    {
-      title: '학급/학년',
-      dataIndex: 'gradeLabel',
-      key: 'gradeLabel',
-      render: (text, record) => <Tag color="blue">{record.schoolLevel} {text}</Tag>
-    },
-    {
-      title: '관리',
-      key: 'action',
-      render: (_, record) => (
-        <Button size="small" onClick={() => navigate(`/students/${record._id}?tab=exam`)}>
-          내신 성적 관리
-        </Button>
+      key: 'formative',
+      label: (
+        <span>
+          <FormOutlined style={{ marginRight: 6 }} />
+          형성평가
+        </span>
       ),
-    }
+      children: <FormativeExamTab category="형성평가" />,
+    },
+    {
+      key: 'midterm-prep',
+      label: (
+        <span>
+          <SolutionOutlined style={{ marginRight: 6 }} />
+          내신준비평가
+        </span>
+      ),
+      children: <FormativeExamTab category="내신준비평가" />,
+    },
   ];
 
   return (
-    <Space direction="vertical" style={{ width: '100%' }} size="large">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <Typography.Title level={4} style={{ margin: 0 }}>
-            내신 성적 대시보드
-          </Typography.Title>
-          <Typography.Text type="secondary">
-            학생별 내신 성적을 통합 관리합니다.
-          </Typography.Text>
-        </div>
+    <div style={{ paddingBottom: 40 }}>
+      <div style={{ marginBottom: 16 }}>
+        <Typography.Title level={4} style={{ margin: '0 0 4px 0' }}>
+          평가 시험지 관리
+        </Typography.Title>
+        <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+          형성평가와 내신준비평가를 통합 관리합니다.
+        </Typography.Text>
       </div>
-      
-      <Card>
-        <Table 
-          columns={columns} 
-          dataSource={students} 
-          rowKey="_id" 
-          loading={loading}
-          pagination={{ pageSize: 20 }}
-        />
-      </Card>
-    </Space>
+
+      <Tabs
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        items={items}
+        size="small"
+        style={{ marginTop: 8 }}
+      />
+    </div>
   );
 }
