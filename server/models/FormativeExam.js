@@ -20,7 +20,12 @@ const formativeExamSchema = new mongoose.Schema(
       required: true,
       enum: [...FORMATIVE_EXAM_TYPES, ...MIDTERM_PREP_EXAM_TYPES],
     },
-    /** 시험 제목 (자유 입력) */
+    /** 시험지 참조 (마스터 데이터) */
+    examPaper: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ExamPaper',
+    },
+    /** 시험 제목 (자유 입력 또는 ExamPaper 연동 시 자동 세팅) */
     title: { type: String, default: '', trim: true },
     /** 학생 참조 */
     student: {
@@ -52,7 +57,7 @@ const formativeExamSchema = new mongoose.Schema(
     chapterName: { type: String, default: '', trim: true },
     /** 메모 */
     memo: { type: String, default: '', trim: true },
-    /** 첨부파일 (이미지, PDF 등) */
+    /** 첨부파일 (학생의 풀이 결과 이미지 등) */
     attachments: [{
       filename: { type: String, required: true },
       originalName: { type: String, required: true },

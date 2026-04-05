@@ -10,6 +10,7 @@ import {
   SettingOutlined,
   UserOutlined,
   FileTextOutlined,
+  FolderOpenOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../store/authStore';
 
@@ -19,6 +20,7 @@ const menuItems = [
   { key: '/timetable', icon: <CalendarOutlined />, label: '시간표' },
   { key: '/students', icon: <TeamOutlined />, label: '학생' },
   { key: '/exam-sheets', icon: <FileTextOutlined />, label: '성적' },
+  { key: '/exam-papers', icon: <FolderOpenOutlined />, label: '시험지' },
   { key: '/textbooks', icon: <BookOutlined />, label: '교재' },
   { key: '/billing', icon: <DollarOutlined />, label: '수납' },
   { key: '/admins', icon: <SettingOutlined />, label: '관리' },

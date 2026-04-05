@@ -54,6 +54,7 @@ router.get('/', async (req, res) => {
 
     const list = await FormativeExam.find(filter)
       .populate('student', 'name schoolLevel gradeLabel')
+      .populate('examPaper')
       .sort({ examDate: -1 })
       .lean();
     return res.json(list);
@@ -74,6 +75,7 @@ router.get('/by-student/:studentId', async (req, res) => {
     if (examType) filter.examType = examType;
 
     const list = await FormativeExam.find(filter)
+      .populate('examPaper')
       .sort({ examDate: -1 })
       .lean();
     return res.json(list);
@@ -101,7 +103,7 @@ router.get('/constants', async (req, res) => {
 router.post('/', upload.array('files', 10), async (req, res) => {
   try {
     const {
-      category, examType, title, student,
+      category, examType, title, student, examPaper,
       schoolLevel, gradeLabel, level,
       totalQuestions, correctCount, score,
       examDate, semester, examPeriod,
@@ -127,6 +129,7 @@ router.post('/', upload.array('files', 10), async (req, res) => {
       examType,
       title: title || `${examType}${level ? ' - ' + level : ''}`,
       student,
+      examPaper: examPaper || null,
       schoolLevel,
       gradeLabel,
       level,
@@ -144,6 +147,7 @@ router.post('/', upload.array('files', 10), async (req, res) => {
 
     const populated = await FormativeExam.findById(exam._id)
       .populate('student', 'name schoolLevel gradeLabel')
+      .populate('examPaper')
       .lean();
 
     return res.status(201).json(populated);
@@ -188,7 +192,7 @@ router.put('/:id', upload.array('files', 10), async (req, res) => {
     }));
 
     const fields = [
-      'category', 'examType', 'title', 'student', 'schoolLevel', 'gradeLabel',
+      'category', 'examType', 'title', 'student', 'examPaper', 'schoolLevel', 'gradeLabel',
       'level', 'totalQuestions', 'correctCount', 'score',
       'examDate', 'semester', 'examPeriod',
       'schoolName', 'chapterName', 'memo',
@@ -209,6 +213,7 @@ router.put('/:id', upload.array('files', 10), async (req, res) => {
     await exam.save();
     const populated = await FormativeExam.findById(exam._id)
       .populate('student', 'name schoolLevel gradeLabel')
+      .populate('examPaper')
       .lean();
 
     return res.json(populated);

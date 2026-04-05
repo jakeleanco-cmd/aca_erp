@@ -15,6 +15,7 @@ import LearningPage from './pages/LearningPage.jsx';
 import BillingPage from './pages/BillingPage.jsx';
 import AdminsPage from './pages/AdminsPage.jsx';
 import ExamSheetsPage from './pages/ExamSheetsPage.jsx';
+import ExamPaperPage from './pages/ExamPaperPage.jsx';
 
 function PrivateRoute({ children }) {
   const token = useAuthStore((s) => s.token);
@@ -53,6 +54,7 @@ export default function App() {
             <Route path="billing" element={<BillingPage />} />
             <Route path="admins" element={<AdminsPage />} />
             <Route path="exam-sheets" element={<ExamSheetsPage />} />
+            <Route path="exam-papers" element={<ExamPaperPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

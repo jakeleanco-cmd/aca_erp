@@ -35,6 +35,7 @@ app.use('/api/assessments', require('./routes/assessments'));
 app.use('/api/bills', require('./routes/bills'));
 app.use('/api/exam-sheets', require('./routes/examSheets'));
 app.use('/api/formative-exams', require('./routes/formativeExams'));
+app.use('/api/exam-papers', require('./routes/examPapers'));
 
 
 // eslint-disable-next-line no-unused-vars

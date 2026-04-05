@@ -59,6 +59,7 @@ const checkFileIsImage = (filename) => {
 export default function FormativeExamTab({ category, studentId = null }) {
   const [rows, setRows] = useState([]);
   const [students, setStudents] = useState([]);
+  const [examPapers, setExamPapers] = useState([]); // 신규: 시험지 목록
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -72,11 +73,13 @@ export default function FormativeExamTab({ category, studentId = null }) {
 
   const watchExamType = Form.useWatch('examType', form);
   const watchSchoolLevel = Form.useWatch('schoolLevel', form);
+  const watchExamPaper = Form.useWatch('examPaper', form); // 신규: 선택된 시험지 감시
   const levelOptions = useMemo(() => getLevelOptions(watchExamType), [watchExamType]);
 
   useEffect(() => {
     if (!studentId) loadStudents();
-  }, [studentId]);
+    loadExamPapers(); // 신규: 시험지 로드
+  }, [studentId, category]);
 
   useEffect(() => {
     loadExams();
@@ -86,6 +89,13 @@ export default function FormativeExamTab({ category, studentId = null }) {
     try {
       const { data } = await client.get('/students');
       setStudents(data.filter(s => s.status === '재원'));
+    } catch {}
+  };
+
+  const loadExamPapers = async () => {
+    try {
+      const { data } = await client.get('/exam-papers', { params: { category } });
+      setExamPapers(data);
     } catch {}
   };
 
@@ -104,14 +114,32 @@ export default function FormativeExamTab({ category, studentId = null }) {
     }
   };
 
+  // 신규: 시험지 선택 시 자동 완성
   useEffect(() => {
-    if (watchExamType && watchSchoolLevel) {
+    if (watchExamPaper) {
+      const paper = examPapers.find(p => p._id === watchExamPaper);
+      if (paper) {
+        form.setFieldsValue({
+          title: paper.title,
+          examType: paper.examType,
+          schoolLevel: paper.schoolLevel,
+          gradeLabel: paper.gradeLabel,
+          level: paper.level,
+          totalQuestions: paper.totalQuestions,
+        });
+      }
+    }
+  }, [watchExamPaper, examPapers, form]);
+
+  useEffect(() => {
+    // 시험지 선택 중이 아닐 때만 학교급 변경 시 기본 문항수 세팅
+    if (!watchExamPaper && watchExamType && watchSchoolLevel) {
       const defaultCount = getDefaultQuestionCount(watchExamType, watchSchoolLevel);
       if (defaultCount > 0) {
         form.setFieldValue('totalQuestions', defaultCount);
       }
     }
-  }, [watchExamType, watchSchoolLevel]);
+  }, [watchExamType, watchSchoolLevel, watchExamPaper]);
 
   const openNew = () => {
     form.resetFields();
@@ -130,6 +158,7 @@ export default function FormativeExamTab({ category, studentId = null }) {
       ...record,
       examDate: dayjs(record.examDate),
       student: record.student?._id || record.student,
+      examPaper: record.examPaper?._id || record.examPaper,
     });
     setEditingId(record._id);
 
@@ -152,6 +181,7 @@ export default function FormativeExamTab({ category, studentId = null }) {
       formData.append('examType', vals.examType);
       formData.append('title', vals.title || '');
       formData.append('student', vals.student);
+      formData.append('examPaper', vals.examPaper || ''); // 신규: 시험공 참조
       formData.append('schoolLevel', vals.schoolLevel || '');
       formData.append('gradeLabel', vals.gradeLabel || '');
       formData.append('level', vals.level || '');
@@ -229,10 +259,15 @@ export default function FormativeExamTab({ category, studentId = null }) {
       render: (_, r) => r.student?.name || '-',
     },
     {
-      title: '평가종류',
-      dataIndex: 'examType',
-      width: 100,
-      render: (v) => <Tag color="blue" bordered={false}>{v}</Tag>,
+      title: '평가유형 (시험지)',
+      key: 'exam_info',
+      width: 150,
+      render: (_, r) => (
+        <Space direction="vertical" size={0}>
+          <Tag color="blue">{r.examType}</Tag>
+          <Typography.Text style={{ fontSize: 13 }}>{r.title}</Typography.Text>
+        </Space>
+      ),
     },
     {
       title: '수준',
@@ -259,13 +294,20 @@ export default function FormativeExamTab({ category, studentId = null }) {
       ),
     },
     {
-      title: '첨부',
+      title: '원본/결과',
       key: 'files',
-      width: 60,
+      width: 80,
       render: (_, r) => (
         <Space size="small">
+          {/* 원본 시험지 링크 (필드 연동 시) */}
+          {r.examPaper?.attachments?.map(att => (
+            <a key={att.filename} href={`/api${att.path}`} target="_blank" rel="noopener noreferrer" title="원본 시험지">
+              <FilePdfOutlined style={{ color: '#2b3a8f' }} />
+            </a>
+          ))}
+          {/* 학생 결과물 */}
           {(r.attachments || []).map(att => (
-            <a key={att.filename} href={`/api${att.path}`} target="_blank" rel="noopener noreferrer">
+            <a key={att.filename} href={`/api${att.path}`} target="_blank" rel="noopener noreferrer" title="학생 결과">
               {checkFileIsImage(att.filename) ? <PictureOutlined /> : <FilePdfOutlined style={{ color: '#ff4d4f' }} />}
             </a>
           ))}
@@ -326,7 +368,7 @@ export default function FormativeExamTab({ category, studentId = null }) {
       />
 
       <Modal
-        title={editingId ? '평가 수정' : '평가 등록'}
+        title={editingId ? '평가 수정' : '평가 결과 기록'}
         open={modalOpen}
         onOk={handleSave}
         onCancel={() => setModalOpen(false)}
@@ -334,16 +376,32 @@ export default function FormativeExamTab({ category, studentId = null }) {
         width={480}
       >
         <Form form={form} layout="vertical" size="small">
-          {!studentId && (
-            <Form.Item name="student" label="학생" rules={[{ required: true, message: '학생을 선택하세요' }]}>
+          <Space style={{ width: '100%' }} direction="vertical" size={12}>
+            {!studentId && (
+              <Form.Item name="student" label="학생" rules={[{ required: true, message: '학생을 선택하세요' }]} style={{ marginBottom: 0 }}>
+                <Select
+                  showSearch
+                  placeholder="학생 검색"
+                  optionFilterProp="label"
+                  options={students.map(s => ({ label: `${s.name} (${s.schoolLevel} ${s.gradeLabel})`, value: s._id }))}
+                />
+              </Form.Item>
+            )}
+
+            <Form.Item name="examPaper" label="시험지 보관함에서 선택" extra="미리 등록된 시험지를 열어서 점수만 입력할 수 있습니다." style={{ marginBottom: 0 }}>
               <Select
-                showSearch
-                placeholder="학생 검색"
-                optionFilterProp="label"
-                options={students.map(s => ({ label: `${s.name} (${s.schoolLevel} ${s.gradeLabel})`, value: s._id }))}
+                placeholder="시험지를 선택하면 아래 정보가 자동 채워집니다."
+                allowClear
+                options={examPapers.map(p => ({ label: `${p.title} (${p.examType})`, value: p._id }))}
               />
             </Form.Item>
-          )}
+          </Space>
+
+          <hr style={{ border: 'none', borderTop: '1px solid #f0f0f0', margin: '16px 0' }} />
+
+          <Form.Item name="title" label="시험 제목" rules={[{ required: true }]} style={{ marginBottom: 12 }}>
+            <Input placeholder="기록할 시험의 제목" />
+          </Form.Item>
 
           <Space style={{ display: 'flex' }} align="start">
             <Form.Item name="examType" label="평가 종류" rules={[{ required: true }]}>
@@ -355,11 +413,16 @@ export default function FormativeExamTab({ category, studentId = null }) {
             </Form.Item>
           </Space>
 
-          {levelOptions.length > 0 && (
-            <Form.Item name="level" label="수준">
-              <Select options={levelOptions.map(l => ({ label: l, value: l }))} />
+          <Space style={{ display: 'flex' }}>
+            {levelOptions.length > 0 && (
+              <Form.Item name="level" label="수준" style={{ width: 120 }}>
+                <Select options={levelOptions.map(l => ({ label: l, value: l }))} allowClear />
+              </Form.Item>
+            )}
+            <Form.Item name="gradeLabel" label="학년" style={{ flex: 1 }}>
+              <Input placeholder="예: 중1" />
             </Form.Item>
-          )}
+          </Space>
 
           {watchExamType === '내신평가' && (
             <Space style={{ display: 'flex' }}>
@@ -370,12 +433,6 @@ export default function FormativeExamTab({ category, studentId = null }) {
                 <Select style={{ width: 120 }} options={SCHOOL_EXAM_PERIODS.map(p => ({ label: p, value: p }))} />
               </Form.Item>
             </Space>
-          )}
-
-          {watchExamType === '학교기출' && (
-            <Form.Item name="schoolName" label="학교명">
-              <Input placeholder="학교 이름" />
-            </Form.Item>
           )}
 
           <Form.Item name="chapterName" label="단원명">
@@ -395,11 +452,11 @@ export default function FormativeExamTab({ category, studentId = null }) {
             <DatePicker style={{ width: '100%' }} />
           </Form.Item>
 
-          <Form.Item name="memo" label="메모">
-            <Input.TextArea rows={2} placeholder="특이사항" />
+          <Form.Item name="memo" label="기타 메모(오답 이유 등)">
+            <Input.TextArea rows={2} />
           </Form.Item>
 
-          <Form.Item label="시험지/결과지 첨부">
+          <Form.Item label="학생 풀이지/결과지 첨부 (개인용)">
             <Upload {...uploadProps} multiple>
               <Button icon={<UploadOutlined />}>파일 선택</Button>
             </Upload>
