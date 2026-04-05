@@ -97,6 +97,16 @@ export default function BillingPage() {
     }
   };
 
+  const updateAmount = async (id, amount) => {
+    try {
+      await client.patch(`/bills/${id}`, { amount });
+      message.success('금액이 수정되었습니다.');
+      await load(); // 목록과 상단 합계를 새로고침
+    } catch (err) {
+      message.error(err.response?.data?.message || '금액 수정에 실패했습니다.');
+    }
+  };
+
   const issueReceipt = async (row) => {
     try {
       await client.post(`/bills/${row._id}/issue-receipt`, {});
@@ -118,8 +128,18 @@ export default function BillingPage() {
     {
       title: '금액',
       dataIndex: 'amount',
-      width: 100,
-      render: (v) => `${Number(v).toLocaleString()}원`,
+      width: 110,
+      render: (v, r) => (
+        <Typography.Text 
+          editable={r.status === '미납' ? {
+            onChange: (newVal) => updateAmount(r._id, newVal),
+            tooltip: '금액 수정',
+          } : false}
+          style={{ whiteSpace: 'nowrap' }}
+        >
+          {Number(v).toLocaleString()}원
+        </Typography.Text>
+      ),
     },
     {
       title: '상태',

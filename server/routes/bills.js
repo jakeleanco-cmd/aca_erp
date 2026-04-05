@@ -220,4 +220,35 @@ router.post('/:id/issue-receipt', async (req, res) => {
   }
 });
 
+/**
+ * 고지된 금액 직접 수정 (미납 건만 가능)
+ */
+router.patch('/:id', async (req, res) => {
+  try {
+    const { amount } = req.body;
+    if (amount === undefined || isNaN(Number(amount))) {
+      return res.status(400).json({ message: '올바른 금액을 입력해주세요.' });
+    }
+
+    const bill = await MonthlyBill.findById(req.params.id);
+    if (!bill) {
+      return res.status(404).json({ message: '고지를 찾을 수 없습니다.' });
+    }
+
+    // 납부 완료된 건은 수정 불가 (데이터 무결성 보호)
+    if (bill.status !== '미납') {
+      return res.status(400).json({ message: '미납 상태인 고지만 금액을 수정할 수 있습니다.' });
+    }
+
+    bill.amount = Number(amount);
+    await bill.save();
+
+    const populated = await MonthlyBill.findById(bill._id).populate('student').lean();
+    return res.json(populated);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: '금액 수정에 실패했습니다.' });
+  }
+});
+
 module.exports = router;
