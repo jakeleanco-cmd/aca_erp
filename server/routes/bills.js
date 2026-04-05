@@ -24,19 +24,26 @@ router.get('/', async (req, res) => {
 });
 
 /**
- * 해당 월의 미납 고지서 일괄 삭제 (잘못 생성한 경우)
+ * 해당 월의 고지서 일괄 삭제
+ * - 기본: 미납 고지서만 삭제
+ * - includeAll=true: 납부완료 포함 전체 삭제 (주의: 되돌릴 수 없음)
  */
 router.delete('/', async (req, res) => {
   try {
-    const { yearMonth } = req.query;
+    const { yearMonth, includeAll } = req.query;
     if (!yearMonth || !YEAR_MONTH_RE.test(yearMonth)) {
       return res.status(400).json({ message: 'yearMonth는 YYYY-MM 형식이어야 합니다.' });
     }
 
-    // 납부 완료된 데이터 보호를 위해 '미납'인 상태만 삭제
-    const result = await MonthlyBill.deleteMany({ yearMonth, status: '미납' });
+    const filter = { yearMonth };
+    // includeAll이 아닌 경우 미납 건만 삭제 (기존 동작 유지)
+    if (includeAll !== 'true') {
+      filter.status = '미납';
+    }
 
-    return res.json({ message: `해당 월의 미납 고지서 ${result.deletedCount}건이 삭제되었습니다.` });
+    const result = await MonthlyBill.deleteMany(filter);
+    const label = includeAll === 'true' ? '전체' : '미납';
+    return res.json({ message: `해당 월의 ${label} 고지서 ${result.deletedCount}건이 삭제되었습니다.` });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: '고지서 삭제에 실패했습니다.', detail: err.message });

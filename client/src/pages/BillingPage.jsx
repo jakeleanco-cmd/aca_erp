@@ -39,10 +39,25 @@ export default function BillingPage() {
     }
   };
 
+  // 미납 고지서만 삭제
   const cancelGeneration = async () => {
     setLoading(true);
     try {
       const { data } = await client.delete('/bills', { params: { yearMonth } });
+      message.success(data.message || '삭제되었습니다.');
+      await load();
+    } catch (err) {
+      message.error(err.response?.data?.message || '삭제에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 납부완료 포함 전체 고지서 삭제
+  const deleteAll = async () => {
+    setLoading(true);
+    try {
+      const { data } = await client.delete('/bills', { params: { yearMonth, includeAll: true } });
       message.success(data.message || '삭제되었습니다.');
       await load();
     } catch (err) {
@@ -184,7 +199,18 @@ export default function BillingPage() {
           okButtonProps={{ danger: true }}
         >
           <Button danger loading={loading}>
-            수강료 전체 삭제
+            미납 전체 삭제
+          </Button>
+        </Popconfirm>
+        <Popconfirm
+          title={`${month.format('YYYY년 M월')} 고지서를 납부완료 포함 모두 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다!`}
+          onConfirm={deleteAll}
+          okText="네, 모두 삭제합니다"
+          cancelText="취소"
+          okButtonProps={{ danger: true }}
+        >
+          <Button danger type="primary" loading={loading}>
+            전체 삭제 (납부완료 포함)
           </Button>
         </Popconfirm>
       </Space>
