@@ -32,6 +32,7 @@ export default function ExamPaperPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [fileList, setFileList] = useState([]);
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [form] = Form.useForm();
 
   const watchCategory = Form.useWatch('category', form);
@@ -57,7 +58,7 @@ export default function ExamPaperPage() {
 
   const openNew = () => {
     form.resetFields();
-    form.setFieldsValue({ category: '형성평가', schoolLevel: '중등' });
+    form.setFieldsValue({ category: '형성평가', schoolLevel: '중등', semester: '' });
     setFileList([]);
     setEditingId(null);
     setModalOpen(true);
@@ -93,7 +94,7 @@ export default function ExamPaperPage() {
       if (editingId) {
         const existingFiles = fileList
           .filter(f => !f.originFileObj && f.url)
-          .map(f => f.name); // Using name as filename pointer
+          .map(f => f.name);
         formData.append('existingFiles', JSON.stringify(existingFiles));
         
         await client.put(`/exam-papers/${editingId}`, formData);
@@ -117,6 +118,27 @@ export default function ExamPaperPage() {
       loadPapers();
     } catch {
       message.error('삭제에 실패했습니다.');
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    try {
+      await client.post('/exam-papers/batch-delete', { ids: selectedRowKeys });
+      message.success(`${selectedRowKeys.length}개의 시험지가 삭제되었습니다.`);
+      setSelectedRowKeys([]);
+      loadPapers();
+    } catch {
+      message.error('선택 삭제에 실패했습니다.');
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    try {
+      await client.delete('/exam-papers');
+      message.success('모든 시험지가 삭제되었습니다.');
+      loadPapers();
+    } catch {
+      message.error('전체 삭제에 실패했습니다.');
     }
   };
 
@@ -148,6 +170,14 @@ export default function ExamPaperPage() {
       key: 'gradeLabel',
       width: 70,
       align: 'center',
+    },
+    {
+      title: '학기',
+      dataIndex: 'semester',
+      key: 'semester',
+      width: 80,
+      align: 'center',
+      render: (v) => v || '-',
     },
     {
       title: '시험지명',
@@ -201,7 +231,23 @@ export default function ExamPaperPage() {
   return (
     <div style={{ padding: '0 8px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <Typography.Title level={5} style={{ margin: 0 }}>시험지 보관함</Typography.Title>
+        <Space wrap>
+          <Typography.Title level={5} style={{ margin: 0 }}>시험지 보관함</Typography.Title>
+          {selectedRowKeys.length > 0 && (
+            <Popconfirm 
+              title={`${selectedRowKeys.length}개의 시험지를 삭제하시겠습니까?`}
+              onConfirm={handleBatchDelete}
+            >
+              <Button size="small" danger icon={<DeleteOutlined />}>선택 삭제</Button>
+            </Popconfirm>
+          )}
+          <Popconfirm 
+            title="모든 시험지를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+            onConfirm={handleDeleteAll}
+          >
+            <Button size="small" danger type="dashed">전체 삭제</Button>
+          </Popconfirm>
+        </Space>
         <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openNew}>등록</Button>
       </div>
 
@@ -214,6 +260,10 @@ export default function ExamPaperPage() {
         scroll={{ x: 1000 }}
         tableLayout="fixed"
         pagination={{ pageSize: 15 }}
+        rowSelection={{
+          selectedRowKeys,
+          onChange: (keys) => setSelectedRowKeys(keys),
+        }}
       />
 
       <Modal
@@ -245,14 +295,23 @@ export default function ExamPaperPage() {
           </Row>
 
           <Row gutter={12}>
-            <Col xs={12} sm={12}>
+            <Col xs={8} sm={8}>
               <Form.Item name="schoolLevel" label="학교급">
                 <Select options={SCHOOL_LEVELS.map(l => ({ label: l, value: l }))} />
               </Form.Item>
             </Col>
-            <Col xs={12} sm={12}>
+            <Col xs={8} sm={8}>
               <Form.Item name="gradeLabel" label="학년">
                 <Input placeholder="예: 중2" />
+              </Form.Item>
+            </Col>
+            <Col xs={8} sm={8}>
+              <Form.Item name="semester" label="학기">
+                <Select options={[
+                  { label: '1학기', value: '1학기' },
+                  { label: '2학기', value: '2학기' },
+                  { label: '기타', value: '기타' },
+                ]} placeholder="선택" />
               </Form.Item>
             </Col>
           </Row>

@@ -55,7 +55,7 @@ router.get('/', async (req, res) => {
  */
 router.post('/', upload.array('files', 5), async (req, res) => {
   try {
-    const { title, category, examType, schoolLevel, gradeLabel, level, totalQuestions, memo } = req.body;
+    const { title, category, examType, schoolLevel, gradeLabel, semester, level, totalQuestions, memo } = req.body;
     
     const attachments = (req.files || []).map(file => ({
       filename: file.filename,
@@ -66,7 +66,7 @@ router.post('/', upload.array('files', 5), async (req, res) => {
     }));
 
     const paper = await ExamPaper.create({
-      title, category, examType, schoolLevel, gradeLabel, level,
+      title, category, examType, schoolLevel, gradeLabel, semester, level,
       totalQuestions: Number(totalQuestions || 0),
       memo,
       attachments
@@ -86,7 +86,7 @@ router.put('/:id', upload.array('files', 5), async (req, res) => {
     const paper = await ExamPaper.findById(req.params.id);
     if (!paper) return res.status(404).json({ message: '찾을 수 없음' });
 
-    const { title, category, examType, schoolLevel, gradeLabel, level, totalQuestions, memo, existingFiles } = req.body;
+    const { title, category, examType, schoolLevel, gradeLabel, semester, level, totalQuestions, memo, existingFiles } = req.body;
 
     let parsedExisting = [];
     if (existingFiles) {
@@ -107,6 +107,7 @@ router.put('/:id', upload.array('files', 5), async (req, res) => {
     paper.examType = examType || paper.examType;
     paper.schoolLevel = schoolLevel || paper.schoolLevel;
     paper.gradeLabel = gradeLabel !== undefined ? gradeLabel : paper.gradeLabel;
+    paper.semester = semester !== undefined ? semester : paper.semester;
     paper.level = level !== undefined ? level : paper.level;
     paper.totalQuestions = totalQuestions !== undefined ? Number(totalQuestions) : paper.totalQuestions;
     paper.memo = memo !== undefined ? memo : paper.memo;
@@ -137,6 +138,54 @@ router.delete('/:id', async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ message: '삭제 실패' });
+  }
+});
+
+/**
+ * 시험지 선택 삭제 (배치)
+ */
+router.post('/batch-delete', async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: '삭제할 ID가 없습니다.' });
+    }
+
+    const papers = await ExamPaper.find({ _id: { $in: ids } });
+    
+    for (const paper of papers) {
+      // 파일 삭제
+      paper.attachments?.forEach(file => {
+        const filePath = path.join(uploadDir, file.filename);
+        if (fs.existsSync(filePath)) try { fs.unlinkSync(filePath); } catch(e) {}
+      });
+      await ExamPaper.findByIdAndDelete(paper._id);
+    }
+
+    res.json({ ok: true, count: papers.length });
+  } catch (err) {
+    res.status(500).json({ message: '배치 삭제 실패' });
+  }
+});
+
+/**
+ * 시험지 전체 삭제
+ */
+router.delete('/', async (req, res) => {
+  try {
+    const papers = await ExamPaper.find({});
+    
+    for (const paper of papers) {
+      paper.attachments?.forEach(file => {
+        const filePath = path.join(uploadDir, file.filename);
+        if (fs.existsSync(filePath)) try { fs.unlinkSync(filePath); } catch(e) {}
+      });
+    }
+
+    await ExamPaper.deleteMany({});
+    res.json({ ok: true, count: papers.length });
+  } catch (err) {
+    res.status(500).json({ message: '전체 삭제 실패' });
   }
 });
 
