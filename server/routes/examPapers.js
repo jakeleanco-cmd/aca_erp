@@ -37,11 +37,15 @@ router.use(requireAuth);
  */
 router.get('/', async (req, res) => {
   try {
-    const { category, examType, schoolLevel } = req.query;
+    const { category, examType, schoolLevel, gradeLabel, semester, examTerm, title } = req.query;
     const filter = {};
     if (category) filter.category = category;
     if (examType) filter.examType = examType;
     if (schoolLevel) filter.schoolLevel = schoolLevel;
+    if (gradeLabel) filter.gradeLabel = gradeLabel;
+    if (semester) filter.semester = semester;
+    if (examTerm) filter.examTerm = examTerm;
+    if (title) filter.title = { $regex: title, $options: 'i' };
 
     const list = await ExamPaper.find(filter).sort({ createdAt: -1 }).lean();
     res.json(list);

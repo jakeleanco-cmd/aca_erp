@@ -38,6 +38,7 @@ export default function ExamPaperPage() {
   const [editingId, setEditingId] = useState(null);
   const [fileList, setFileList] = useState([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [filters, setFilters] = useState({ category: '', semester: '', examTerm: '', title: '' });
   const [form] = Form.useForm();
 
   const watchCategory = Form.useWatch('category', form);
@@ -51,12 +52,12 @@ export default function ExamPaperPage() {
 
   useEffect(() => {
     loadPapers();
-  }, []);
+  }, [filters]);
 
   const loadPapers = async () => {
     setLoading(true);
     try {
-      const { data } = await client.get('/exam-papers');
+      const { data } = await client.get('/exam-papers', { params: filters });
       setPapers(data);
     } catch {
       message.error('시험지 목록을 불러오지 못했습니다.');
@@ -266,6 +267,59 @@ export default function ExamPaperPage() {
           </Popconfirm>
         </Space>
         <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openNew}>등록</Button>
+      </div>
+
+      <div style={{ backgroundColor: '#f5f5f5', padding: '12px', borderRadius: '8px', marginBottom: 16 }}>
+        <Space wrap size="middle">
+          <Select 
+            placeholder="학기"
+            allowClear
+            style={{ width: 100 }}
+            options={[
+              { label: '전체 학기', value: '' },
+              { label: '1학기', value: '1학기' },
+              { label: '2학기', value: '2학기' },
+            ]}
+            value={filters.semester}
+            onChange={(v) => setFilters(f => ({ ...f, semester: v }))}
+          />
+          <Select 
+            placeholder="고사"
+            allowClear
+            style={{ width: 100 }}
+            options={[
+              { label: '전체 고사', value: '' },
+              { label: '중간', value: '중간' },
+              { label: '기말', value: '기말' },
+            ]}
+            value={filters.examTerm}
+            onChange={(v) => setFilters(f => ({ ...f, examTerm: v }))}
+          />
+          <Select 
+            placeholder="대분류"
+            allowClear
+            style={{ width: 140 }}
+            options={[
+              { label: '전체 대분류', value: '' },
+              ...FORMATIVE_CATEGORIES.map(c => ({ label: c, value: c }))
+            ]}
+            value={filters.category}
+            onChange={(v) => setFilters(f => ({ ...f, category: v }))}
+          />
+          <Input.Search 
+            placeholder="시험지 제목 검색"
+            allowClear
+            style={{ width: 220 }}
+            onSearch={(v) => setFilters(f => ({ ...f, title: v }))}
+          />
+          <Button 
+            size="small" 
+            type="text" 
+            onClick={() => setFilters({ category: '', semester: '', examTerm: '', title: '' })}
+          >
+            초기화
+          </Button>
+        </Space>
       </div>
 
       <Table
