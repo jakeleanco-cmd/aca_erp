@@ -122,20 +122,20 @@ export default function AppLayout() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                width: 60,
+                width: 48, // 7개 메뉴 수용을 위해 너비 축소 (60 -> 48)
                 color: isActive ? 'var(--primary-vibrant)' : 'var(--text-muted)',
                 transition: 'all 0.3s ease',
               }}
             >
               <div style={{ 
-                fontSize: 22, 
-                marginBottom: 4,
+                fontSize: 20, // 아이콘 크기 약간 축소 (22 -> 20)
+                marginBottom: 2, // 여백 축소
                 transform: isActive ? 'translateY(-2px)' : 'none',
                 filter: isActive ? 'drop-shadow(0 0 8px rgba(99, 102, 241, 0.5))' : 'none'
               }}>
                 {item.icon}
               </div>
-              <span style={{ fontSize: 11, fontWeight: isActive ? 600 : 400 }}>{item.label}</span>
+              <span style={{ fontSize: 10, fontWeight: isActive ? 600 : 400 }}>{item.label}</span>
               {isActive && (
                 <div style={{ 
                   width: 4, height: 4, borderRadius: '50%', 
