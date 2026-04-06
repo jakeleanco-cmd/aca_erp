@@ -41,6 +41,8 @@ const examPaperSchema = new mongoose.Schema(
       mimetype: { type: String, required: true },
       size: { type: Number, required: true },
       path: { type: String, required: true },
+      googleFileId: { type: String }, // 구글 드라이브 파일 ID 추가
+      webViewLink: { type: String }, // 바로보기 링크 추가
     }],
     /** 메모 */
     memo: { type: String, default: '', trim: true },

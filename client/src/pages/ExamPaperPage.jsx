@@ -103,8 +103,9 @@ export default function ExamPaperPage() {
       });
 
       fileList.forEach((file) => {
-        if (file.originFileObj) {
-          formData.append('files', file.originFileObj);
+        const fileToUpload = file.originFileObj || file;
+        if (fileToUpload instanceof File) {
+          formData.append('files', fileToUpload);
         }
       });
 
@@ -228,11 +229,14 @@ export default function ExamPaperPage() {
       align: 'center',
       render: (_, r) => (
         <Space>
-          {(r.attachments || []).map(att => (
-            <a key={att.filename} href={`/api${att.path}`} target="_blank" rel="noopener noreferrer">
-              {checkFileIsImage(att.filename) ? <PictureOutlined /> : <FilePdfOutlined style={{ color: '#ff4d4f' }} />}
-            </a>
-          ))}
+          {(r.attachments || []).map(att => {
+            const fileUrl = att.path.startsWith('http') ? att.path : `/api${att.path}`;
+            return (
+              <a key={att.filename} href={fileUrl} target="_blank" rel="noopener noreferrer">
+                {checkFileIsImage(att.filename) ? <PictureOutlined /> : <FilePdfOutlined style={{ color: '#ff4d4f' }} />}
+              </a>
+            );
+          })}
         </Space>
       )
     },

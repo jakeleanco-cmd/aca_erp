@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const ExamSheet = require('../models/ExamSheet');
 const { requireAuth } = require('../middleware/auth');
+const { uploadWithCleanup, deleteFile } = require('../services/googleDriveService');
 
 const router = express.Router();
 
@@ -74,14 +75,20 @@ router.post('/', upload.array('files', 10), async (req, res) => {
   try {
     const { student, schoolName, year, semester, subject, score, memo } = req.body;
     
-    // 파일 정보 정리
-    const attachments = (req.files || []).map(file => ({
-      filename: file.filename,
-      originalName: file.originalname,
-      mimetype: file.mimetype,
-      size: file.size,
-      path: `/uploads/${file.filename}`
-    }));
+    // 구글 드라이브 업로드 처리
+    const attachments = [];
+    for (const file of (req.files || [])) {
+      const driveData = await uploadWithCleanup(file);
+      attachments.push({
+        filename: file.filename,
+        originalName: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+        path: driveData.webViewLink,
+        googleFileId: driveData.id,
+        webViewLink: driveData.webViewLink
+      });
+    }
 
     const newSheet = await ExamSheet.create({
       student,
@@ -130,14 +137,24 @@ router.put('/:id', upload.array('files', 10), async (req, res) => {
       parsedExistingFiles.includes(att.filename)
     );
 
-    // 새롭게 추가된 파일 정보 정리
-    const newAttachments = (req.files || []).map(file => ({
-      filename: file.filename,
-      originalName: file.originalname,
-      mimetype: file.mimetype,
-      size: file.size,
-      path: `/uploads/${file.filename}`
-    }));
+    // 새롭게 추가된 파일 구글 드라이브 업로드 
+    const newAttachments = [];
+    for (const file of (req.files || [])) {
+      try {
+        const driveData = await uploadWithCleanup(file);
+        newAttachments.push({
+          filename: file.filename,
+          originalName: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size,
+          path: driveData.webViewLink,
+          googleFileId: driveData.id,
+          webViewLink: driveData.webViewLink
+        });
+      } catch (uploadErr) {
+        console.error('파일 업로드 중 에러:', uploadErr);
+      }
+    }
 
     // 최종 파일 배열
     const finalAttachments = [...retainedAttachments, ...newAttachments];
@@ -167,15 +184,17 @@ router.delete('/:id', async (req, res) => {
     const sheet = await ExamSheet.findByIdAndDelete(req.params.id);
     if (!sheet) return res.status(404).json({ message: '성적을 찾을 수 없습니다.' });
 
-    // 실제 파일 시스템에서도 삭제 처리
-    sheet.attachments.forEach(file => {
-      const filePath = path.join(uploadDir, file.filename);
-      if (fs.existsSync(filePath)) {
-        try {
-          fs.unlinkSync(filePath);
-        } catch(e) {}
+    // 실제 파일 삭제 처리 (드라이브 및 로컬)
+    for (const file of sheet.attachments) {
+      if (file.googleFileId) {
+        await deleteFile(file.googleFileId);
+      } else {
+        const filePath = path.join(uploadDir, file.filename);
+        if (fs.existsSync(filePath)) {
+          try { fs.unlinkSync(filePath); } catch(e) {}
+        }
       }
-    });
+    }
 
     res.json({ ok: true });
   } catch (err) {

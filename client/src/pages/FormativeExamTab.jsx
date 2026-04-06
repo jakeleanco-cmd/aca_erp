@@ -195,8 +195,9 @@ export default function FormativeExamTab({ category, studentId = null }) {
       formData.append('memo', vals.memo || '');
 
       fileList.forEach((file) => {
-        if (file.originFileObj) {
-          formData.append('files', file.originFileObj);
+        const fileToUpload = file.originFileObj || file;
+        if (fileToUpload instanceof File) {
+          formData.append('files', fileToUpload);
         }
       });
 
@@ -300,17 +301,23 @@ export default function FormativeExamTab({ category, studentId = null }) {
       render: (_, r) => (
         <Space size="small">
           {/* 원본 시험지 링크 (필드 연동 시) */}
-          {r.examPaper?.attachments?.map(att => (
-            <a key={att.filename} href={`/api${att.path}`} target="_blank" rel="noopener noreferrer" title="원본 시험지">
-              <FilePdfOutlined style={{ color: '#2b3a8f' }} />
-            </a>
-          ))}
+          {r.examPaper?.attachments?.map(att => {
+            const fileUrl = att.path.startsWith('http') ? att.path : `/api${att.path}`;
+            return (
+              <a key={att.filename} href={fileUrl} target="_blank" rel="noopener noreferrer" title="원본 시험지">
+                <FilePdfOutlined style={{ color: '#2b3a8f' }} />
+              </a>
+            );
+          })}
           {/* 학생 결과물 */}
-          {(r.attachments || []).map(att => (
-            <a key={att.filename} href={`/api${att.path}`} target="_blank" rel="noopener noreferrer" title="학생 결과">
-              {checkFileIsImage(att.filename) ? <PictureOutlined /> : <FilePdfOutlined style={{ color: '#ff4d4f' }} />}
-            </a>
-          ))}
+          {(r.attachments || []).map(att => {
+            const fileUrl = att.path.startsWith('http') ? att.path : `/api${att.path}`;
+            return (
+              <a key={att.filename} href={fileUrl} target="_blank" rel="noopener noreferrer" title="학생 결과">
+                {checkFileIsImage(att.filename) ? <PictureOutlined /> : <FilePdfOutlined style={{ color: '#ff4d4f' }} />}
+              </a>
+            );
+          })}
         </Space>
       )
     },

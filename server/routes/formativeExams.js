@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const FormativeExam = require('../models/FormativeExam');
 const { requireAuth } = require('../middleware/auth');
+const { uploadWithCleanup, deleteFile } = require('../services/googleDriveService');
 const {
   FORMATIVE_CATEGORIES,
   FORMATIVE_EXAM_TYPES,
@@ -110,14 +111,20 @@ router.post('/', upload.array('files', 10), async (req, res) => {
       schoolName, chapterName, memo,
     } = req.body;
 
-    // 파일 정보 정리
-    const attachments = (req.files || []).map(file => ({
-      filename: file.filename,
-      originalName: file.originalname,
-      mimetype: file.mimetype,
-      size: file.size,
-      path: `/uploads/${file.filename}`
-    }));
+    // 구글 드라이브 업로드 처리 
+    const attachments = [];
+    for (const file of (req.files || [])) {
+      const driveData = await uploadWithCleanup(file);
+      attachments.push({
+        filename: file.filename,
+        originalName: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+        path: driveData.webViewLink,
+        googleFileId: driveData.id,
+        webViewLink: driveData.webViewLink
+      });
+    }
 
     let finalScore = score || 0;
     if (totalQuestions > 0 && correctCount !== undefined) {
@@ -182,14 +189,24 @@ router.put('/:id', upload.array('files', 10), async (req, res) => {
       parsedExistingFiles.includes(att.filename)
     );
 
-    // 새 파일 추가
-    const newAttachments = (req.files || []).map(file => ({
-      filename: file.filename,
-      originalName: file.originalname,
-      mimetype: file.mimetype,
-      size: file.size,
-      path: `/uploads/${file.filename}`
-    }));
+    // 새 파일 구글 드라이브 업로드 
+    const newAttachments = [];
+    for (const file of (req.files || [])) {
+      try {
+        const driveData = await uploadWithCleanup(file);
+        newAttachments.push({
+          filename: file.filename,
+          originalName: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size,
+          path: driveData.webViewLink,
+          googleFileId: driveData.id,
+          webViewLink: driveData.webViewLink
+        });
+      } catch (uploadErr) {
+        console.error('파일 업로드 중 에러:', uploadErr);
+      }
+    }
 
     const fields = [
       'category', 'examType', 'title', 'student', 'examPaper', 'schoolLevel', 'gradeLabel',
@@ -233,13 +250,17 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ message: '평가를 찾을 수 없습니다.' });
     }
 
-    // 파일 삭제
-    exam.attachments.forEach(file => {
-      const filePath = path.join(uploadDir, file.filename);
-      if (fs.existsSync(filePath)) {
-        try { fs.unlinkSync(filePath); } catch(e) {}
+    // 파일 삭제 (드라이브 및 로컬)
+    for (const file of exam.attachments) {
+      if (file.googleFileId) {
+        await deleteFile(file.googleFileId);
+      } else {
+        const filePath = path.join(uploadDir, file.filename);
+        if (fs.existsSync(filePath)) {
+          try { fs.unlinkSync(filePath); } catch(e) {}
+        }
       }
-    });
+    }
 
     return res.json({ ok: true });
   } catch (err) {

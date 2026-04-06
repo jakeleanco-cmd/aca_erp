@@ -61,8 +61,9 @@ export default function ExamSheetsStudentTab({ studentId }) {
       formData.append('memo', vals.memo || '');
 
       fileList.forEach((file) => {
-        if (file.originFileObj) {
-          formData.append('files', file.originFileObj);
+        const fileToUpload = file.originFileObj || file;
+        if (fileToUpload instanceof File) {
+          formData.append('files', fileToUpload);
         }
       });
 
@@ -158,8 +159,9 @@ export default function ExamSheetsStudentTab({ studentId }) {
         <Space size="small" wrap>
           {(r.attachments || []).map(att => {
             const isImage = checkFileIsImage(att.filename);
+            const fileUrl = att.path.startsWith('http') ? att.path : `/api${att.path}`;
             return (
-               <a key={att.filename} href={`/api${att.path}`} target="_blank" rel="noopener noreferrer">
+               <a key={att.filename} href={fileUrl} target="_blank" rel="noopener noreferrer">
                  {isImage ? <PictureOutlined style={{fontSize: 20}} /> : <FilePdfOutlined style={{fontSize: 20, color:'#ff4d4f'}} />}
                </a>
             );

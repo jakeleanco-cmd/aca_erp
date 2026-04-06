@@ -64,6 +64,8 @@ const formativeExamSchema = new mongoose.Schema(
       mimetype: { type: String, required: true },
       size: { type: Number, required: true },
       path: { type: String, required: true },
+      googleFileId: { type: String },
+      webViewLink: { type: String },
     }],
   },
   { timestamps: true }

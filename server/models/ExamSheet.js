@@ -6,6 +6,8 @@ const attachmentSchema = new mongoose.Schema({
   mimetype: { type: String, required: true },
   size: { type: Number, required: true },
   path: { type: String, required: true },
+  googleFileId: { type: String },
+  webViewLink: { type: String },
 });
 
 const examSheetSchema = new mongoose.Schema(

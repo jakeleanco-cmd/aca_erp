@@ -4,15 +4,18 @@ const path = require('path');
 const fs = require('fs');
 const ExamPaper = require('../models/ExamPaper');
 const { requireAuth } = require('../middleware/auth');
+const { uploadWithCleanup, deleteFile } = require('../services/googleDriveService');
 
 const router = express.Router();
 
 // 업로드 디렉토리 설정
-const uploadDir = path.join(__dirname, '..', 'uploads');
+const uploadDir = process.env.VERCEL ? '/tmp/uploads' : path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadDir)) {
   try {
     fs.mkdirSync(uploadDir, { recursive: true });
-  } catch (err) {}
+  } catch (err) {
+    console.error('업로드 디렉토리 생성 실패:', err);
+  }
 }
 
 const storage = multer.diskStorage({
@@ -61,13 +64,20 @@ router.post('/', upload.array('files', 5), async (req, res) => {
   try {
     const { title, category, examType, schoolLevel, gradeLabel, semester, examTerm, level, totalQuestions, memo } = req.body;
     
-    const attachments = (req.files || []).map(file => ({
-      filename: file.filename,
-      originalName: file.originalname,
-      mimetype: file.mimetype,
-      size: file.size,
-      path: `/uploads/${file.filename}`
-    }));
+    // 구글 드라이브 업로드 처리
+    const attachments = [];
+    for (const file of (req.files || [])) {
+      const driveData = await uploadWithCleanup(file);
+      attachments.push({
+        filename: file.filename,
+        originalName: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+        path: driveData.webViewLink, // DB에는 웹 뷰 링크를 기본 경로로 저장
+        googleFileId: driveData.id,
+        webViewLink: driveData.webViewLink
+      });
+    }
 
     const paper = await ExamPaper.create({
       title, category, examType, schoolLevel, gradeLabel, semester, examTerm, level,
@@ -98,13 +108,25 @@ router.put('/:id', upload.array('files', 5), async (req, res) => {
     }
 
     const retained = paper.attachments.filter(a => parsedExisting.includes(a.filename));
-    const newFiles = (req.files || []).map(file => ({
-      filename: file.filename,
-      originalName: file.originalname,
-      mimetype: file.mimetype,
-      size: file.size,
-      path: `/uploads/${file.filename}`
-    }));
+    
+    // 새 파일 구글 드라이브 업로드
+    const newFiles = [];
+    for (const file of (req.files || [])) {
+      try {
+        const driveData = await uploadWithCleanup(file);
+        newFiles.push({
+          filename: file.filename,
+          originalName: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size,
+          path: driveData.webViewLink,
+          googleFileId: driveData.id,
+          webViewLink: driveData.webViewLink
+        });
+      } catch (uploadErr) {
+        console.error('파일 업로드 중 에러:', uploadErr);
+      }
+    }
 
     paper.title = title || paper.title;
     paper.category = category || paper.category;
@@ -133,12 +155,16 @@ router.delete('/:id', async (req, res) => {
     const paper = await ExamPaper.findByIdAndDelete(req.params.id);
     if (!paper) return res.status(404).json({ message: '찾을 수 없음' });
 
-    paper.attachments.forEach(file => {
-      const filePath = path.join(uploadDir, file.filename);
-      if (fs.existsSync(filePath)) {
-        try { fs.unlinkSync(filePath); } catch(e) {}
+    for (const file of paper.attachments) {
+      if (file.googleFileId) {
+        await deleteFile(file.googleFileId);
+      } else {
+        const filePath = path.join(uploadDir, file.filename);
+        if (fs.existsSync(filePath)) {
+          try { fs.unlinkSync(filePath); } catch(e) {}
+        }
       }
-    });
+    }
 
     res.json({ ok: true });
   } catch (err) {
@@ -159,11 +185,17 @@ router.post('/batch-delete', async (req, res) => {
     const papers = await ExamPaper.find({ _id: { $in: ids } });
     
     for (const paper of papers) {
-      // 파일 삭제
-      paper.attachments?.forEach(file => {
-        const filePath = path.join(uploadDir, file.filename);
-        if (fs.existsSync(filePath)) try { fs.unlinkSync(filePath); } catch(e) {}
-      });
+      // 파일 삭제 (드라이브 및 로컬)
+      if (paper.attachments) {
+        for (const file of paper.attachments) {
+          if (file.googleFileId) {
+            await deleteFile(file.googleFileId);
+          } else {
+            const filePath = path.join(uploadDir, file.filename);
+            if (fs.existsSync(filePath)) try { fs.unlinkSync(filePath); } catch(e) {}
+          }
+        }
+      }
       await ExamPaper.findByIdAndDelete(paper._id);
     }
 
@@ -181,10 +213,16 @@ router.delete('/', async (req, res) => {
     const papers = await ExamPaper.find({});
     
     for (const paper of papers) {
-      paper.attachments?.forEach(file => {
-        const filePath = path.join(uploadDir, file.filename);
-        if (fs.existsSync(filePath)) try { fs.unlinkSync(filePath); } catch(e) {}
-      });
+      if (paper.attachments) {
+        for (const file of paper.attachments) {
+          if (file.googleFileId) {
+            await deleteFile(file.googleFileId);
+          } else {
+            const filePath = path.join(uploadDir, file.filename);
+            if (fs.existsSync(filePath)) try { fs.unlinkSync(filePath); } catch(e) {}
+          }
+        }
+      }
     }
 
     await ExamPaper.deleteMany({});
