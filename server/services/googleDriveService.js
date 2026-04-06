@@ -37,7 +37,12 @@ async function uploadFile(file) {
 
   try {
     // 한글 파일명 깨짐 방지: multer는 기본적으로 latin1으로 읽어오므로 utf8로 다시 인코딩해줍니다.
-    const decodedName = Buffer.from(file.originalname, 'binary').toString('utf8');
+    // 단, 로컬 마이그레이션 등 이미 UTF-8인 경우는 skipDecoding 플래그를 사용합니다.
+    const decodedName = file.skipDecoding 
+      ? file.originalname 
+      : Buffer.from(file.originalname, 'latin1').toString('utf8');
+    
+    console.log(`[Google Drive] 파일명 인코딩 변환: ${file.originalname} -> ${decodedName}`);
     
     console.log(`[Google Drive] 업로드 시작: ${decodedName}`);
     const response = await drive.files.create({

@@ -1,0 +1,289 @@
+[
+    {
+        "series": "쎈연산",
+        "year": 2026,
+        "curriculum": "2022개정",
+        "grade_level": "초등",
+        "grade": 4,
+        "semester": "1",
+        "subject": "수학",
+        "chapters": [
+            {
+                "chapter_no": "1",
+                "chapter_title": "큰 수",
+                "topics": []
+            },
+            {
+                "chapter_no": "2",
+                "chapter_title": "각도",
+                "topics": []
+            },
+            {
+                "chapter_no": "3",
+                "chapter_title": "곱셈과 나눗셈",
+                "topics": []
+            },
+            {
+                "chapter_no": "4",
+                "chapter_title": "평면도형의 이동",
+                "topics": []
+            },
+            {
+                "chapter_no": "5",
+                "chapter_title": "막대그래프",
+                "topics": []
+            },
+            {
+                "chapter_no": "6",
+                "chapter_title": "규칙 찾기",
+                "topics": []
+            }
+        ]
+    },
+    {
+        "series": "디딤돌(기본+응용)",
+        "year": 2026,
+        "curriculum": "2022개정",
+        "grade_level": "초등",
+        "grade": 4,
+        "semester": "2",
+        "subject": "수학",
+        "chapters": [
+            {
+                "chapter_no": "1",
+                "chapter_title": "분수의 덧셈과 뺄셈",
+                "topics": []
+            },
+            {
+                "chapter_no": "2",
+                "chapter_title": "삼각형",
+                "topics": []
+            },
+            {
+                "chapter_no": "3",
+                "chapter_title": "소수의 덧셈과 뺄셈",
+                "topics": []
+            },
+            {
+                "chapter_no": "4",
+                "chapter_title": "사각형",
+                "topics": []
+            },
+            {
+                "chapter_no": "5",
+                "chapter_title": "꺾은선그래프",
+                "topics": []
+            },
+            {
+                "chapter_no": "6",
+                "chapter_title": "다각형",
+                "topics": []
+            }
+        ]
+    },
+    {
+        "series": "쎈",
+        "year": 2026,
+        "curriculum": "2022개정",
+        "grade_level": "초등",
+        "grade": 5,
+        "semester": "1",
+        "subject": "수학",
+        "chapters": [
+            {
+                "chapter_no": "1",
+                "chapter_title": "자연수의 혼합 계산",
+                "topics": []
+            },
+            {
+                "chapter_no": "2",
+                "chapter_title": "약수와 배수",
+                "topics": []
+            },
+            {
+                "chapter_no": "3",
+                "chapter_title": "규칙과 대응",
+                "topics": []
+            },
+            {
+                "chapter_no": "4",
+                "chapter_title": "약분과 통분",
+                "topics": []
+            },
+            {
+                "chapter_no": "5",
+                "chapter_title": "분수의 덧셈과 뺄셈",
+                "topics": []
+            },
+            {
+                "chapter_no": "6",
+                "chapter_title": "다각형의 둘레와 넓이",
+                "topics": []
+            }
+        ]
+    },
+    {
+        "series": "최상위S",
+        "year": 2026,
+        "curriculum": "2022개정",
+        "grade_level": "초등",
+        "grade": 5,
+        "semester": "2",
+        "subject": "수학",
+        "chapters": [
+            {
+                "chapter_no": "1",
+                "chapter_title": "수의 범위와 어림하기",
+                "topics": []
+            },
+            {
+                "chapter_no": "2",
+                "chapter_title": "분수의 곱셈",
+                "topics": []
+            },
+            {
+                "chapter_no": "3",
+                "chapter_title": "합동과 대칭",
+                "topics": []
+            },
+            {
+                "chapter_no": "4",
+                "chapter_title": "소수의 곱셈",
+                "topics": []
+            },
+            {
+                "chapter_no": "5",
+                "chapter_title": "직육면체",
+                "topics": []
+            },
+            {
+                "chapter_no": "6",
+                "chapter_title": "평균과 가능성",
+                "topics": []
+            }
+        ]
+    },
+    {
+        "series": "최상위",
+        "year": 2026,
+        "curriculum": "2022개정",
+        "grade_level": "초등",
+        "grade": 6,
+        "semester": "1",
+        "subject": "수학",
+        "chapters": [
+            {
+                "chapter_no": "1",
+                "chapter_title": "분수의 나눗셈",
+                "topics": []
+            },
+            {
+                "chapter_no": "2",
+                "chapter_title": "각기둥과 각뿔",
+                "topics": []
+            },
+            {
+                "chapter_no": "3",
+                "chapter_title": "소수의 나눗셈",
+                "topics": []
+            },
+            {
+                "chapter_no": "4",
+                "chapter_title": "비와 비율",
+                "topics": []
+            },
+            {
+                "chapter_no": "5",
+                "chapter_title": "여러 가지 그래프",
+                "topics": []
+            },
+            {
+                "chapter_no": "6",
+                "chapter_title": "직육면체의 겉넓이와 부피",
+                "topics": []
+            }
+        ]
+    },
+    {
+        "series": "왕수학(최상위)",
+        "year": 2026,
+        "curriculum": "2022개정",
+        "grade_level": "초등",
+        "grade": 6,
+        "semester": "2",
+        "subject": "수학",
+        "chapters": [
+            {
+                "chapter_no": "1",
+                "chapter_title": "분수의 나눗셈",
+                "topics": []
+            },
+            {
+                "chapter_no": "2",
+                "chapter_title": "입체도형",
+                "topics": []
+            },
+            {
+                "chapter_no": "3",
+                "chapter_title": "소수의 나눗셈",
+                "topics": []
+            },
+            {
+                "chapter_no": "4",
+                "chapter_title": "비례식과 비례배분",
+                "topics": []
+            },
+            {
+                "chapter_no": "5",
+                "chapter_title": "원의 넓이",
+                "topics": []
+            },
+            {
+                "chapter_no": "6",
+                "chapter_title": "가능성과 통계",
+                "topics": []
+            }
+        ]
+    },
+    {
+        "series": "빅터연산",
+        "year": 2026,
+        "curriculum": "2022개정",
+        "grade_level": "초등",
+        "grade": 4,
+        "semester": "1",
+        "subject": "수학",
+        "chapters": [
+            {
+                "chapter_no": "1",
+                "chapter_title": "큰 수",
+                "topics": []
+            },
+            {
+                "chapter_no": "2",
+                "chapter_title": "각도",
+                "topics": []
+            },
+            {
+                "chapter_no": "3",
+                "chapter_title": "곱셈과 나눗셈",
+                "topics": []
+            },
+            {
+                "chapter_no": "4",
+                "chapter_title": "평면도형의 이동",
+                "topics": []
+            },
+            {
+                "chapter_no": "5",
+                "chapter_title": "막대그래프",
+                "topics": []
+            },
+            {
+                "chapter_no": "6",
+                "chapter_title": "규칙 찾기",
+                "topics": []
+            }
+        ]
+    }
+]

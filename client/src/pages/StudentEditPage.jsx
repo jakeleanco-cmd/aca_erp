@@ -6,6 +6,7 @@ import client from '../api/client';
 import { SCHOOL_LEVELS, STUDENT_STATUSES } from '../constants/learning';
 import ExamSheetsStudentTab from './ExamSheetsStudentTab';
 import FormativeExamTab from './FormativeExamTab';
+import MidtermPrepMatrixTab from './MidtermPrepMatrixTab';
 
 export default function StudentEditPage() {
   const { id } = useParams();
@@ -167,7 +168,7 @@ export default function StudentEditPage() {
     {
       key: 'midterm-prep',
       label: '내신준비평가',
-      children: <FormativeExamTab category="내신준비평가" studentId={id} />,
+      children: <MidtermPrepMatrixTab studentId={id} />,
     },
   ];
 
