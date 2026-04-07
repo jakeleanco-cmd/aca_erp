@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, Button, message, Input, Popconfirm, Space, Typography, Modal } from 'antd';
+import { Table, Button, message, Input, Popconfirm, Space, Typography, Modal, Select } from 'antd';
 import { DeleteOutlined, SearchOutlined, CodeOutlined } from '@ant-design/icons';
 import client from '../api/client';
 
@@ -9,6 +9,11 @@ export default function TextbooksPage() {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState([]);
   const [searchText, setSearchText] = useState('');
+
+  // 필터 상태
+  const [filterLevel, setFilterLevel] = useState('전체');
+  const [filterGrade, setFilterGrade] = useState('전체');
+  const [filterStep, setFilterStep] = useState('전체');
 
   // JSON 일괄 등록 상태
   const [jsonModalOpen, setJsonModalOpen] = useState(false);
@@ -79,13 +84,21 @@ export default function TextbooksPage() {
     }
   };
 
+  // 필터 옵션 산출
+  const filterOptions = {
+    levels: ['전체', ...new Set(rows.map(r => r.gradeLevel))].filter(Boolean),
+    grades: ['전체', ...new Set(rows.map(r => String(r.grade)))].filter(v => v !== 'undefined').sort(),
+    steps: ['전체', ...new Set(rows.map(r => r.learningLevel))].filter(Boolean),
+  };
+
   const filteredRows = rows.filter((r) => {
     const search = searchText.toLowerCase();
-    return (
-      r.title?.toLowerCase().includes(search) ||
-      r.gradeLevel?.toLowerCase().includes(search) ||
-      r.grade?.toString().includes(search)
-    );
+    const matchSearch = !search || r.title?.toLowerCase().includes(search);
+    const matchLevel = filterLevel === '전체' || r.gradeLevel === filterLevel;
+    const matchGrade = filterGrade === '전체' || String(r.grade) === filterGrade;
+    const matchStep = filterStep === '전체' || r.learningLevel === filterStep;
+
+    return matchSearch && matchLevel && matchGrade && matchStep;
   });
 
   const columns = [
@@ -165,29 +178,74 @@ export default function TextbooksPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
-        <div>
-          <h2 style={{ margin: 0 }}>교재 관리</h2>
-          <Typography.Text type="secondary" style={{ fontSize: 13 }}>
-            등록된 시스템 교재 리스트를 검색하고 관리할 수 있습니다. (총 {filteredRows.length}종)
-          </Typography.Text>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>교재 관리</h2>
+            <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+              등록된 시스템 교재 리스트를 검색하고 관리할 수 있습니다. (전체 {rows.length}종 / 필터결과 {filteredRows.length}종)
+            </Typography.Text>
+          </div>
+          <Space wrap>
+            <Button icon={<CodeOutlined />} onClick={() => setJsonModalOpen(true)} style={{ borderRadius: 8 }}>
+              JSON등록
+            </Button>
+            <Button type="primary" onClick={() => navigate('/textbooks/new')} style={{ borderRadius: 8 }}>
+              교재 등록
+            </Button>
+          </Space>
         </div>
-        <Space wrap>
-          <Input
-            placeholder="교재명, 학년 검색"
-            prefix={<SearchOutlined style={{ color: '#888' }} />}
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: 220 }}
-            allowClear
-          />
-          <Button icon={<CodeOutlined />} onClick={() => setJsonModalOpen(true)}>
-            JSON등록
-          </Button>
-          <Button type="primary" onClick={() => navigate('/textbooks/new')}>
-            교재 등록
-          </Button>
-        </Space>
+
+        {/* 필터 영역 */}
+        <div style={{ 
+          background: '#f8f9fa', 
+          padding: '16px', 
+          borderRadius: '12px', 
+          display: 'flex', 
+          flexWrap: 'wrap', 
+          gap: '20px',
+          alignItems: 'center',
+          marginBottom: 16,
+          border: '1px solid #eee'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: '#555' }}>학교급:</span>
+            <Select 
+              value={filterLevel} 
+              onChange={setFilterLevel} 
+              style={{ width: 100 }}
+              options={filterOptions.levels.map(v => ({ label: v, value: v }))}
+            />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: '#555' }}>학년:</span>
+            <Select 
+              value={filterGrade} 
+              onChange={setFilterGrade} 
+              style={{ width: 100 }}
+              options={filterOptions.grades.map(v => ({ label: v === '전체' ? v : `${v}학년`, value: v }))}
+            />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: '#555' }}>학습수준:</span>
+            <Select 
+              value={filterStep} 
+              onChange={setFilterStep} 
+              style={{ width: 110 }}
+              options={filterOptions.steps.map(v => ({ label: v, value: v }))}
+            />
+          </div>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Input
+              placeholder="교재명 검색"
+              prefix={<SearchOutlined style={{ color: '#888' }} />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: 220, borderRadius: 8 }}
+              allowClear
+            />
+          </div>
+        </div>
       </div>
 
       <Table
