@@ -106,6 +106,40 @@ export default function TimetablePage() {
                     <List.Item 
                       style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}
                       actions={[
+                        // 수납 상태 버튼
+                        !stu.billId ? (
+                          <Popconfirm 
+                            key="gen-bill"
+                            title="당월 고지서를 생성하시겠습니까?" 
+                            onConfirm={() => generateBill(stu._id, slot.yearMonth)}
+                          >
+                            <Button size="small" type="dashed" icon={<PlusOutlined />} style={{ fontSize: 11 }}>
+                              고지서
+                            </Button>
+                          </Popconfirm>
+                        ) : stu.billStatus === '미납' ? (
+                          <Space key="pay-group" size={4}>
+                            <Button 
+                              size="small" 
+                              icon={<CreditCardOutlined />} 
+                              onClick={() => payCard(stu.billId)}
+                              style={{ fontSize: 11, padding: '0 4px' }}
+                            >
+                              카드
+                            </Button>
+                            <Button 
+                              size="small" 
+                              icon={<DollarOutlined />} 
+                              onClick={() => payCash(stu.billId)}
+                              style={{ fontSize: 11, padding: '0 4px' }}
+                            >
+                              현금
+                            </Button>
+                          </Space>
+                        ) : (
+                          <Tag key="paid-tag" color="green" bordered={false} style={{ fontSize: 10, margin: 0 }}>수납완료</Tag>
+                        ),
+                        // 관리 버튼
                         <Button 
                           key="detail"
                           type="text" 
