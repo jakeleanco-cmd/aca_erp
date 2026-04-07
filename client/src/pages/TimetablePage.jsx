@@ -107,13 +107,23 @@ export default function TimetablePage() {
                       style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}
                       actions={[
                         <Button 
-                          key="manage"
+                          key="detail"
                           type="text" 
                           size="small"
-                          icon={<RightOutlined />}
-                          style={{ color: 'var(--primary-vibrant)' }}
+                          style={{ color: '#888', fontSize: 12 }}
+                          onClick={() => navigate(`/students/${stu._id}`)}
+                        >
+                          상세보기
+                        </Button>,
+                        <Button 
+                          key="learning"
+                          type="link" 
+                          size="small"
+                          style={{ fontSize: 12, fontWeight: 600 }}
                           onClick={() => navigate(`/students/${stu._id}/learning`)}
-                        />
+                        >
+                          학습관리
+                        </Button>
                       ]}
                     >
                       <List.Item.Meta
@@ -126,44 +136,7 @@ export default function TimetablePage() {
                             <UserOutlined style={{ color: 'var(--primary-vibrant)' }} />
                           </div>
                         }
-                        title={
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                            <span style={{ fontWeight: 600 }}>{stu.name}</span>
-                            
-                            {/* 수납 상태 및 버튼 영역 */}
-                            {!stu.billId ? (
-                              <Popconfirm 
-                                title="당월 고지서를 생성하시겠습니까?" 
-                                onConfirm={() => generateBill(stu._id, slot.yearMonth)}
-                              >
-                                <Button size="small" type="dashed" icon={<PlusOutlined />} style={{ fontSize: 11 }}>
-                                  고지서 생성
-                                </Button>
-                              </Popconfirm>
-                            ) : stu.billStatus === '미납' ? (
-                              <Space size={4}>
-                                <Button 
-                                  size="small" 
-                                  icon={<CreditCardOutlined />} 
-                                  onClick={() => payCard(stu.billId)}
-                                  style={{ fontSize: 11, padding: '0 4px' }}
-                                >
-                                  카드
-                                </Button>
-                                <Button 
-                                  size="small" 
-                                  icon={<DollarOutlined />} 
-                                  onClick={() => payCash(stu.billId)}
-                                  style={{ fontSize: 11, padding: '0 4px' }}
-                                >
-                                  현금
-                                </Button>
-                              </Space>
-                            ) : (
-                              <Tag color="green" bordered={false} style={{ fontSize: 10, margin: 0 }}>수납완료</Tag>
-                            )}
-                          </div>
-                        }
+                        title={<span style={{ fontWeight: 600 }}>{stu.name}</span>}
                         description={<span style={{ fontSize: 12 }}>{stu.schoolLevel} {stu.gradeLabel}</span>}
                       />
                     </List.Item>

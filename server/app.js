@@ -5,7 +5,7 @@ const { connectDb } = require('./db');
 const app = express();
 
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 /**
  * MongoDB 연결을 요청마다 시도하지만, db.js 캐시로 실제 연결은 한 번만 유지된다.

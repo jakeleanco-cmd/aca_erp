@@ -76,14 +76,23 @@ export default function TextbookEditPage() {
           <Form.Item name="publishYear" label="출판년도" rules={[{ required: true }]} style={{ width: '120px', margin: 0 }}>
             <InputNumber min={1990} max={2100} style={{ width: '100%' }} />
           </Form.Item>
-          <Form.Item name="schoolLevel" label="학년구분" rules={[{ required: true }]} style={{ width: '120px', margin: 0 }}>
+          <Form.Item name="gradeLevel" label="학교급" rules={[{ required: true }]} style={{ width: '120px', margin: 0 }}>
             <Select options={SCHOOL_LEVELS.map((v) => ({ value: v, label: v }))} />
           </Form.Item>
-          <Form.Item name="gradeLabel" label="학년/학기" rules={[{ required: true }]} style={{ width: '180px', margin: 0 }}>
-            <Input placeholder="예: 1학년 1학기" />
+          <Form.Item name="grade" label="학년(숫자)" rules={[{ required: true }]} style={{ width: '120px', margin: 0 }}>
+            <InputNumber min={1} max={6} style={{ width: '100%' }} placeholder="예: 3" />
           </Form.Item>
           <Form.Item name="learningLevel" label="학습수준" rules={[{ required: true }]} style={{ width: '120px', margin: 0 }}>
             <Select options={TEXTBOOK_LEVELS.map((v) => ({ value: v, label: v }))} />
+          </Form.Item>
+          <Form.Item name="series" label="시리즈 (옵션)" style={{ width: '150px', margin: 0 }}>
+            <Input placeholder="예: 쎈, 최상위" />
+          </Form.Item>
+          <Form.Item name="curriculum" label="교육과정 (옵션)" style={{ width: '150px', margin: 0 }}>
+            <Input placeholder="예: 2022개정" />
+          </Form.Item>
+          <Form.Item name="semester" label="학기 (옵션)" style={{ width: '120px', margin: 0 }}>
+            <Input placeholder="예: 1학기" />
           </Form.Item>
           <Form.Item name="title" label="교재명" rules={[{ required: true }]} style={{ flex: '1 1 250px', margin: 0 }}>
             <Input placeholder="교재 이름을 입력하세요" />

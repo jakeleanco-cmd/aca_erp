@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "concurrently -n api,web -c blue,green \"npm run dev:api\" \"npm run dev:client\"",
-    "dev:api": "node server/dev.js",
+    "dev:api": "nodemon --watch server server/dev.js",
     "dev:client": "npm run dev --prefix client",
     "build": "cd client && npm run build",
     "vercel-build": "cd client && npm install && npm run build",
@@ -22,6 +22,7 @@
     "mysql2": "^3.20.0"
   },
   "devDependencies": {
-    "concurrently": "^9.0.0"
+    "concurrently": "^9.0.0",
+    "nodemon": "^3.1.14"
   }
 }

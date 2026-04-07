@@ -41,6 +41,11 @@ export default function LearningPage() {
   const [assessCtx, setAssessCtx] = useState(null);
   const [filterMode, setFilterMode] = useState('진행중'); // '진행중' (완료 제외) or '전체'
 
+  // 교재 선택 필터 (모달 내)
+  const [bookFilterSchool, setBookFilterSchool] = useState(null);
+  const [bookFilterGrade, setBookFilterGrade] = useState(null);
+  const [bookFilterLevel, setBookFilterLevel] = useState(null);
+
   const loadAll = async () => {
     const [stu, learn, books] = await Promise.all([
       client.get(`/students/${studentId}`),
@@ -67,6 +72,9 @@ export default function LearningPage() {
 
   const openAdd = () => {
     addForm.resetFields();
+    setBookFilterSchool(null);
+    setBookFilterGrade(null);
+    setBookFilterLevel(null);
     setAddOpen(true);
   };
 
@@ -171,6 +179,20 @@ export default function LearningPage() {
     return null;
   }
 
+  // --- 모달 교재 필터 옵션 산출 ---
+  const filterProps = {
+    schools: [...new Set(textbooks.map(b => b.gradeLevel))].filter(Boolean),
+    grades: [...new Set(textbooks.map(b => b.grade))].filter(Boolean).sort((a,b)=>a-b),
+    levels: [...new Set(textbooks.map(b => b.learningLevel))].filter(Boolean),
+  };
+
+  const filteredTextbooks = textbooks.filter(b => {
+    if (bookFilterSchool && b.gradeLevel !== bookFilterSchool) return false;
+    if (bookFilterGrade && b.grade !== bookFilterGrade) return false;
+    if (bookFilterLevel && b.learningLevel !== bookFilterLevel) return false;
+    return true;
+  });
+
   const items = learnings
     .filter((L) => {
       if (filterMode === '진행중') return L.status !== '완료';
@@ -193,7 +215,7 @@ export default function LearningPage() {
               wordBreak: 'keep-all',
               flex: '1 1 auto'
             }}>
-              {L.textbook?.title || '교재'} — {L.textbook?.gradeLabel || ''}
+              {L.textbook?.title || '교재'}
             </Typography.Text>
             <Tag
               color={L.status === '완료' ? 'green' : L.status === '보류중' ? 'orange' : 'processing'}
@@ -482,13 +504,46 @@ export default function LearningPage() {
           <Form.Item name="learningType" label="학습종류" rules={[{ required: true }]}>
             <Select options={LEARNING_TYPE_ORDER.map((t) => ({ value: t, label: t }))} />
           </Form.Item>
-          <Form.Item name="textbook" label="교재" rules={[{ required: true }]}>
+
+          <div style={{ marginBottom: 16 }}>
+            <Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>
+              교재 필터 <span style={{ fontSize: 12, color: '#888', fontWeight: 'normal' }}>(선택사항)</span>
+            </Typography.Text>
+            <Space size="small" wrap>
+              <Select
+                placeholder="학교급"
+                allowClear
+                style={{ width: 100 }}
+                value={bookFilterSchool}
+                onChange={setBookFilterSchool}
+                options={filterProps.schools.map((s) => ({ value: s, label: s }))}
+              />
+              <Select
+                placeholder="학년"
+                allowClear
+                style={{ width: 100 }}
+                value={bookFilterGrade}
+                onChange={setBookFilterGrade}
+                options={filterProps.grades.map((s) => ({ value: s, label: s }))}
+              />
+              <Select
+                placeholder="학습수준"
+                allowClear
+                style={{ width: 100 }}
+                value={bookFilterLevel}
+                onChange={setBookFilterLevel}
+                options={filterProps.levels.map((s) => ({ value: s, label: s }))}
+              />
+            </Space>
+          </div>
+
+          <Form.Item name="textbook" label={`교재 선택 (${filteredTextbooks.length}권)`} rules={[{ required: true }]}>
             <Select
               showSearch
               optionFilterProp="label"
-              options={textbooks.map((b) => ({
+              options={filteredTextbooks.map((b) => ({
                 value: b._id,
-                label: `[${b.schoolLevel}] ${b.title} - ${b.gradeLabel} (${b.publishYear})`,
+                label: `[${b.gradeLevel}] ${b.title} - ${b.grade}학년 (${b.publishYear})`,
               }))}
             />
           </Form.Item>

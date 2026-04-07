@@ -25,11 +25,13 @@ const chapterSchema = new mongoose.Schema(
 const textbookSchema = new mongoose.Schema(
   {
     publishYear: { type: Number, required: true },
-    schoolLevel: { type: String, required: true, enum: SCHOOL_LEVELS },
-    /** "3학년" 등 표기 통일은 프론트에서 안내 */
-    gradeLabel: { type: String, required: true, trim: true },
+    gradeLevel: { type: String, required: true, enum: SCHOOL_LEVELS },
+    grade: { type: Number, required: true },
     title: { type: String, required: true, trim: true },
     learningLevel: { type: String, required: true, enum: TEXTBOOK_LEVELS },
+    curriculum: { type: String, trim: true },
+    semester: { type: String, trim: true },
+    series: { type: String, trim: true },
     chapters: { type: [chapterSchema], default: [] },
   },
   { timestamps: true }

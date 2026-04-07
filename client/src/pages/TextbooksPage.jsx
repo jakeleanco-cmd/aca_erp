@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, Button, message, Input, Popconfirm, Space, Typography } from 'antd';
-import { DeleteOutlined, SearchOutlined } from '@ant-design/icons';
+import { Table, Button, message, Input, Popconfirm, Space, Typography, Modal } from 'antd';
+import { DeleteOutlined, SearchOutlined, CodeOutlined } from '@ant-design/icons';
 import client from '../api/client';
 
 export default function TextbooksPage() {
@@ -9,6 +9,11 @@ export default function TextbooksPage() {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState([]);
   const [searchText, setSearchText] = useState('');
+
+  // JSON 일괄 등록 상태
+  const [jsonModalOpen, setJsonModalOpen] = useState(false);
+  const [jsonInput, setJsonInput] = useState('');
+  const [jsonLoading, setJsonLoading] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -36,12 +41,50 @@ export default function TextbooksPage() {
     }
   };
 
+  const handleJsonSubmit = async () => {
+    if (!jsonInput.trim()) {
+      message.error('JSON 데이터를 입력해주세요.');
+      return;
+    }
+    
+    let parsedData;
+    try {
+      parsedData = JSON.parse(jsonInput);
+    } catch (err) {
+      message.error('유효하지 않은 JSON 형식입니다. 구문을 확인해주세요.');
+      return;
+    }
+
+    if (!Array.isArray(parsedData)) {
+      message.error('데이터는 JSON 배열([]) 형태여야 합니다.');
+      return;
+    }
+
+    setJsonLoading(true);
+    try {
+      const { data } = await client.post('/textbooks/batch-json', { jsonData: parsedData });
+      Modal.success({
+        title: 'JSON 일괄 등록 완료',
+        content: `성공적으로 처리되었습니다.\n\n새로 추가됨: ${data.addedCount}건\n중복 생략됨(Skip): ${data.skippedCount}건`,
+        onOk: () => {
+           setJsonModalOpen(false);
+           setJsonInput('');
+           loadData();
+        }
+      });
+    } catch (err) {
+      message.error(err.response?.data?.message || '일괄 등록에 실패했습니다.');
+    } finally {
+      setJsonLoading(false);
+    }
+  };
+
   const filteredRows = rows.filter((r) => {
     const search = searchText.toLowerCase();
     return (
       r.title?.toLowerCase().includes(search) ||
-      r.schoolLevel?.toLowerCase().includes(search) ||
-      r.gradeLabel?.toLowerCase().includes(search)
+      r.gradeLevel?.toLowerCase().includes(search) ||
+      r.grade?.toString().includes(search)
     );
   });
 
@@ -61,17 +104,17 @@ export default function TextbooksPage() {
     },
     {
       title: '학년구분',
-      dataIndex: 'schoolLevel',
-      key: 'schoolLevel',
+      dataIndex: 'gradeLevel',
+      key: 'gradeLevel',
       align: 'center',
       render: (v) => <span style={{ whiteSpace: 'nowrap' }}>{v}</span>
     },
     {
       title: '학년',
-      dataIndex: 'gradeLabel',
-      key: 'gradeLabel',
+      dataIndex: 'grade',
+      key: 'grade',
       align: 'center',
-      render: (v) => <span style={{ whiteSpace: 'nowrap' }}>{v}</span>
+      render: (v) => <span style={{ whiteSpace: 'nowrap' }}>{v ? `${v}학년` : '-'}</span>
     },
     {
       title: '학습수준',
@@ -81,12 +124,11 @@ export default function TextbooksPage() {
       render: (v) => <span style={{ whiteSpace: 'nowrap' }}>{v}</span>
     },
     {
-      title: '구성', // '단원 수' 대신 '구성'으로 변경
+      title: '구성',
       key: 'structure',
       align: 'center',
       render: (_, r) => {
         const chapterCount = (r.chapters || []).length;
-        // 모든 단원의 topics 길이를 합산
         const topicCount = (r.chapters || []).reduce((acc, ch) => acc + (ch.topics || []).length, 0);
         return (
           <Space direction="vertical" size={0} style={{ fontSize: '12px', whiteSpace: 'nowrap' }}>
@@ -100,7 +142,7 @@ export default function TextbooksPage() {
       title: '작업',
       key: 'a',
       align: 'center',
-      width: 100, // 버튼 영역은 최소한의 고정 너비 유지
+      width: 100,
       render: (_, r) => (
         <Space size="small">
           <Button type="link" onClick={() => navigate(`/textbooks/${r._id}`)} style={{ padding: 0 }}>
@@ -139,6 +181,9 @@ export default function TextbooksPage() {
             style={{ width: 220 }}
             allowClear
           />
+          <Button icon={<CodeOutlined />} onClick={() => setJsonModalOpen(true)}>
+            JSON등록
+          </Button>
           <Button type="primary" onClick={() => navigate('/textbooks/new')}>
             교재 등록
           </Button>
@@ -154,6 +199,34 @@ export default function TextbooksPage() {
         scroll={{ x: 'max-content' }}
         size="middle"
       />
+
+      {/* JSON 일괄 등록 모달 */}
+      <Modal
+        title="JSON 형태 교재 일괄 등록"
+        open={jsonModalOpen}
+        onCancel={() => {
+          setJsonModalOpen(false);
+          setJsonInput('');
+        }}
+        onOk={handleJsonSubmit}
+        confirmLoading={jsonLoading}
+        okText="일괄 등록 실행"
+        cancelText="취소"
+        width={700}
+        destroyOnClose
+      >
+        <Typography.Paragraph type="secondary" style={{ marginBottom: 16 }}>
+          배열(`[]`)로 감싸진 교재 데이터 JSON 객체를 붙여넣어 주세요.<br/>
+          동일한 제목(title), 출판년도(year), 학교급, 학년 기호(gradeLabel)를 가진 교재는 중복으로 간주되어 자동으로 <strong style={{ color: '#ff4d4f' }}>Skip</strong> 처리됩니다.
+        </Typography.Paragraph>
+        <Input.TextArea
+          rows={16}
+          placeholder={`[\n  {\n    "series": "쎈",\n    "subject": "수학",\n    "grade_level": "중등",\n    ...\n  }\n]`}
+          value={jsonInput}
+          onChange={(e) => setJsonInput(e.target.value)}
+          style={{ fontFamily: 'monospace' }}
+        />
+      </Modal>
     </div>
   );
 }

@@ -108,26 +108,29 @@ async function seedTextbooks() {
   const list = await Textbook.insertMany([
     {
       publishYear: 2026,
-      schoolLevel: '초등',
-      gradeLabel: '3학년',
-      title: '[시드] 초등 수학 교재',
+      gradeLevel: '초등',
+      grade: 3,
+      title: '초3-1 디딤돌',
       learningLevel: '기본',
+      series: '디딤돌',
       chapters: commonChapters,
     },
     {
       publishYear: 2026,
-      schoolLevel: '중등',
-      gradeLabel: '2학년',
-      title: '[시드] 중등 수학 교재',
-      learningLevel: '심화',
+      gradeLevel: '중등',
+      grade: 2,
+      title: '중2-1 쎈',
+      learningLevel: '실력',
+      series: '쎈',
       chapters: commonChapters,
     },
     {
       publishYear: 2026,
-      schoolLevel: '고등',
-      gradeLabel: '1학년',
-      title: '[시드] 고등 수학 교재',
+      gradeLevel: '고등',
+      grade: 1,
+      title: '고1-1 블랙라벨',
       learningLevel: '심화',
+      series: '블랙라벨',
       chapters: commonChapters,
     },
   ]);
@@ -201,9 +204,9 @@ function highSlotIds(slots, index) {
 }
 
 async function seedStudentsAndLearning(slots, textbooks) {
-  const tbEl = textbooks.find((t) => t.schoolLevel === '초등');
-  const tbMid = textbooks.find((t) => t.schoolLevel === '중등');
-  const tbHi = textbooks.find((t) => t.schoolLevel === '고등');
+  const tbEl = textbooks.find((t) => t.gradeLevel === '초등');
+  const tbMid = textbooks.find((t) => t.gradeLevel === '중등');
+  const tbHi = textbooks.find((t) => t.gradeLevel === '고등');
 
   const baseDate = new Date('2025-03-01');
   const studentsPayload = [];
@@ -258,7 +261,7 @@ async function seedStudentsAndLearning(slots, textbooks) {
 
   const firstEl = created.find((s) => s.schoolLevel === '초등');
   const firstMid = created.find((s) => s.schoolLevel === '중등');
-  const firstHi = created.find((s) => s.schoolLevel === '고등');
+  const firstHi = created.find((s) => s.schoolLevel === '고등');  // 학생은 기존 schoolLevel 그대로 유지
 
   const learnings = [];
   if (firstEl && tbEl) {

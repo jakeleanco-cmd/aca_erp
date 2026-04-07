@@ -1,0 +1,73 @@
+[
+    {
+        "series": "라이트쎈",
+        "year": 2026,
+        "curriculum": "2022개정",
+        "grade_level": "중등",
+        "grade": 1,
+        "semester": "2",
+        "subject": "수학",
+        "chapters": [
+            {
+                "chapter_no": "I",
+                "chapter_title": "기본 도형",
+                "topics": [
+                    {
+                        "topic_no": "01",
+                        "topic_title": "기본 도형"
+                    },
+                    {
+                        "topic_no": "02",
+                        "topic_title": "위치 관계"
+                    },
+                    {
+                        "topic_no": "03",
+                        "topic_title": "평행선"
+                    },
+                    {
+                        "topic_no": "04",
+                        "topic_title": "작도와 합동"
+                    }
+                ]
+            },
+            {
+                "chapter_no": "II",
+                "chapter_title": "평면도형",
+                "topics": [
+                    {
+                        "topic_no": "05",
+                        "topic_title": "다각형"
+                    },
+                    {
+                        "topic_no": "06",
+                        "topic_title": "원과 부채꼴"
+                    }
+                ]
+            },
+            {
+                "chapter_no": "III",
+                "chapter_title": "입체도형",
+                "topics": [
+                    {
+                        "topic_no": "07",
+                        "topic_title": "다면체와 회전체"
+                    },
+                    {
+                        "topic_no": "08",
+                        "topic_title": "입체도형의 겉넓이와 부피"
+                    }
+                ]
+            },
+            {
+                "chapter_no": "IV",
+                "chapter_title": "통계",
+                "topics": [
+                    {
+                        "topic_no": "09",
+                        "topic_title": "도수분포표와 상대도수"
+                    }
+                ]
+            }
+        ]
+    },
+]
