@@ -16,6 +16,7 @@ export default function StudentEditPage() {
   const isNew = id === 'new';
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(!isNew);
+  const [student, setStudent] = useState(null);
   const [slots, setSlots] = useState([]);
 
   useEffect(() => {
@@ -41,6 +42,7 @@ export default function StudentEditPage() {
     (async () => {
       try {
         const { data } = await client.get(`/students/${id}`);
+        setStudent(data);
         form.setFieldsValue({
           ...data,
           enrolledAt: data.enrolledAt ? dayjs(data.enrolledAt) : null,
@@ -170,13 +172,13 @@ export default function StudentEditPage() {
     {
       key: 'midterm-prep',
       label: '내신준비평가',
-      children: <MidtermPrepMatrixTab studentId={id} />,
+      children: <MidtermPrepMatrixTab studentId={id} student={student} />,
     },
   ];
 
   return (
     <Card 
-      title="학생 상세 정보" 
+      title={isNew ? '학생 등록' : `학생 상세 정보: ${student?.name || ''}`} 
       bodyStyle={{ padding: '0 24px 24px' }}
       className="glass-effect"
     >

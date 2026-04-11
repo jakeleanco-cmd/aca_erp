@@ -25,14 +25,14 @@ const checkFileIsImage = (filename) => {
   return filename && filename.match(/\.(jpeg|jpg|gif|png)$/i) != null;
 };
 
-export default function MidtermPrepMatrixTab({ studentId }) {
+export default function MidtermPrepMatrixTab({ studentId, student }) {
   const [form] = Form.useForm();
   const [examSheetForm] = Form.useForm();
 
   // Filters
   const [filterYear, setFilterYear] = useState(CURRENT_YEAR);
-  const [filterLevel, setFilterLevel] = useState('중등');
-  const [filterGrade, setFilterGrade] = useState('중2');
+  const [filterLevel, setFilterLevel] = useState(student?.schoolLevel || '중등');
+  const [filterGrade, setFilterGrade] = useState(student?.gradeLabel || '중2');
   const [filterSemester, setFilterSemester] = useState('1학기');
   const [filterTerm, setFilterTerm] = useState('중간');
 
@@ -55,6 +55,14 @@ export default function MidtermPrepMatrixTab({ studentId }) {
       fetchMatrixData();
     }
   }, [studentId, filterYear, filterLevel, filterGrade, filterSemester, filterTerm]);
+  
+  // 학생 정보가 변경되면 필터 자동 동기화
+  useEffect(() => {
+    if (student) {
+      if (student.schoolLevel) setFilterLevel(student.schoolLevel);
+      if (student.gradeLabel) setFilterGrade(student.gradeLabel);
+    }
+  }, [student]);
 
   const fetchMatrixData = async () => {
     setLoading(true);
@@ -289,45 +297,67 @@ export default function MidtermPrepMatrixTab({ studentId }) {
     listType: "picture",
   };
 
-  const renderCell = (chapterName, examType) => {
-    const isMultiMode = examType === '학교기출';
+  const hasData = (chapterName, examType) => {
     const paper = papers.find(p => p.title === chapterName && p.examType === examType);
-    
-    // For FormativeExams, we match either by examPaper._id or (title + examType) 
     const cellRecords = records.filter(r => {
       const matchType = r.examType === examType;
       const matchChapter = r.chapterName === chapterName || r.title === chapterName;
-      // If paper exists, prefer examPaper matching, else fallback to title+type
       if (paper && r.examPaper) {
         return r.examPaper._id === paper._id || r.examPaper === paper._id;
       }
       return matchType && matchChapter;
     });
+    return !!paper || cellRecords.length > 0;
+  };
 
-    // Not assigned in master (No paper found for this combination)
+  const checkPassed = (rec) => {
+    if (!rec) return false;
+    if (rec.totalQuestions > 0 && rec.correctCount !== undefined && rec.correctCount !== null) {
+      return (rec.correctCount / rec.totalQuestions) >= 0.8;
+    }
+    return (rec.score || 0) >= 80;
+  };
+
+  const renderCellContent = (chapterName, examType) => {
+    const isMultiMode = examType === '학교기출';
+    const paper = papers.find(p => p.title === chapterName && p.examType === examType);
+    
+    // 이력 순서대로 정렬 (날짜 오름차순)
+    const cellRecords = records
+      .filter(r => {
+        const matchType = r.examType === examType;
+        const matchChapter = r.chapterName === chapterName || r.title === chapterName;
+        if (paper && r.examPaper) {
+          return r.examPaper._id === paper._id || r.examPaper === paper._id;
+        }
+        return matchType && matchChapter;
+      })
+      .sort((a, b) => dayjs(a.examDate).unix() - dayjs(b.examDate).unix());
+
     if (!paper && cellRecords.length === 0) {
-      return <div style={{ color: '#d9d9d9', textAlign: 'center' }}>-</div>;
+      return null;
     }
 
-    const renderSingleRecord = (rec) => {
+    const renderSingleRecord = (rec, idx) => {
       let displayScore = rec.score > 0 ? `${rec.score}점` : '-';
-      if (rec.totalQuestions > 0 && rec.correctCount !== undefined) {
+      if (rec.totalQuestions > 0 && rec.correctCount !== undefined && rec.correctCount !== null) {
          displayScore = `${rec.correctCount}/${rec.totalQuestions}`;
       }
-      const isGood = rec.score >= 80;
-      const isBad = rec.score < 60;
+      
+      const passed = checkPassed(rec);
+      const isBad = !passed && (rec.score < 60 || (rec.totalQuestions > 0 && (rec.correctCount / rec.totalQuestions) < 0.6));
 
       return (
         <div key={rec._id} style={{ marginBottom: 4 }}>
           <Space size="small">
              <Tag 
-               color={isGood ? 'green' : isBad ? 'red' : 'orange'} 
+               color={passed ? 'green' : isBad ? 'red' : 'orange'} 
                style={{ cursor: 'pointer', margin: 0 }}
                onClick={() => handleEditRecord(rec)}
              >
+               {idx > 0 ? '[재시험] ' : ''}
                {isMultiMode && rec.schoolName ? `${rec.schoolName}: ` : ''}{displayScore}
              </Tag>
-             {/* 학생의 제출 결과물 링크 */}
              {(rec.attachments || []).map(att => {
                 const fileUrl = att.path.startsWith('http') ? att.path : `/api${att.path}`;
                 return (
@@ -341,11 +371,15 @@ export default function MidtermPrepMatrixTab({ studentId }) {
       );
     };
 
+    const latestRecord = cellRecords[cellRecords.length - 1];
+    const latestPassed = checkPassed(latestRecord);
+    const showAddButton = isMultiMode || cellRecords.length === 0 || !latestPassed;
+
     return (
-      <div style={{ textAlign: 'center' }}>
-        {/* 원본 시험지 링크 (If master paper exists) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+        {/* 원본 시험지 링크 */}
         {paper && (
-          <div style={{ marginBottom: 4 }}>
+          <div>
             {paper.attachments?.map(att => {
               const fileUrl = att.path.startsWith('http') ? att.path : `/api${att.path}`;
               return (
@@ -360,93 +394,25 @@ export default function MidtermPrepMatrixTab({ studentId }) {
         )}
 
         {/* 기록 목록 */}
-        {cellRecords.map(renderSingleRecord)}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {cellRecords.map((rec, i) => renderSingleRecord(rec, i))}
+        </div>
 
-        {/* 플러스 버튼 (기록 추가) */}
-        {(isMultiMode || cellRecords.length === 0) && (
+        {/* 플러스 버튼 */}
+        {showAddButton && (
           <Button 
             type="dashed" 
             size="small" 
             icon={<PlusOutlined />} 
             onClick={() => handleOpenRecord(chapterName, examType, paper)}
-            style={{ fontSize: 11, marginTop: 4 }}
+            style={{ fontSize: 11 }}
           >
-            기록
+            {cellRecords.length > 0 ? '재시험 기록' : '기록'}
           </Button>
         )}
       </div>
     );
   };
-
-  // --- Table Columns ---
-  const columns = [
-    {
-      title: '단원명',
-      dataIndex: 'chapterName',
-      fixed: 'left',
-      width: 180,
-      render: (v) => <Typography.Text strong>{v}</Typography.Text>
-    },
-    ...MIDTERM_PREP_EXAM_TYPES.map(type => ({
-      title: type,
-      key: type,
-      width: 140,
-      render: (_, record) => renderCell(record.chapterName, type)
-    })),
-    {
-      title: '실전 내신성적 (8단계)',
-      key: 'actualResult',
-      width: 160,
-      align: 'center',
-      render: (_, record, index) => {
-        const obj = {
-          children: (
-            <div style={{ padding: '8px 0' }}>
-              {!matchedSheet ? (
-                <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenSheet}>
-                  성적 입력
-                </Button>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                  <Typography.Title level={4} style={{ margin: 0, color: '#1677ff' }}>
-                    {matchedSheet.score}점
-                  </Typography.Title>
-                  {matchedSheet.schoolName && <Typography.Text type="secondary">{matchedSheet.schoolName}</Typography.Text>}
-                  <Space>
-                    <Button size="small" type="default" icon={<EditOutlined />} onClick={handleEditSheet}>수정</Button>
-                    <Popconfirm title="정말 삭제하시겠습니까?" onConfirm={handleDeleteSheet}>
-                      <Button size="small" danger type="text" icon={<DeleteOutlined />} />
-                    </Popconfirm>
-                  </Space>
-                  <Space style={{ marginTop: 4 }}>
-                    {(matchedSheet.attachments || []).map(att => {
-                      const fileUrl = att.path.startsWith('http') ? att.path : `/api${att.path}`;
-                      return (
-                        <a key={att.filename} href={fileUrl} target="_blank" rel="noopener noreferrer" title="성적표/시험지 보기">
-                          {checkFileIsImage(att.filename) ? <PictureOutlined style={{fontSize: 20}} /> : <FilePdfOutlined style={{ fontSize: 20, color: '#ff4d4f' }} />}
-                        </a>
-                      );
-                    })}
-                  </Space>
-                </div>
-              )}
-            </div>
-          ),
-          props: {}
-        };
-        // RowSpan: 1번째 행에만 그리고, 나머지는 병합
-        if (index === 0) {
-          obj.props.rowSpan = chapters.length;
-        } else {
-          obj.props.rowSpan = 0;
-        }
-        return obj;
-      }
-    }
-  ];
-
-  const dataSource = chapters.map(c => ({ key: c, chapterName: c }));
-
   return (
     <div>
       {/* 1. 필터 영역 */}
@@ -475,17 +441,104 @@ export default function MidtermPrepMatrixTab({ studentId }) {
         </Space>
       </Card>
 
-      {/* 2. 매트릭스 뷰 */}
-      <Table
-        rowKey="key"
-        loading={loading}
-        columns={columns}
-        dataSource={dataSource}
-        pagination={false}
-        scroll={{ x: 'max-content' }}
-        bordered
-        locale={{ emptyText: '조건에 해당하는 시험지 마스터 데이터가 없습니다.' }}
-      />
+      {/* 2. 유형별 리스트 뷰 */}
+      <Spin spinning={loading}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {MIDTERM_PREP_EXAM_TYPES.map((type, idx) => {
+            const filteredChapters = chapters
+              .filter(c => hasData(c, type))
+              .map(c => ({ key: c, chapterName: c }));
+
+            if (filteredChapters.length === 0) return null;
+
+            return (
+              <Card 
+                key={type} 
+                title={<Typography.Title level={5} style={{ margin: 0 }}>{idx + 1}. {type}</Typography.Title>}
+                size="small"
+                styles={{ body: { padding: 0 } }}
+              >
+                <Table 
+                  dataSource={filteredChapters}
+                  pagination={false}
+                  size="small"
+                  bordered
+                  tableLayout="fixed"
+                  columns={[
+                    { 
+                      title: '단원명', 
+                      dataIndex: 'chapterName', 
+                      width: 200,
+                      render: (v) => <Typography.Text strong>{v}</Typography.Text>
+                    },
+                    { 
+                      title: '시험지 및 평가 기록', 
+                      render: (_, record) => renderCellContent(record.chapterName, type) 
+                    }
+                  ]}
+                />
+              </Card>
+            );
+          })}
+
+          {/* 8. 실전 내신성적 (8단계) */}
+          <Card 
+            title={<Typography.Title level={5} style={{ margin: 0, color: '#1677ff' }}>8. 실전 내신성적</Typography.Title>}
+            styles={{ body: { padding: '24px' } }}
+            style={{ borderColor: '#91caff', backgroundColor: '#e6f4ff', marginBottom: 24 }}
+          >
+            {!matchedSheet ? (
+              <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                <Button type="primary" size="large" icon={<PlusOutlined />} onClick={handleOpenSheet}>
+                  실전 성적 입력하기
+                </Button>
+                <div style={{ marginTop: 8, color: '#8c8c8c' }}>{filterYear}년도 {targetSheetPeriod} 성적 기록이 없습니다.</div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <Typography.Text type="secondary" style={{ fontSize: 13 }}>내신 점수</Typography.Text>
+                    <div style={{ fontSize: 32, fontWeight: 'bold', color: '#1677ff', lineHeight: 1 }}>
+                      {matchedSheet.score}점
+                    </div>
+                  </div>
+                  <div style={{ height: 40, width: 1, backgroundColor: '#d9d9d9' }} />
+                  <div>
+                    <Typography.Title level={5} style={{ margin: 0 }}>{matchedSheet.schoolName || '학교 정보 없음'}</Typography.Title>
+                    <Typography.Text type="secondary">{matchedSheet.subject} | {filterYear}년 {targetSheetPeriod}</Typography.Text>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <Space style={{ marginRight: 16 }}>
+                    {(matchedSheet.attachments || []).map(att => {
+                      const fileUrl = att.path.startsWith('http') ? att.path : `/api${att.path}`;
+                      return (
+                        <a key={att.filename} href={fileUrl} target="_blank" rel="noopener noreferrer" title="성적표/시험지 보기">
+                          {checkFileIsImage(att.filename) ? <PictureOutlined style={{fontSize: 28}} /> : <FilePdfOutlined style={{ fontSize: 28, color: '#ff4d4f' }} />}
+                        </a>
+                      );
+                    })}
+                  </Space>
+                  <Space>
+                    <Button type="default" icon={<EditOutlined />} onClick={handleEditSheet}>수정</Button>
+                    <Popconfirm title="정말 삭제하시겠습니까?" onConfirm={handleDeleteSheet}>
+                      <Button danger type="text" icon={<DeleteOutlined />} />
+                    </Popconfirm>
+                  </Space>
+                </div>
+              </div>
+            )}
+            {matchedSheet?.memo && (
+              <div style={{ marginTop: 16, padding: '12px', background: '#fff', borderRadius: 4, border: '1px solid #d9d9d9' }}>
+                <Typography.Text strong style={{ fontSize: 12, color: '#8c8c8c', display: 'block', marginBottom: 4 }}>특이사항 메모</Typography.Text>
+                <Typography.Text>{matchedSheet.memo}</Typography.Text>
+              </div>
+            )}
+          </Card>
+        </div>
+      </Spin>
 
       {/* 3. 내신진도(1-7단계) 기록 모달 */}
       <Modal
