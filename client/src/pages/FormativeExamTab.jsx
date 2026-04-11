@@ -28,6 +28,8 @@ const UNIT_EXAM_LEVELS = ['개념', '기초', '기본', '실력', '심화'];
 const SCHOOL_EXAM_PERIODS = ['중간고사', '기말고사'];
 const SCHOOL_LEVELS = ['초등', '중등', '고등'];
 
+const DATE_FORMATS = ['YYYY.MM.DD', 'YY.MM.DD', 'YYYY-MM-DD', 'YY-MM-DD', 'YYYYMMDD', 'YYMMDD'];
+
 const DEFAULT_QUESTION_COUNTS = {
   '레벨평가': { '초등': 25, '중등': 25, '고등': 25 },
   '과정평가': { '초등': 15, '중등': 20, '고등': 25 },
@@ -456,7 +458,7 @@ export default function FormativeExamTab({ category, studentId = null }) {
           </Space>
 
           <Form.Item name="examDate" label="시험일" rules={[{ required: true }]}>
-            <DatePicker style={{ width: '100%' }} />
+            <DatePicker style={{ width: '100%' }} format={DATE_FORMATS} />
           </Form.Item>
 
           <Form.Item name="memo" label="기타 메모(오답 이유 등)">

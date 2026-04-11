@@ -4,6 +4,8 @@ import dayjs from 'dayjs';
 import { CloseCircleOutlined } from '@ant-design/icons';
 import client from '../api/client';
 
+const MONTH_FORMATS = ['YYYY.MM', 'YY.MM', 'YYYY-MM', 'YY-MM', 'YYYYMM', 'YYMM'];
+
 export default function BillingPage() {
   const [month, setMonth] = useState(() => dayjs());
   const [loading, setLoading] = useState(false);
@@ -223,7 +225,7 @@ export default function BillingPage() {
       <Typography.Title level={4}>월별 수납</Typography.Title>
       <Space style={{ marginBottom: 16 }} wrap align="center" size={[8, 12]}>
         <span>대상 월:</span>
-        <DatePicker picker="month" value={month} onChange={(d) => d && setMonth(d)} allowClear={false} />
+        <DatePicker picker="month" format={MONTH_FORMATS} value={month} onChange={(d) => d && setMonth(d)} allowClear={false} />
         <Button type="primary" onClick={generate} loading={loading}>
           수강료 고지 생성
         </Button>

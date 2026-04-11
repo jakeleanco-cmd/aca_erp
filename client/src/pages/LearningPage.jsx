@@ -27,6 +27,8 @@ import {
   LEARNING_STATUSES
 } from '../constants/learning';
 
+const DATE_FORMATS = ['YYYY.MM.DD', 'YY.MM.DD', 'YYYY-MM-DD', 'YY-MM-DD', 'YYYYMMDD', 'YYMMDD'];
+
 export default function LearningPage() {
   const { id: studentId } = useParams();
   const navigate = useNavigate();
@@ -319,6 +321,7 @@ export default function LearningPage() {
                           size="small"
                           placeholder="시작"
                           style={{ width: '100%' }}
+                          format={DATE_FORMATS}
                           value={d ? dayjs(d) : null}
                           onChange={(v) => saveTopic(L._id, unitRecord.chapterOrder, i, { startedAt: v ? v.toISOString() : null })}
                         />
@@ -333,6 +336,7 @@ export default function LearningPage() {
                           size="small"
                           placeholder="완료"
                           style={{ width: '100%' }}
+                          format={DATE_FORMATS}
                           value={d ? dayjs(d) : null}
                           onChange={(v) => saveTopic(L._id, unitRecord.chapterOrder, i, { completedAt: v ? v.toISOString() : null })}
                         />
@@ -402,6 +406,7 @@ export default function LearningPage() {
                     size="small"
                     placeholder="시작"
                     style={{ width: '100%' }}
+                    format={DATE_FORMATS}
                     value={u.startedAt ? dayjs(u.startedAt) : null}
                     onChange={(d) => saveUnit(L._id, u.chapterOrder, { startedAt: d ? d.toISOString() : null })}
                   />
@@ -415,6 +420,7 @@ export default function LearningPage() {
                     size="small"
                     placeholder="완료"
                     style={{ width: '100%' }}
+                    format={DATE_FORMATS}
                     value={u.completedAt ? dayjs(u.completedAt) : null}
                     onChange={(d) => saveUnit(L._id, u.chapterOrder, { completedAt: d ? d.toISOString() : null })}
                   />
@@ -561,7 +567,7 @@ export default function LearningPage() {
             </Form.Item>
           )}
           <Form.Item name="assessedAt" label="평가일" rules={[{ required: true }]}>
-            <DatePicker style={{ width: '100%' }} />
+            <DatePicker style={{ width: '100%' }} format={DATE_FORMATS} />
           </Form.Item>
           <Form.Item name="result" label="결과" rules={[{ required: true }]}>
             <Input.TextArea rows={3} placeholder="점수 또는 평가 내용" />

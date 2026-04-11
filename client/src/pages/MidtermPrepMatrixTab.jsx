@@ -17,6 +17,8 @@ const MIDTERM_PREP_EXAM_TYPES = [
   '최다오답', '고난이도', '학교기출',
 ];
 
+const DATE_FORMATS = ['YYYY.MM.DD', 'YY.MM.DD', 'YYYY-MM-DD', 'YY-MM-DD', 'YYYYMMDD', 'YYMMDD'];
+
 const CURRENT_YEAR = dayjs().year();
 
 const checkFileIsImage = (filename) => {
@@ -516,7 +518,7 @@ export default function MidtermPrepMatrixTab({ studentId }) {
           </Space>
 
           <Form.Item name="examDate" label="푼 날짜" rules={[{ required: true }]}>
-            <DatePicker style={{ width: '100%' }} />
+            <DatePicker style={{ width: '100%' }} format={DATE_FORMATS} />
           </Form.Item>
 
           <Form.Item name="memo" label="기타 메모(오답 이유 등)">

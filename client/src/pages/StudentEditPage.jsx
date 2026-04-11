@@ -8,6 +8,8 @@ import ExamSheetsStudentTab from './ExamSheetsStudentTab';
 import FormativeExamTab from './FormativeExamTab';
 import MidtermPrepMatrixTab from './MidtermPrepMatrixTab';
 
+const DATE_FORMATS = ['YYYY.MM.DD', 'YY.MM.DD', 'YYYY-MM-DD', 'YY-MM-DD', 'YYYYMMDD', 'YYMMDD'];
+
 export default function StudentEditPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -117,13 +119,13 @@ export default function StudentEditPage() {
           <Input placeholder="01012345678" />
         </Form.Item>
         <Form.Item name="enrolledAt" label="최초등록일" rules={[{ required: true }]}>
-          <DatePicker style={{ width: '100%' }} />
+          <DatePicker style={{ width: '100%' }} format={DATE_FORMATS} />
         </Form.Item>
         <Form.Item name="leftAt" label="퇴원일">
-          <DatePicker style={{ width: '100%' }} allowClear />
+          <DatePicker style={{ width: '100%' }} allowClear format={DATE_FORMATS} />
         </Form.Item>
         <Form.Item name="lastCounselingAt" label="마지막 상담일">
-          <DatePicker style={{ width: '100%' }} allowClear />
+          <DatePicker style={{ width: '100%' }} allowClear format={DATE_FORMATS} />
         </Form.Item>
         <Form.Item>
           <Space wrap>
