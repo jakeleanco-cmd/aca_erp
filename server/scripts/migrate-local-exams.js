@@ -49,7 +49,7 @@ async function migrate() {
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/aca_erp');
     console.log('✅ MongoDB 연결 성공');
 
-    const grades = ['중2', '중3'];
+    const grades = ['중1', '중2', '중3'];
     let totalCount = 0;
     let successCount = 0;
     let skipCount = 0;
@@ -85,7 +85,9 @@ async function migrate() {
               const existing = await ExamPaper.findOne({ 
                 title, 
                 gradeLabel: grade,
-                semester: semester 
+                semester: semester.includes('1학기') ? '1학기' : semester.includes('2학기') ? '2학기' : semester,
+                examTerm: term.includes('중간') ? '중간' : term.includes('기말') ? '기말' : term,
+                examType
               });
 
               if (existing) {

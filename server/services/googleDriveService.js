@@ -36,13 +36,25 @@ async function uploadFile(file) {
   }
 
   try {
-    // 한글 파일명 깨짐 방지: multer는 기본적으로 latin1으로 읽어오므로 utf8로 다시 인코딩해줍니다.
-    // 단, 로컬 마이그레이션 등 이미 UTF-8인 경우는 skipDecoding 플래그를 사용합니다.
-    const decodedName = file.skipDecoding 
-      ? file.originalname 
-      : Buffer.from(file.originalname, 'latin1').toString('utf8');
+    // 한글 파일명 깨짐 방지: 
+    // 1. 브라우저에서 업로드된 경우(Multer) latin1 -> utf8 변환이 필요할 수 있음
+    // 2. 모든 경우에 대해 macOS NFD(자음/모음 분리) 현상을 방지하기 위해 NFC 정규화 수행
+    let name = file.originalname;
+    if (!file.skipDecoding) {
+      try {
+        const latin1Buffer = Buffer.from(file.originalname, 'latin1');
+        const utf8String = latin1Buffer.toString('utf8');
+        // 실제로 변환이 필요한 경우(멀티바이트 문자가 포함된 경우)만 적용
+        if (utf8String !== file.originalname) {
+          name = utf8String;
+        }
+      } catch (e) {
+        console.warn('[Google Drive] 파일명 디코딩 중 에러 (원본 사용):', e.message);
+      }
+    }
+    const decodedName = name.normalize('NFC');
     
-    console.log(`[Google Drive] 파일명 인코딩 변환: ${file.originalname} -> ${decodedName}`);
+    console.log(`[Google Drive] 파일명 정규화 및 인코딩: ${file.originalname} -> ${decodedName}`);
     
     console.log(`[Google Drive] 업로드 시작: ${decodedName}`);
     const response = await drive.files.create({
