@@ -413,32 +413,49 @@ export default function MidtermPrepMatrixTab({ studentId, student }) {
       </div>
     );
   };
+  const handleSyncExams = async () => {
+    setLoading(true);
+    try {
+      const res = await client.post('/exam-papers/sync-local');
+      message.success(`동기화 완료: ${res.data.successCount}개 추가, ${res.data.skipCount}개 건너뜀`);
+      fetchMatrixData();
+    } catch (err) {
+      console.error(err);
+      message.error(err.response?.data?.message || '동기화 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div>
       {/* 1. 필터 영역 */}
       <Card size="small" style={{ marginBottom: 16, backgroundColor: '#fafafa' }}>
-        <Space wrap size={[16, 12]}>
-          <Space>
-            <Typography.Text strong>년도</Typography.Text>
-            <InputNumber value={filterYear} onChange={setFilterYear} style={{ width: 80 }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+          <Space wrap size={[16, 12]}>
+            <Space>
+              <Typography.Text strong>년도</Typography.Text>
+              <InputNumber value={filterYear} onChange={setFilterYear} style={{ width: 80 }} />
+            </Space>
+            <Space>
+              <Typography.Text strong>학교급</Typography.Text>
+              <Select value={filterLevel} onChange={setFilterLevel} options={SCHOOL_LEVELS.map(v=>({label:v, value:v}))} style={{ width: 80 }} />
+            </Space>
+            <Space>
+              <Typography.Text strong>학년</Typography.Text>
+              <Select value={filterGrade} onChange={setFilterGrade} options={['중1','중2','중3','고1','고2','고3'].map(v=>({label:v, value:v}))} style={{ width: 80 }} />
+            </Space>
+            <Space>
+              <Typography.Text strong>학기</Typography.Text>
+              <Select value={filterSemester} onChange={setFilterSemester} options={['1학기','2학기'].map(v=>({label:v, value:v}))} style={{ width: 80 }} />
+            </Space>
+            <Space>
+              <Typography.Text strong>고사</Typography.Text>
+              <Select value={filterTerm} onChange={setFilterTerm} options={['중간','기말'].map(v=>({label:v, value:v}))} style={{ width: 80 }} />
+            </Space>
           </Space>
-          <Space>
-            <Typography.Text strong>학교급</Typography.Text>
-            <Select value={filterLevel} onChange={setFilterLevel} options={SCHOOL_LEVELS.map(v=>({label:v, value:v}))} style={{ width: 80 }} />
-          </Space>
-          <Space>
-            <Typography.Text strong>학년</Typography.Text>
-            <Select value={filterGrade} onChange={setFilterGrade} options={['중1','중2','중3','고1','고2','고3'].map(v=>({label:v, value:v}))} style={{ width: 80 }} />
-          </Space>
-          <Space>
-            <Typography.Text strong>학기</Typography.Text>
-            <Select value={filterSemester} onChange={setFilterSemester} options={['1학기','2학기'].map(v=>({label:v, value:v}))} style={{ width: 80 }} />
-          </Space>
-          <Space>
-            <Typography.Text strong>고사</Typography.Text>
-            <Select value={filterTerm} onChange={setFilterTerm} options={['중간','기말'].map(v=>({label:v, value:v}))} style={{ width: 80 }} />
-          </Space>
-        </Space>
+          <Button onClick={handleSyncExams} type="primary" loading={loading}>시험지 갱신</Button>
+        </div>
       </Card>
 
       {/* 2. 유형별 리스트 뷰 */}

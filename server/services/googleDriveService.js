@@ -42,11 +42,17 @@ async function uploadFile(file) {
     let name = file.originalname;
     if (!file.skipDecoding) {
       try {
-        const latin1Buffer = Buffer.from(file.originalname, 'latin1');
-        const utf8String = latin1Buffer.toString('utf8');
-        // 실제로 변환이 필요한 경우(멀티바이트 문자가 포함된 경우)만 적용
-        if (utf8String !== file.originalname) {
-          name = utf8String;
+        // 모든 문자가 0~255 사이(latin1 영역)인지 검사하여
+        // 멀터(Multer)가 UTF-8을 한 글자씩 latin1으로 잘못 읽었을 때만 복구 시도
+        const isLatin1 = Array.from(name).every(c => c.charCodeAt(0) <= 255);
+        if (isLatin1) {
+          const latin1Buffer = Buffer.from(name, 'latin1');
+          const utf8String = latin1Buffer.toString('utf8');
+          
+          // 변환된 문자열에 깨짐(Replacement Character)이 없으면 적용
+          if (!utf8String.includes('\uFFFD') && utf8String !== name) {
+            name = utf8String;
+          }
         }
       } catch (e) {
         console.warn('[Google Drive] 파일명 디코딩 중 에러 (원본 사용):', e.message);

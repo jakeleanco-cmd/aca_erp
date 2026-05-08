@@ -11,8 +11,12 @@ import {
   UserOutlined,
   FileTextOutlined,
   FolderOpenOutlined,
+  MobileOutlined,
+  DesktopOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../store/authStore';
+import { useUiStore } from '../store/uiStore';
+import { useEffect } from 'react';
 
 const { Header, Content, Footer } = Layout;
 
@@ -31,6 +35,24 @@ export default function AppLayout() {
   const location = useLocation();
   const admin = useAuthStore((s) => s.admin);
   const logout = useAuthStore((s) => s.logout);
+  
+  const { viewMode, toggleViewMode } = useUiStore();
+
+  // 뷰 모드에 따라 #root 및 body 클래스 토글
+  useEffect(() => {
+    const root = document.getElementById('root');
+    if (root) {
+      root.classList.remove('view-mobile', 'view-web');
+      root.classList.add(`view-${viewMode}`);
+    }
+    
+    // 모바일 모드일 때만 배경 그라데이션 표시
+    if (viewMode === 'mobile') {
+      document.body.classList.add('has-bg');
+    } else {
+      document.body.classList.remove('has-bg');
+    }
+  }, [viewMode]);
 
   const activeKey = menuItems.find(
     (m) => location.pathname === m.key || location.pathname.startsWith(`${m.key}/`)
@@ -68,6 +90,27 @@ export default function AppLayout() {
           <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: -0.5 }}>{currentPageLabel}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {/* 화면 모드 전환 버튼 */}
+          <div 
+            onClick={toggleViewMode}
+            style={{ 
+              cursor: 'pointer', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.05)',
+              transition: 'all 0.3s ease',
+              color: 'var(--text-muted)'
+            }}
+            title={viewMode === 'mobile' ? '웹 모드로 전환' : '모바일 모드로 전환'}
+            className="btn-tap"
+          >
+            {viewMode === 'mobile' ? <DesktopOutlined /> : <MobileOutlined />}
+          </div>
+
           <Badge dot status="processing">
             <UserOutlined style={{ fontSize: 20, color: 'var(--text-muted)' }} />
           </Badge>
@@ -97,7 +140,7 @@ export default function AppLayout() {
           left: '50%',
           transform: 'translateX(-50%)',
           width: '100%',
-          maxWidth: 'var(--max-app-width)',
+          maxWidth: viewMode === 'mobile' ? 'var(--max-app-width)' : '100%',
           height: 72,
           padding: '0 10px',
           background: 'rgba(15, 20, 28, 0.95)',

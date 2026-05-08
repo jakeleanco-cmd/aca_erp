@@ -1,8 +1,14 @@
 const { google } = require('googleapis');
 const dotenv = require('dotenv');
 const path = require('path');
+const fs = require('fs');
 
-dotenv.config({ path: path.join(__dirname, '../.env') });
+const envPath = path.join(__dirname, '../../.env');
+const envLocalPath = path.join(__dirname, '../../.env.local');
+
+if (fs.existsSync(envPath)) dotenv.config({ path: envPath });
+if (fs.existsSync(envLocalPath)) dotenv.config({ path: envLocalPath, override: true });
+
 
 const getDriveContext = () => {
   const oauth2Client = new google.auth.OAuth2(
@@ -45,8 +51,21 @@ async function fixFilenames() {
 
     for (const file of files) {
       const originalName = file.name;
-      // NFC 정규화 수행
-      const fixedName = originalName.normalize('NFC');
+      let fixedName = originalName;
+
+      // 1) latin1 -> utf8 복구 로직 (이전에 잘못 인코딩되어 올라간 텍스트 복구)
+      const isLatin1 = Array.from(originalName).every(c => c.charCodeAt(0) <= 255);
+      if (isLatin1) {
+        const latin1Buffer = Buffer.from(originalName, 'latin1');
+        const utf8String = latin1Buffer.toString('utf8');
+        // utf8로 변환 시 깨짐(Replacement Character)이 없고 실제 변환이 일어났다면
+        if (!utf8String.includes('\uFFFD') && utf8String !== originalName) {
+           fixedName = utf8String;
+        }
+      }
+
+      // 2) NFC(macOS 자음모음 분리) 정규화 수행
+      fixedName = fixedName.normalize('NFC');
 
       if (originalName !== fixedName) {
         console.log(`🔧 보정 필요: "${originalName}" -> "${fixedName}"`);

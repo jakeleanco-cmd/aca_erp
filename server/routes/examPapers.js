@@ -5,6 +5,7 @@ const fs = require('fs');
 const ExamPaper = require('../models/ExamPaper');
 const { requireAuth } = require('../middleware/auth');
 const { uploadWithCleanup, deleteFile } = require('../services/googleDriveService');
+const { syncLocalExams } = require('../services/examMigrationService');
 
 const router = express.Router();
 
@@ -34,6 +35,19 @@ const upload = multer({
 });
 
 router.use(requireAuth);
+
+/**
+ * 로컬 단말 시험지 데이터베이스 갱신/동기화 
+ */
+router.post('/sync-local', async (req, res) => {
+  try {
+    const result = await syncLocalExams();
+    res.json({ ok: true, ...result });
+  } catch (error) {
+    console.error('동기화 실패:', error);
+    res.status(500).json({ message: '동기화 중 오류가 발생했습니다.' });
+  }
+});
 
 /**
  * 시험지 목록 조회

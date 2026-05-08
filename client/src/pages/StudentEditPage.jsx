@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Form, Input, InputNumber, Select, DatePicker, Button, Card, message, Spin, Space, Tabs } from 'antd';
 import dayjs from 'dayjs';
 import client from '../api/client';
@@ -13,7 +13,8 @@ const DATE_FORMATS = ['YYYY.MM.DD', 'YY.MM.DD', 'YYYY-MM-DD', 'YY-MM-DD', 'YYYYM
 export default function StudentEditPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const isNew = id === 'new';
+  const location = useLocation();
+  const isNew = id === 'new' || location.pathname.endsWith('/new');
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(!isNew);
   const [student, setStudent] = useState(null);
@@ -32,9 +33,12 @@ export default function StudentEditPage() {
 
   useEffect(() => {
     if (isNew) {
+      const params = new URLSearchParams(location.search);
+      const slotId = params.get('slotId');
+      
       form.setFieldsValue({
         enrolledAt: dayjs(),
-        classSlotIds: [],
+        classSlotIds: slotId ? [slotId] : [],
         status: '재원',
       });
       return;
@@ -57,7 +61,7 @@ export default function StudentEditPage() {
         setLoading(false);
       }
     })();
-  }, [id, isNew, form, navigate]);
+  }, [id, isNew, form, navigate, location.pathname]);
 
   const onFinish = async (values) => {
     const payload = {
