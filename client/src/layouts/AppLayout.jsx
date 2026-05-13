@@ -18,7 +18,7 @@ import { useAuthStore } from '../store/authStore';
 import { useUiStore } from '../store/uiStore';
 import { useEffect } from 'react';
 
-const { Header, Content, Footer } = Layout;
+const { Header, Content, Sider } = Layout;
 
 const menuItems = [
   { key: '/timetable', icon: <CalendarOutlined />, label: '시간표' },
@@ -47,7 +47,7 @@ export default function AppLayout() {
       root.classList.add(`view-${viewMode}`);
     }
     
-    // 모바일 모드일 때만 배경 그라데이션 표시
+    // 모바일 모드일 때만 배경 그라데이션 표시 (PC 모드에서는 전체 화면 사용)
     if (viewMode === 'mobile') {
       document.body.classList.add('has-bg');
     } else {
@@ -63,133 +63,202 @@ export default function AppLayout() {
 
   return (
     <Layout style={{ minHeight: '100vh', background: 'transparent' }}>
-      {/* 프리미엄 상단 헤더 */}
-      <Header
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-          width: '100%',
-          height: 64,
-          padding: '0 20px',
-          background: 'rgba(10, 14, 20, 0.8)',
-          backdropFilter: 'blur(10px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ 
-            width: 32, height: 32, borderRadius: 8, 
-            background: 'var(--primary-gradient)', 
-            display: 'flex', alignItems: 'center', justifyContent: 'center' 
-          }}>
-            <BookOutlined style={{ color: '#fff', fontSize: 18 }} />
+      {/* PC 모드일 때만 왼쪽 사이드바 표시 */}
+      {viewMode === 'web' && (
+        <Sider
+          width={200}
+          theme="dark"
+          style={{
+            background: 'rgba(15, 20, 28, 0.9)',
+            borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+            position: 'sticky',
+            top: 0,
+            height: '100vh',
+          }}
+        >
+          <div style={{ height: 64, display: 'flex', alignItems: 'center', padding: '0 20px', gap: 10 }}>
+            <div style={{ 
+              width: 28, height: 28, borderRadius: 6, 
+              background: 'var(--primary-gradient)', 
+              display: 'flex', alignItems: 'center', justifyContent: 'center' 
+            }}>
+              <BookOutlined style={{ color: '#fff', fontSize: 16 }} />
+            </div>
+            <span style={{ fontWeight: 800, fontSize: 16, color: '#fff' }}>ACA ERP</span>
           </div>
-          <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: -0.5 }}>{currentPageLabel}</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          {/* 화면 모드 전환 버튼 */}
-          <div 
-            onClick={toggleViewMode}
-            style={{ 
-              cursor: 'pointer', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              background: 'rgba(255, 255, 255, 0.05)',
-              transition: 'all 0.3s ease',
-              color: 'var(--text-muted)'
-            }}
-            title={viewMode === 'mobile' ? '웹 모드로 전환' : '모바일 모드로 전환'}
-            className="btn-tap"
-          >
-            {viewMode === 'mobile' ? <DesktopOutlined /> : <MobileOutlined />}
-          </div>
-
-          <Badge dot status="processing">
-            <UserOutlined style={{ fontSize: 20, color: 'var(--text-muted)' }} />
-          </Badge>
-          <LogoutOutlined
-            style={{ fontSize: 20, color: '#ff4d4f', cursor: 'pointer' }}
-            onClick={() => {
-              logout();
-              navigate('/login');
-            }}
-          />
-        </div>
-      </Header>
-
-      {/* 메인 콘텐츠 영역 */}
-      <Content style={{ 
-        padding: '20px 20px 100px 20px', // 하단 내비바 공간 확보
-        overflowY: 'auto' 
-      }}>
-        <Outlet />
-      </Content>
-
-      {/* 모바일 우선 하단 내비게이션 바 */}
-      <Footer
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '100%',
-          maxWidth: viewMode === 'mobile' ? 'var(--max-app-width)' : '100%',
-          height: 72,
-          padding: '0 10px',
-          background: 'rgba(15, 20, 28, 0.95)',
-          backdropFilter: 'blur(20px)',
-          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-          display: 'flex',
-          justifyContent: 'space-around',
-          alignItems: 'center',
-          zIndex: 1000,
-        }}
-      >
-        {menuItems.map((item) => {
-          const isActive = activeKey === item.key;
-          return (
-            <div
-              key={item.key}
-              onClick={() => navigate(item.key)}
-              className="btn-tap"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                width: 48, // 7개 메뉴 수용을 위해 너비 축소 (60 -> 48)
-                color: isActive ? 'var(--primary-vibrant)' : 'var(--text-muted)',
-                transition: 'all 0.3s ease',
-              }}
-            >
-              <div style={{ 
-                fontSize: 20, // 아이콘 크기 약간 축소 (22 -> 20)
-                marginBottom: 2, // 여백 축소
-                transform: isActive ? 'translateY(-2px)' : 'none',
-                filter: isActive ? 'drop-shadow(0 0 8px rgba(99, 102, 241, 0.5))' : 'none'
-              }}>
+          <div style={{ padding: '10px 0' }}>
+            {menuItems.map((item) => (
+              <div
+                key={item.key}
+                onClick={() => navigate(item.key)}
+                style={{
+                  padding: '12px 20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  cursor: 'pointer',
+                  color: activeKey === item.key ? 'var(--primary-vibrant)' : 'var(--text-muted)',
+                  background: activeKey === item.key ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                  transition: 'all 0.2s ease',
+                  borderRight: activeKey === item.key ? '3px solid var(--primary-vibrant)' : 'none',
+                }}
+              >
                 {item.icon}
+                <span style={{ fontWeight: activeKey === item.key ? 600 : 400 }}>{item.label}</span>
               </div>
-              <span style={{ fontSize: 10, fontWeight: isActive ? 600 : 400 }}>{item.label}</span>
-              {isActive && (
-                <div style={{ 
-                  width: 4, height: 4, borderRadius: '50%', 
-                  background: 'var(--primary-vibrant)', marginTop: 4 
-                }} />
+            ))}
+          </div>
+        </Sider>
+      )}
+
+      <Layout style={{ background: 'transparent' }}>
+        {/* 상단 헤더 */}
+        <Header
+          style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 100,
+            width: '100%',
+            height: 64,
+            padding: '0 20px',
+            background: 'rgba(10, 14, 20, 0.8)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {viewMode === 'mobile' && (
+              <div style={{ 
+                width: 32, height: 32, borderRadius: 8, 
+                background: 'var(--primary-gradient)', 
+                display: 'flex', alignItems: 'center', justifyContent: 'center' 
+              }}>
+                <BookOutlined style={{ color: '#fff', fontSize: 18 }} />
+              </div>
+            )}
+            <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: -0.5 }}>{currentPageLabel}</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            {/* 화면 모드 전환 버튼 - 더 직관적인 UI */}
+            <div 
+              onClick={toggleViewMode}
+              style={{ 
+                cursor: 'pointer', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 8,
+                padding: '4px 12px',
+                borderRadius: 20,
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                transition: 'all 0.3s ease',
+                color: 'var(--text-muted)'
+              }}
+              className="btn-tap"
+            >
+              {viewMode === 'mobile' ? (
+                <>
+                  <DesktopOutlined style={{ fontSize: 16 }} />
+                  <span style={{ fontSize: 12, fontWeight: 600 }}>PC 모드</span>
+                </>
+              ) : (
+                <>
+                  <MobileOutlined style={{ fontSize: 16 }} />
+                  <span style={{ fontSize: 12, fontWeight: 600 }}>모바일 모드</span>
+                </>
               )}
             </div>
-          );
-        })}
-      </Footer>
+
+            <Badge dot status="processing">
+              <UserOutlined style={{ fontSize: 20, color: 'var(--text-muted)' }} />
+            </Badge>
+            <LogoutOutlined
+              style={{ fontSize: 20, color: '#ff4d4f', cursor: 'pointer' }}
+              onClick={() => {
+                logout();
+                navigate('/login');
+              }}
+            />
+          </div>
+        </Header>
+
+        {/* 메인 콘텐츠 영역 */}
+        <Content style={{ 
+          padding: viewMode === 'mobile' ? '20px 20px 100px 20px' : '24px', 
+          overflowY: 'auto' 
+        }}>
+          <div style={{ 
+            maxWidth: viewMode === 'web' ? '1200px' : '100%', 
+            margin: '0 auto' 
+          }}>
+            <Outlet />
+          </div>
+        </Content>
+
+        {/* 모바일 모드일 때만 하단 내비게이션 바 표시 */}
+        {viewMode === 'mobile' && (
+          <div
+            style={{
+              position: 'fixed',
+              bottom: 0,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '100%',
+              maxWidth: 'var(--max-app-width)',
+              height: 72,
+              padding: '0 10px',
+              background: 'rgba(15, 20, 28, 0.95)',
+              backdropFilter: 'blur(20px)',
+              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+              display: 'flex',
+              justifyContent: 'space-around',
+              alignItems: 'center',
+              zIndex: 1000,
+            }}
+          >
+            {menuItems.map((item) => {
+              const isActive = activeKey === item.key;
+              return (
+                <div
+                  key={item.key}
+                  onClick={() => navigate(item.key)}
+                  className="btn-tap"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    width: 48,
+                    color: isActive ? 'var(--primary-vibrant)' : 'var(--text-muted)',
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  <div style={{ 
+                    fontSize: 20, 
+                    marginBottom: 2, 
+                    transform: isActive ? 'translateY(-2px)' : 'none',
+                    filter: isActive ? 'drop-shadow(0 0 8px rgba(99, 102, 241, 0.5))' : 'none'
+                  }}>
+                    {item.icon}
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: isActive ? 600 : 400 }}>{item.label}</span>
+                  {isActive && (
+                    <div style={{ 
+                      width: 4, height: 4, borderRadius: '50%', 
+                      background: 'var(--primary-vibrant)', marginTop: 4 
+                    }} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Layout>
     </Layout>
   );
 }

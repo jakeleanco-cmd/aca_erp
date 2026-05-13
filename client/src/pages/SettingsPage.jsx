@@ -22,6 +22,7 @@ export default function SettingsPage() {
   const [form] = Form.useForm();
   const [templates, setTemplates] = useState([]);
   const [bankAccount, setBankAccount] = useState(DEFAULT_BANK);
+  const [shareUrl, setShareUrl] = useState('');
   const [loading, setLoading] = useState(false);
 
   const load = async () => {
@@ -31,6 +32,7 @@ export default function SettingsPage() {
       if (data && data.value) {
         setTemplates(data.value.templates || []);
         setBankAccount(data.value.bankAccount || DEFAULT_BANK);
+        setShareUrl(data.value.shareUrl || '');
       }
     } catch (err) {
       message.error('설정을 불러오지 못했습니다.');
@@ -43,7 +45,7 @@ export default function SettingsPage() {
     load();
   }, []);
 
-  const save = async (newTemplates, newBank) => {
+  const save = async (newTemplates, newBank, newShareUrl) => {
     setLoading(true);
     try {
       await client.post('/settings', {
@@ -51,6 +53,7 @@ export default function SettingsPage() {
         value: {
           templates: newTemplates,
           bankAccount: newBank,
+          shareUrl: newShareUrl,
         },
         description: '요일별 수강료 안내 메시지 템플릿 설정 (v2)',
       });
@@ -88,7 +91,7 @@ export default function SettingsPage() {
   };
 
   const handleSaveAll = () => {
-    save(templates, bankAccount);
+    save(templates, bankAccount, shareUrl);
   };
 
   return (
@@ -107,6 +110,16 @@ export default function SettingsPage() {
               value={bankAccount} 
               onChange={(e) => setBankAccount(e.target.value)} 
               placeholder="예: 농협 000-0000-0000 (이장원)"
+            />
+          </Form.Item>
+          <Form.Item 
+            label="카카오톡 공유 버튼 링크 (URL)" 
+            extra="안내 메시지 하단의 '학원 홈페이지 이동' 버튼 클릭 시 연결될 주소입니다."
+          >
+            <Input 
+              value={shareUrl} 
+              onChange={(e) => setShareUrl(e.target.value)} 
+              placeholder="예: https://jake-portal.vercel.app"
             />
           </Form.Item>
         </Form>

@@ -29,6 +29,12 @@ body,
 body {
   display: flex;
   justify-content: center;
+  transition: all 0.3s ease;
+}
+
+/* PC(웹) 모드일 때는 중앙 정렬 해제 */
+body:has(#root.view-web) {
+  display: block;
 }
 
 #root {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Input, Button, message, Spin } from 'antd';
-import { CopyOutlined } from '@ant-design/icons';
+import { CopyOutlined, CommentOutlined } from '@ant-design/icons';
 import { generateTuitionMessage } from '../utils/billMessageUtils';
 import client from '../api/client';
 
@@ -8,6 +8,7 @@ const { TextArea } = Input;
 
 export default function BillMessageModal({ visible, bill, onClose }) {
   const [content, setContent] = useState('');
+  const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -16,7 +17,8 @@ export default function BillMessageModal({ visible, bill, onClose }) {
         setLoading(true);
         try {
           const { data } = await client.get('/settings/bill_message_config_v2');
-          // data.value 에 templates, bankAccount 가 들어있음
+          // data.value 에 templates, bankAccount, shareUrl 가 들어있음
+          setConfig(data?.value);
           const generated = generateTuitionMessage(bill, data?.value);
           setContent(generated);
         } catch (err) {
@@ -54,6 +56,43 @@ export default function BillMessageModal({ visible, bill, onClose }) {
     }
   };
 
+  const handleKakaoShare = () => {
+    if (!content) return;
+    
+    const KAKAO_KEY = import.meta.env.VITE_KAKAO_JS_KEY;
+    
+    if (!KAKAO_KEY) {
+      return message.error('카카오 JavaScript 키가 설정되지 않았습니다. (client/.env 파일 확인)');
+    }
+
+    const kakao = window.Kakao;
+    if (!kakao) {
+      return message.error('카카오 SDK를 불러오지 못했습니다. 페이지를 새로고침해 보세요.');
+    }
+
+    // 설정된 공유 URL이 있으면 사용, 없으면 현재 접속 도메인 사용
+    const targetUrl = config?.shareUrl || window.location.origin;
+
+    try {
+      if (!kakao.isInitialized()) {
+        kakao.init(KAKAO_KEY);
+      }
+
+      kakao.Share.sendDefault({
+        objectType: 'text',
+        text: content,
+        link: {
+          mobileWebUrl: targetUrl,
+          webUrl: targetUrl,
+        },
+        buttonTitle: '학원 홈페이지 이동'
+      });
+    } catch (err) {
+      console.error('Kakao Share Error:', err);
+      message.error('카카오톡 전송 중 오류가 발생했습니다.');
+    }
+  };
+
   return (
     <Modal
       title="수강료 안내 메시지 미리보기"
@@ -65,13 +104,21 @@ export default function BillMessageModal({ visible, bill, onClose }) {
         </Button>,
         <Button 
           key="copy" 
-          type="primary" 
           icon={<CopyOutlined />} 
           onClick={handleCopy}
-          style={{ background: '#52c41a', borderColor: '#52c41a' }}
           disabled={loading || !content}
         >
           복사하기
+        </Button>,
+        <Button 
+          key="kakao" 
+          type="primary" 
+          icon={<CommentOutlined />} 
+          onClick={handleKakaoShare}
+          style={{ background: '#FEE500', borderColor: '#FEE500', color: '#000' }}
+          disabled={loading || !content}
+        >
+          카카오톡 전송
         </Button>,
       ]}
       width={500}
