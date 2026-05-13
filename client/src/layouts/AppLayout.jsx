@@ -27,7 +27,8 @@ const menuItems = [
   { key: '/exam-papers', icon: <FolderOpenOutlined />, label: '시험지' },
   { key: '/textbooks', icon: <BookOutlined />, label: '교재' },
   { key: '/billing', icon: <DollarOutlined />, label: '수납' },
-  { key: '/admins', icon: <SettingOutlined />, label: '관리' },
+  { key: '/admins', icon: <UserOutlined />, label: '관리' },
+  { key: '/settings', icon: <SettingOutlined />, label: '설정' },
 ];
 
 export default function AppLayout() {

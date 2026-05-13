@@ -104,6 +104,65 @@ router.post('/login', async (req, res) => {
   }
 });
 
+/** 아이디(이메일) 찾기 */
+router.post('/find-id-v2', async (req, res) => {
+  console.log('--- FIND-ID DEBUG ---');
+  console.log('Request Body:', req.body);
+  try {
+    const { name, registrationCode } = req.body;
+
+    const secretCode = process.env.ADMIN_REGISTRATION_CODE;
+    if (!secretCode || registrationCode !== secretCode) {
+      return res.status(403).json({ message: '가입 코드가 올바르지 않습니다.' });
+    }
+
+    const query = {};
+    if (name && String(name).trim()) {
+      query.name = String(name).trim();
+    }
+
+    const admins = await Admin.find(query).select('email name').lean();
+    if (admins.length === 0) {
+      return res.status(404).json({ message: '등록된 관리자 정보를 찾을 수 없습니다.' });
+    }
+
+    return res.json({ 
+      admins: admins.map(a => ({ email: a.email, name: a.name })),
+      message: `가입 코드로 등록된 아이디를 ${admins.length}건 찾았습니다.`
+    });
+  } catch (err) {
+    return handleAuthError(res, err, '아이디 찾기에 실패했습니다.');
+  }
+});
+
+/** 비밀번호 재설정 (가입 코드 필요) */
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, registrationCode, newPassword } = req.body;
+
+    const secretCode = process.env.ADMIN_REGISTRATION_CODE;
+    if (!secretCode || registrationCode !== secretCode) {
+      return res.status(403).json({ message: '가입 코드가 올바르지 않습니다.' });
+    }
+
+    if (!email || !newPassword) {
+      return res.status(400).json({ message: '이메일과 새 비밀번호는 필수입니다.' });
+    }
+
+    const admin = await Admin.findOne({ email: String(email).trim().toLowerCase() });
+    if (!admin) {
+      return res.status(404).json({ message: '해당 이메일의 관리자를 찾을 수 없습니다.' });
+    }
+
+    admin.passwordHash = await bcrypt.hash(newPassword, 10);
+    await admin.save();
+
+    return res.json({ message: '비밀번호가 성공적으로 재설정되었습니다. 다시 로그인해 주세요.' });
+  } catch (err) {
+    return handleAuthError(res, err, '비밀번호 재설정에 실패했습니다.');
+  }
+});
+
 router.get('/me', requireAuth, async (req, res) => {
   try {
     const admin = await Admin.findById(req.adminId).lean();

@@ -82,12 +82,11 @@ export default function RegisterFirstPage() {
         <Form layout="vertical" onFinish={onFinish} requiredMark={false}>
           <Form.Item 
             name="name" 
-            label={<span style={{ color: 'var(--text-muted)', fontSize: 13 }}>이름</span>}
-            rules={[{ required: true, message: '이름을 입력해 주세요.' }]}
+            label={<span style={{ color: 'var(--text-muted)', fontSize: 13 }}>이름 (선택)</span>}
           >
             <Input 
               prefix={<UserAddOutlined style={{ color: 'var(--text-muted)' }} />} 
-              placeholder="실명 또는 닉네임" 
+              placeholder="실명 또는 닉네임 (미입력 시 '관리자')" 
               style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
             />
           </Form.Item>

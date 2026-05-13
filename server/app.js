@@ -33,6 +33,7 @@ app.use('/api/timetable', require('./routes/timetable'));
 app.use('/api/learnings', require('./routes/learnings'));
 app.use('/api/assessments', require('./routes/assessments'));
 app.use('/api/bills', require('./routes/bills'));
+app.use('/api/settings', require('./routes/settings'));
 app.use('/api/exam-sheets', require('./routes/examSheets'));
 app.use('/api/formative-exams', require('./routes/formativeExams'));
 app.use('/api/exam-papers', require('./routes/examPapers'));

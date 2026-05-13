@@ -5,7 +5,9 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 
 const app = require('./app');
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+const PORT = parseInt(process.env.PORT, 10) || 3001;
+console.log(`[DEBUG] Attempting to start server on port: ${PORT}`);
+
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`API 서버 http://localhost:${PORT}`);
 });

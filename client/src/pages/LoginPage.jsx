@@ -58,8 +58,8 @@ export default function LoginPage() {
         <Form layout="vertical" onFinish={onFinish} requiredMark={false}>
           <Form.Item 
             name="email" 
-            label={<span style={{ color: 'var(--text-muted)', fontSize: 13 }}>이메일</span>}
-            rules={[{ required: true, message: '이메일을 입력해 주세요.' }]}
+            label={<span style={{ color: 'var(--text-muted)', fontSize: 13 }}>아이디 (이메일)</span>}
+            rules={[{ required: true, message: '아이디(이메일)를 입력해 주세요.' }]}
           >
             <Input 
               prefix={<UserOutlined style={{ color: 'var(--text-muted)' }} />} 
@@ -106,7 +106,16 @@ export default function LoginPage() {
         </Form>
       </Card>
 
-      <div style={{ marginTop: 24, textAlign: 'center' }}>
+      <div style={{ marginTop: 24, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
+          <Link to="/find-id" style={{ color: 'var(--text-muted)', fontSize: 14 }}>
+            <span style={{ color: 'var(--primary-vibrant)', fontWeight: 600 }}>아이디 찾기</span>
+          </Link>
+          <span style={{ color: 'rgba(255,255,255,0.1)' }}>|</span>
+          <Link to="/reset-password" style={{ color: 'var(--text-muted)', fontSize: 14 }}>
+            <span style={{ color: 'var(--primary-vibrant)', fontWeight: 600 }}>비밀번호 찾기</span>
+          </Link>
+        </div>
         <Link to="/register-first" style={{ color: 'var(--text-muted)', fontSize: 14 }}>
           계정이 없으신가요? <span style={{ color: 'var(--primary-vibrant)', fontWeight: 600 }}>관리자 가입</span>
         </Link>

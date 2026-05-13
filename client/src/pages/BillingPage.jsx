@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Table, Button, DatePicker, message, Space, Tag, Typography, Popconfirm } from 'antd';
 import dayjs from 'dayjs';
-import { CloseCircleOutlined } from '@ant-design/icons';
+import { CloseCircleOutlined, MessageOutlined } from '@ant-design/icons';
+import BillMessageModal from '../components/BillMessageModal';
 import client from '../api/client';
 
 const MONTH_FORMATS = ['YYYY.MM', 'YY.MM', 'YYYY-MM', 'YY-MM', 'YYYYMM', 'YYMM'];
@@ -10,6 +11,8 @@ export default function BillingPage() {
   const [month, setMonth] = useState(() => dayjs());
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState([]);
+  const [messageModalVisible, setMessageModalVisible] = useState(false);
+  const [selectedBill, setSelectedBill] = useState(null);
 
   const yearMonth = month.format('YYYY-MM');
 
@@ -195,6 +198,16 @@ export default function BillingPage() {
       width: 200,
       render: (_, r) => (
         <Space wrap size="small">
+          <Button 
+            size="small" 
+            icon={<MessageOutlined />} 
+            onClick={() => {
+              setSelectedBill(r);
+              setMessageModalVisible(true);
+            }}
+          >
+            안내문
+          </Button>
           {r.status === '미납' && (
             <>
               <Button size="small" type="primary" onClick={() => payCard(r._id)}>
@@ -295,6 +308,14 @@ export default function BillingPage() {
         pagination={{ pageSize: 30 }} 
         scroll={{ x: 670 }}
         size="small"
+      />
+      <BillMessageModal 
+        visible={messageModalVisible}
+        bill={selectedBill}
+        onClose={() => {
+          setMessageModalVisible(false);
+          setSelectedBill(null);
+        }}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Form, Input, InputNumber, Select, Button, Card, message, Spin, Switch, Space, Divider, Typography } from 'antd';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import client from '../api/client';
@@ -8,7 +8,8 @@ import { SCHOOL_LEVELS, TEXTBOOK_LEVELS } from '../constants/learning';
 export default function TextbookEditPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const isNew = id === 'new';
+  const location = useLocation();
+  const isNew = id === 'new' || location.pathname.endsWith('/new');
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(!isNew);
 
@@ -32,7 +33,7 @@ export default function TextbookEditPage() {
         setLoading(false);
       }
     })();
-  }, [id, isNew, form, navigate]);
+  }, [id, isNew, form, navigate, location.pathname]);
 
   const onFinish = async (values) => {
     // 폼 데이터 가공 (공백 제거 등)

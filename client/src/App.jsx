@@ -4,6 +4,8 @@ import { darkThemeConfig } from './theme/theme.js';
 import { useAuthStore } from './store/authStore';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterFirstPage from './pages/RegisterFirstPage.jsx';
+import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
+import FindIdPage from './pages/FindIdPage.jsx';
 import AppLayout from './layouts/AppLayout.jsx';
 import TimetablePage from './pages/TimetablePage.jsx';
 import StudentsPage from './pages/StudentsPage.jsx';
@@ -16,6 +18,7 @@ import BillingPage from './pages/BillingPage.jsx';
 import AdminsPage from './pages/AdminsPage.jsx';
 import ExamSheetsPage from './pages/ExamSheetsPage.jsx';
 import ExamPaperPage from './pages/ExamPaperPage.jsx';
+import SettingsPage from './pages/SettingsPage.jsx';
 
 function PrivateRoute({ children }) {
   const token = useAuthStore((s) => s.token);
@@ -32,6 +35,8 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register-first" element={<RegisterFirstPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/find-id" element={<FindIdPage />} />
           <Route
             path="/"
             element={
@@ -55,6 +60,7 @@ export default function App() {
             <Route path="admins" element={<AdminsPage />} />
             <Route path="exam-sheets" element={<ExamSheetsPage />} />
             <Route path="exam-papers" element={<ExamPaperPage />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

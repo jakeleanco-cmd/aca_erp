@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
     const { yearMonth } = req.query;
     const filter = yearMonth ? { yearMonth: String(yearMonth) } : {};
     const list = await MonthlyBill.find(filter)
-      .populate('student')
+      .populate({ path: 'student', populate: { path: 'classSlotIds' } })
       .sort({ yearMonth: -1, 'student.name': 1 })
       .lean();
     return res.json(list);
