@@ -24,6 +24,25 @@ router.get('/', async (req, res) => {
 });
 
 /**
+ * 특정 고지서 상세 조회
+ * 왜: 시간표 화면에서 개별 학생의 수강료 안내 메시지 모달을 띄울 때 학생의 클래스 슬롯 상세 정보 등이 함께 필요함.
+ */
+router.get('/:id', async (req, res) => {
+  try {
+    const bill = await MonthlyBill.findById(req.params.id)
+      .populate({ path: 'student', populate: { path: 'classSlotIds' } })
+      .lean();
+    if (!bill) {
+      return res.status(404).json({ message: '고지서를 찾을 수 없습니다.' });
+    }
+    return res.json(bill);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: '고지서 정보를 불러오지 못했습니다.' });
+  }
+});
+
+/**
  * 해당 월의 고지서 일괄 삭제
  * - 기본: 미납 고지서만 삭제
  * - includeAll=true: 납부완료 포함 전체 삭제 (주의: 되돌릴 수 없음)

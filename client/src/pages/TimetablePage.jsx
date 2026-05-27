@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, List, Button, Space, Typography, message, Spin, Tag, Empty, Popconfirm, Modal, Select, Dropdown } from 'antd';
-import { ClockCircleOutlined, UserOutlined, RightOutlined, CreditCardOutlined, DollarOutlined, PlusOutlined, CalendarOutlined, PlusCircleOutlined } from '@ant-design/icons';
+import { ClockCircleOutlined, UserOutlined, RightOutlined, CreditCardOutlined, DollarOutlined, PlusOutlined, CalendarOutlined, PlusCircleOutlined, MessageOutlined } from '@ant-design/icons';
 import client from '../api/client';
 import { useUiStore } from '../store/uiStore';
 import { useMemo } from 'react';
+import BillMessageModal from '../components/BillMessageModal';
 
 export default function TimetablePage() {
   const navigate = useNavigate();
@@ -16,8 +17,26 @@ export default function TimetablePage() {
   const [students, setStudents] = useState([]);
   const [targetStudentId, setTargetStudentId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [messageModalVisible, setMessageModalVisible] = useState(false);
+  const [selectedBill, setSelectedBill] = useState(null);
+  const [loadingBillId, setLoadingBillId] = useState(null);
 
   const weekdays = ['월', '화', '수', '목', '금', '토', '일'];
+
+  // 안내문 띄우기 위해 백엔드에서 단일 고지 정보를 가져오는 함수
+  const openMessageModal = async (billId) => {
+    if (!billId) return;
+    setLoadingBillId(billId);
+    try {
+      const { data } = await client.get(`/bills/${billId}`);
+      setSelectedBill(data);
+      setMessageModalVisible(true);
+    } catch (err) {
+      message.error('고지서 상세 정보를 불러오지 못했습니다.');
+    } finally {
+      setLoadingBillId(null);
+    }
+  };
 
   // 웹 모드용 그리드 데이터 가공
   const timeMatrix = useMemo(() => {
@@ -264,6 +283,19 @@ export default function TimetablePage() {
                                       </>
                                     ) : null}
 
+                                    {/* 수강료 안내 메시지 보기 버튼 */}
+                                    {stu.billId && (
+                                      <Button 
+                                        size="small" 
+                                        icon={<MessageOutlined />}
+                                        onClick={() => openMessageModal(stu.billId)}
+                                        loading={loadingBillId === stu.billId}
+                                        style={{ fontSize: 10, height: 22, padding: '0 4px', color: 'var(--primary-vibrant)', borderColor: 'var(--primary-vibrant)' }}
+                                      >
+                                        안내문
+                                      </Button>
+                                    )}
+
                                     <Button 
                                       size="small" 
                                       style={{ fontSize: 10, height: 22, padding: '0 4px' }}
@@ -370,6 +402,19 @@ export default function TimetablePage() {
                         ) : (
                           <Tag key="paid-tag" color="green" bordered={false} style={{ fontSize: 10, margin: 0 }}>수납완료</Tag>
                         ),
+                        // 수강료 안내 메시지 보기 버튼
+                        stu.billId && (
+                          <Button 
+                            key="message"
+                            size="small" 
+                            icon={<MessageOutlined />} 
+                            onClick={() => openMessageModal(stu.billId)}
+                            loading={loadingBillId === stu.billId}
+                            style={{ fontSize: 11, color: 'var(--primary-vibrant)', borderColor: 'var(--primary-vibrant)' }}
+                          >
+                            안내문
+                          </Button>
+                        ),
                         // 관리 버튼
                         <Button 
                           key="detail"
@@ -446,6 +491,14 @@ export default function TimetablePage() {
           }))}
         />
       </Modal>
+      <BillMessageModal 
+        visible={messageModalVisible}
+        bill={selectedBill}
+        onClose={() => {
+          setMessageModalVisible(false);
+          setSelectedBill(null);
+        }}
+      />
     </div>
   );
 }
