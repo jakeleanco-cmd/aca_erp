@@ -13,6 +13,7 @@ import {
   FolderOpenOutlined,
   MobileOutlined,
   DesktopOutlined,
+  DatabaseOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../store/authStore';
 import { useUiStore } from '../store/uiStore';
@@ -23,6 +24,7 @@ const { Header, Content, Sider } = Layout;
 const menuItems = [
   { key: '/timetable', icon: <CalendarOutlined />, label: '시간표' },
   { key: '/students', icon: <TeamOutlined />, label: '학생' },
+  { key: '/leanmath', icon: <DatabaseOutlined />, label: '린매쓰' },
   { key: '/exam-sheets', icon: <FileTextOutlined />, label: '성적' },
   { key: '/exam-papers', icon: <FolderOpenOutlined />, label: '시험지' },
   { key: '/textbooks', icon: <BookOutlined />, label: '교재' },

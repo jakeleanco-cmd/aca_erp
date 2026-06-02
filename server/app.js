@@ -29,6 +29,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/textbooks', require('./routes/textbooks'));
 app.use('/api/class-slots', require('./routes/classSlots'));
 app.use('/api/students', require('./routes/students'));
+app.use('/api/leanmath-students', require('./routes/leanmathStudents'));
 app.use('/api/timetable', require('./routes/timetable'));
 app.use('/api/learnings', require('./routes/learnings'));
 app.use('/api/assessments', require('./routes/assessments'));
