@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
-import { darkThemeConfig } from './theme/theme.js';
+import { lightThemeConfig } from './theme/theme.js';
 import { useAuthStore } from './store/authStore';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterFirstPage from './pages/RegisterFirstPage.jsx';
@@ -31,7 +31,7 @@ function PrivateRoute({ children }) {
 
 export default function App() {
   return (
-    <ConfigProvider theme={darkThemeConfig}>
+    <ConfigProvider theme={lightThemeConfig}>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />

@@ -1,15 +1,15 @@
 :root {
-  /* 프리미엄 다크 모드 색상 */
-  --bg-deep: #0a0e14;
-  --bg-card: rgba(255, 255, 255, 0.05);
+  /* 프리미엄 화이트(라이트) 모드 색상 */
+  --bg-deep: #f8fafc;
+  --bg-card: rgba(255, 255, 255, 0.75);
   --primary-vibrant: #4f46e5;
-  --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-  --accent-cyan: #06b6d4;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-blur: blur(12px);
-  --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  --accent-cyan: #0891b2;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --glass-blur: blur(16px);
+  --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.06);
   --max-app-width: 500px;
 }
 
@@ -41,7 +41,7 @@ body:has(#root.view-web) {
   width: 100%;
   min-height: 100vh;
   position: relative;
-  box-shadow: 0 0 100px rgba(0,0,0,0.5);
+  box-shadow: 0 0 50px rgba(0,0,0,0.05);
   background: var(--bg-deep);
   transition: max-width 0.3s ease; /* 부드러운 전환 효과 */
 }
@@ -60,7 +60,7 @@ body::before {
   content: "";
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
-  background: radial-gradient(circle at 20% 30%, #1e1b4b 0%, #0a0e14 100%);
+  background: radial-gradient(circle at 20% 30%, #e0e7ff 0%, #f8fafc 100%);
   z-index: -1;
   display: none;
 }

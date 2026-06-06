@@ -22,6 +22,17 @@ export default function TimetablePage() {
   const [loadingBillId, setLoadingBillId] = useState(null);
 
   const weekdays = ['월', '화', '수', '목', '금', '토', '일'];
+  
+  // 오늘 날짜 기준으로 마지막 상담일 경과 일수 계산
+  const getDaysSinceCounsel = (dateString) => {
+    if (!dateString) return null;
+    const counselDate = new Date(dateString);
+    const today = new Date();
+    // 날짜의 시각 차이를 배제하기 위해 일(Date) 기준으로 차이 계산
+    const diffTime = today.setHours(0,0,0,0) - counselDate.setHours(0,0,0,0);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
 
   // 안내문 띄우기 위해 백엔드에서 단일 고지 정보를 가져오는 함수
   const openMessageModal = async (billId) => {
@@ -145,6 +156,17 @@ export default function TimetablePage() {
     }
   };
 
+  // 현금영수증 발행 완료 처리 함수
+  const issueReceipt = async (billId) => {
+    try {
+      await client.post(`/bills/${billId}/issue-receipt`);
+      message.success('현금영수증 발행이 기록되었습니다.');
+      await fetchTimetable();
+    } catch (err) {
+      message.error(err.response?.data?.message || '발행 처리에 실패했습니다.');
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ height: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -177,24 +199,29 @@ export default function TimetablePage() {
               <tr style={{ background: 'rgba(255,255,255,0.05)' }}>
                 <th style={{ padding: '16px', border: '1px solid rgba(255,255,255,0.08)', width: 100 }}>시간</th>
                 {weekdays.map(day => (
-                  <th key={day} style={{ padding: '16px', border: '1px solid rgba(255,255,255,0.08)', fontWeight: 800 }}>
+                  <th key={day} style={{ padding: '16px', border: '1px solid rgba(255,255,255,0.08)', fontWeight: 800, minWidth: 160 }}>
                     {day}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {timeMatrix.map(row => (
-                <tr key={row.time}>
+              {timeMatrix.map((row, idx) => (
+                <tr key={row.time} style={{ 
+                  borderBottom: '4px solid #94a3b8',
+                  background: idx % 2 === 0 ? 'rgba(0,0,0,0.01)' : 'rgba(0,0,0,0.03)'
+                }}>
                   <td style={{ 
                     padding: '16px', 
-                    border: '1px solid rgba(255,255,255,0.08)', 
+                    borderRight: '1px solid rgba(0,0,0,0.08)',
+                    borderLeft: '1px solid rgba(0,0,0,0.08)',
                     textAlign: 'center',
-                    fontWeight: 700,
+                    fontWeight: 800,
+                    fontSize: '15px',
                     color: 'var(--primary-vibrant)',
-                    background: 'rgba(255,255,255,0.02)'
+                    background: 'rgba(99, 102, 241, 0.08)'
                   }}>
-                    {row.time}
+                    {row.time}시
                   </td>
                   {weekdays.map(day => {
                     const slot = row[day];
@@ -245,12 +272,44 @@ export default function TimetablePage() {
                                 >
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                      <span style={{ fontWeight: 700, fontSize: 14 }}>{stu.name}</span>
-                                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{stu.gradeLabel}</span>
+                                      <span style={{ fontWeight: 700, fontSize: 14 }}>{stu.name}({stu.gradeLabel})</span>
+                                      {stu.lastCounselingAt && (() => {
+                                        const days = getDaysSinceCounsel(stu.lastCounselingAt);
+                                        const isWarning = days !== null && days >= 90;
+                                        return (
+                                          <span style={{ 
+                                            fontSize: 11, 
+                                            color: isWarning ? '#ff4d4f' : '#eab308', 
+                                            fontWeight: isWarning ? 700 : 'normal',
+                                            marginTop: 2 
+                                          }}>
+                                            {isWarning ? '⚠️' : '💬'} 상담: {new Date(stu.lastCounselingAt).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' })}
+                                            {days !== null && ` (${days === 0 ? '오늘' : `${days}일 전`})`}
+                                          </span>
+                                        );
+                                      })()}
+                                      {stu.lastStudyRecordUpdatedAt && (() => {
+                                        const days = getDaysSinceCounsel(stu.lastStudyRecordUpdatedAt);
+                                        const isWarning = days !== null && days >= 90;
+                                        return (
+                                          <span style={{ 
+                                            fontSize: 11, 
+                                            color: isWarning ? '#ff4d4f' : '#1e293b', 
+                                            fontWeight: isWarning ? 700 : 'normal',
+                                            marginTop: 1 
+                                          }}>
+                                            {isWarning ? '⚠️' : '📝'} 기록: {new Date(stu.lastStudyRecordUpdatedAt).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' })}
+                                            {days !== null && ` (${days === 0 ? '오늘' : `${days}일 전`})`}
+                                          </span>
+                                        );
+                                      })()}
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                       {stu.billStatus === '완납' && (
                                         <Tag color="green" bordered={false} style={{ fontSize: 10, margin: 0, padding: '0 4px', borderRadius: 4 }}>완납</Tag>
+                                      )}
+                                      {stu.billStatus === '미납' && (
+                                        <Tag color="red" bordered={false} style={{ fontSize: 10, margin: 0, padding: '0 4px', borderRadius: 4 }}>미납</Tag>
                                       )}
                                     </div>
                                   </div>
@@ -281,7 +340,27 @@ export default function TimetablePage() {
                                           현금
                                         </Button>
                                       </>
-                                    ) : null}
+                                    ) : (
+                                      <>
+                                        <Tag color="green" bordered={false} style={{ fontSize: 10, margin: 0, padding: '0 4px', borderRadius: 4 }}>
+                                          {stu.paymentMethod ? `${stu.paymentMethod} 수납완료` : '수납완료'}
+                                        </Tag>
+                                        {/* 현금 수납 + 영수증 사용 설정 시 발행 버튼 또는 발행완료 태그 표시 */}
+                                        {stu.paymentMethod === '현금' && stu.cashReceiptUse === '사용' && (
+                                          stu.receiptIssued ? (
+                                            <Tag color="blue" bordered={false} style={{ fontSize: 10, margin: 0, padding: '0 4px', borderRadius: 4 }}>발행완료</Tag>
+                                          ) : (
+                                            <Button
+                                              size="small"
+                                              onClick={() => issueReceipt(stu.billId)}
+                                              style={{ fontSize: 10, height: 22, padding: '0 4px', color: '#f97316', borderColor: '#f97316' }}
+                                            >
+                                              영수증 발행
+                                            </Button>
+                                          )
+                                        )}
+                                      </>
+                                    )}
 
                                     {/* 수강료 안내 메시지 보기 버튼 */}
                                     {stu.billId && (
@@ -381,26 +460,33 @@ export default function TimetablePage() {
                             </Button>
                           </Popconfirm>
                         ) : stu.billStatus === '미납' ? (
-                          <Space key="pay-group" size={4}>
-                            <Button 
-                              size="small" 
-                              icon={<CreditCardOutlined />} 
-                              onClick={() => payCard(stu.billId)}
-                              style={{ fontSize: 11, padding: '0 4px' }}
-                            >
-                              카드
-                            </Button>
-                            <Button 
-                              size="small" 
-                              icon={<DollarOutlined />} 
-                              onClick={() => payCash(stu.billId)}
-                              style={{ fontSize: 11, padding: '0 4px' }}
-                            >
-                              현금
-                            </Button>
+                          <Space key="pay-group" size={4} direction="vertical" align="end">
+                            <Tag color="red" bordered={false} style={{ fontSize: 10, margin: 0, padding: '0 4px', borderRadius: 4 }}>미납</Tag>
+                            <Space size={4}>
+                              <Button 
+                                size="small" 
+                                icon={<CreditCardOutlined />} 
+                                onClick={() => payCard(stu.billId)}
+                                style={{ fontSize: 11, padding: '0 4px' }}
+                              >
+                                카드
+                              </Button>
+                              <Button 
+                                size="small" 
+                                icon={<DollarOutlined />} 
+                                onClick={() => payCash(stu.billId)}
+                                style={{ fontSize: 11, padding: '0 4px' }}
+                              >
+                                현금
+                              </Button>
+                            </Space>
                           </Space>
                         ) : (
-                          <Tag key="paid-tag" color="green" bordered={false} style={{ fontSize: 10, margin: 0 }}>수납완료</Tag>
+                          <Space key="paid-tag" size={4}>
+                            <Tag color="green" bordered={false} style={{ fontSize: 10, margin: 0 }}>
+                              {stu.paymentMethod ? `${stu.paymentMethod} 수납완료` : '수납완료'}
+                            </Tag>
+                          </Space>
                         ),
                         // 수강료 안내 메시지 보기 버튼
                         stu.billId && (
@@ -446,8 +532,39 @@ export default function TimetablePage() {
                             <UserOutlined style={{ color: 'var(--primary-vibrant)' }} />
                           </div>
                         }
-                        title={<span style={{ fontWeight: 600 }}>{stu.name}</span>}
-                        description={<span style={{ fontSize: 12 }}>{stu.schoolLevel} {stu.gradeLabel}</span>}
+                        title={<span style={{ fontWeight: 600 }}>{stu.name}({stu.gradeLabel})</span>}
+                        description={
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            {stu.lastCounselingAt && (() => {
+                              const days = getDaysSinceCounsel(stu.lastCounselingAt);
+                              const isWarning = days !== null && days >= 90;
+                              return (
+                                <span style={{ 
+                                  fontSize: 11, 
+                                  color: isWarning ? '#ff4d4f' : '#eab308', 
+                                  fontWeight: isWarning ? 700 : 'normal' 
+                                }}>
+                                  {isWarning ? '⚠️' : '💬'} 상담: {new Date(stu.lastCounselingAt).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' })}
+                                  {days !== null && ` (${days === 0 ? '오늘' : `${days}일 전`})`}
+                                </span>
+                              );
+                            })()}
+                            {stu.lastStudyRecordUpdatedAt && (() => {
+                              const days = getDaysSinceCounsel(stu.lastStudyRecordUpdatedAt);
+                              const isWarning = days !== null && days >= 90;
+                              return (
+                                <span style={{ 
+                                  fontSize: 11, 
+                                  color: isWarning ? '#ff4d4f' : '#1e293b', 
+                                  fontWeight: isWarning ? 700 : 'normal' 
+                                }}>
+                                  {isWarning ? '⚠️' : '📝'} 기록: {new Date(stu.lastStudyRecordUpdatedAt).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' })}
+                                  {days !== null && ` (${days === 0 ? '오늘' : `${days}일 전`})`}
+                                </span>
+                              );
+                            })()}
+                          </div>
+                        }
                       />
                     </List.Item>
                   )}

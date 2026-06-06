@@ -40,6 +40,7 @@ export default function StudentEditPage() {
         enrolledAt: dayjs(),
         classSlotIds: slotId ? [slotId] : [],
         status: '재원',
+        cashReceiptUse: '사용',
       });
       return;
     }
@@ -52,6 +53,8 @@ export default function StudentEditPage() {
           enrolledAt: data.enrolledAt ? dayjs(data.enrolledAt) : null,
           leftAt: data.leftAt ? dayjs(data.leftAt) : null,
           lastCounselingAt: data.lastCounselingAt ? dayjs(data.lastCounselingAt) : null,
+          lastStudyRecordUpdatedAt: data.lastStudyRecordUpdatedAt ? dayjs(data.lastStudyRecordUpdatedAt) : null,
+          cashReceiptUse: data.cashReceiptUse ?? '사용',
           classSlotIds: (data.classSlotIds || []).map((s) => (typeof s === 'object' ? s._id : s)),
         });
       } catch {
@@ -70,6 +73,7 @@ export default function StudentEditPage() {
       // '퇴원' 상태가 아니면 퇴원일을 null로 강제 설정
       leftAt: values.status === '퇴원' && values.leftAt ? values.leftAt.toISOString() : null,
       lastCounselingAt: values.lastCounselingAt ? values.lastCounselingAt.toISOString() : null,
+      lastStudyRecordUpdatedAt: values.lastStudyRecordUpdatedAt ? values.lastStudyRecordUpdatedAt.toISOString() : null,
     };
     try {
       if (isNew) {
@@ -124,6 +128,12 @@ export default function StudentEditPage() {
         <Form.Item name="cashReceiptPhone" label="현금영수증 발행용 휴대폰">
           <Input placeholder="01012345678" />
         </Form.Item>
+        <Form.Item name="cashReceiptUse" label="현금영수증 발행 유무" initialValue="사용">
+          <Select>
+            <Select.Option value="사용">사용</Select.Option>
+            <Select.Option value="미사용">미사용</Select.Option>
+          </Select>
+        </Form.Item>
         <Form.Item name="enrolledAt" label="최초등록일" rules={[{ required: true }]}>
           <DatePicker style={{ width: '100%' }} format={DATE_FORMATS} />
         </Form.Item>
@@ -131,6 +141,9 @@ export default function StudentEditPage() {
           <DatePicker style={{ width: '100%' }} allowClear format={DATE_FORMATS} />
         </Form.Item>
         <Form.Item name="lastCounselingAt" label="마지막 상담일">
+          <DatePicker style={{ width: '100%' }} allowClear format={DATE_FORMATS} />
+        </Form.Item>
+        <Form.Item name="lastStudyRecordUpdatedAt" label="학습기록 최종 업데이트일">
           <DatePicker style={{ width: '100%' }} allowClear format={DATE_FORMATS} />
         </Form.Item>
         <Form.Item>

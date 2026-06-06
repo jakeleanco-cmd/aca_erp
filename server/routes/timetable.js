@@ -22,7 +22,7 @@ router.get('/dashboard', async (req, res) => {
     
     // '재원' 상태인 학생만 조회
     const students = await Student.find({ status: '재원' })
-      .select('name status classSlotIds schoolLevel gradeLabel')
+      .select('name status classSlotIds schoolLevel gradeLabel lastCounselingAt lastStudyRecordUpdatedAt cashReceiptUse')
       .lean();
 
     // 해당 월의 수납 정보 조회
@@ -41,8 +41,13 @@ router.get('/dashboard', async (req, res) => {
         status: s.status,
         schoolLevel: s.schoolLevel,
         gradeLabel: s.gradeLabel,
+        lastCounselingAt: s.lastCounselingAt || null,
+        lastStudyRecordUpdatedAt: s.lastStudyRecordUpdatedAt || null,
+        cashReceiptUse: s.cashReceiptUse ?? '사용',
         billId: bill?._id || null,
         billStatus: bill?.status || null,
+        paymentMethod: bill?.paymentMethod || null,
+        receiptIssued: bill?.receiptIssued || false, // 현금영수증 발행 완료 여부
       };
 
       for (const sid of s.classSlotIds || []) {

@@ -1,17 +1,17 @@
 import { theme } from 'antd';
 
-export const darkThemeConfig = {
-  algorithm: theme.darkAlgorithm,
+export const lightThemeConfig = {
+  algorithm: theme.defaultAlgorithm,
   token: {
-    colorPrimary: '#6366f1', // 인디고 계열 (프리미엄 바이브런트)
-    colorBgBase: '#0a0e14',
-    colorBoxShadow: 'rgba(0,0,0,0.5)',
+    colorPrimary: '#4f46e5', // 인디고 계열 (프리미엄 바이브런트)
+    colorBgBase: '#ffffff',
+    colorBoxShadow: 'rgba(31, 38, 135, 0.06)',
     borderRadius: 12,
     fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
   },
   components: {
     Card: {
-      colorBgContainer: 'rgba(255, 255, 255, 0.05)',
+      colorBgContainer: 'rgba(255, 255, 255, 0.8)',
       borderRadiusLG: 20,
     },
     Button: {
@@ -22,11 +22,11 @@ export const darkThemeConfig = {
     Input: {
       controlHeight: 44,
       borderRadius: 12,
-      colorBgContainer: 'rgba(255, 255, 255, 0.05)',
+      colorBgContainer: '#ffffff',
     },
     Menu: {
-      colorItemBgSelected: 'rgba(99, 102, 241, 0.15)',
-      colorItemTextSelected: '#818cf8',
+      colorItemBgSelected: 'rgba(79, 70, 229, 0.1)',
+      colorItemTextSelected: '#4f46e5',
     },
   },
 };
