@@ -110,14 +110,18 @@ router.post('/', async (req, res) => {
  */
 router.patch('/:id', async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, startedAt } = req.body;
     if (status && !LEARNING_STATUSES.includes(status)) {
       return res.status(400).json({ message: '유효하지 않은 학습 상태입니다.' });
     }
 
+    const updateFields = {};
+    if (status !== undefined) updateFields.status = status;
+    if (startedAt !== undefined) updateFields.startedAt = startedAt ? new Date(startedAt) : null;
+
     const doc = await StudentLearning.findByIdAndUpdate(
       req.params.id,
-      { status },
+      updateFields,
       { new: true }
     ).populate('textbook').lean();
 

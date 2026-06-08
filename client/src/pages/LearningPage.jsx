@@ -43,6 +43,22 @@ export default function LearningPage() {
   const [assessCtx, setAssessCtx] = useState(null);
   const [filterMode, setFilterMode] = useState('진행중'); // '진행중' (완료 제외) or '전체'
 
+  // 마지막 상담일, 학습기록 최종 업데이트일 경과 포맷 함수
+  const getElapsedText = (dateString) => {
+    if (!dateString) return '기록 없음';
+    const start = dayjs(dateString);
+    const today = dayjs();
+    const months = today.diff(start, 'month');
+    const tempDate = start.add(months, 'month');
+    const days = today.diff(tempDate, 'day');
+    
+    const dateFormatted = start.format('YYYY.MM.DD');
+    if (months > 0) {
+      return `${dateFormatted} (${months}개월 ${days}일 전)`;
+    }
+    return `${dateFormatted} (${days}일 전)`;
+  };
+
   // 교재 선택 필터 (모달 내)
   const [bookFilterSchool, setBookFilterSchool] = useState(null);
   const [bookFilterGrade, setBookFilterGrade] = useState(null);
@@ -117,13 +133,13 @@ export default function LearningPage() {
     }
   };
 
-  const updateStatus = async (learningId, status) => {
+  const updateLearning = async (learningId, patch) => {
     try {
-      await client.patch(`/learnings/${learningId}`, { status });
-      message.success('상태가 업데이트되었습니다.');
+      await client.patch(`/learnings/${learningId}`, patch);
+      message.success('학습 정보가 업데이트되었습니다.');
       await loadAll();
     } catch (err) {
-      message.error(err.response?.data?.message || '상태 업데이트에 실패했습니다.');
+      message.error(err.response?.data?.message || '업데이트에 실패했습니다.');
     }
   };
 
@@ -200,68 +216,123 @@ export default function LearningPage() {
       if (filterMode === '진행중') return L.status !== '완료';
       return true;
     })
-    .map((L) => ({
-      key: L._id,
-      label: (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-          width: '100%',
-          padding: '8px 0'
-        }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
-            <Tag color="blue" bordered={false} style={{ margin: 0 }}>{L.learningType}</Tag>
-            <Typography.Text strong style={{
-              fontSize: 15,
-              wordBreak: 'keep-all',
-              flex: '1 1 auto'
-            }}>
-              {L.textbook?.title || '교재'}
-            </Typography.Text>
-            <Tag
-              color={L.status === '완료' ? 'green' : L.status === '보류중' ? 'orange' : 'processing'}
-              bordered={false}
-              style={{ margin: 0 }}
+    .map((L) => {
+      // 과정 시작일(L.startedAt) 기준으로 오늘까지 경과일 계산
+      const courseStartedAt = L.startedAt || null;
+      const hasActiveUnit = (L.units || []).some(u => u.status === '학습중');
+
+      let elapsedText = '0일';
+      if (courseStartedAt && hasActiveUnit) {
+        const start = dayjs(courseStartedAt);
+        const today = dayjs();
+        const months = today.diff(start, 'month');
+        const tempDate = start.add(months, 'month');
+        const days = today.diff(tempDate, 'day');
+
+        if (months > 0) {
+          elapsedText = `${months}개월 ${days}일`;
+        } else {
+          elapsedText = `${days}일`;
+        }
+      }
+
+      // 날짜 범위 표기용 포맷: MM.DD
+      const startDateStr = courseStartedAt ? dayjs(courseStartedAt).format('MM.DD') : null;
+      const todayStr = dayjs().format('MM.DD');
+
+      // 경과일 태그 문구: 시작일이 있으면 날짜 범위 포함, 없으면 미설정 안내
+      const elapsedLabel = courseStartedAt
+        ? `+${elapsedText}째 (${startDateStr} ~ ${todayStr})`
+        : '시작일 미설정';
+      const elapsedColor = (courseStartedAt && hasActiveUnit) ? 'warning' : 'default';
+
+      // 진척률 계산 (전체 단원 수 대비 학습완료 단원 수)
+      const totalUnits = (L.units || []).length;
+      const completedUnits = (L.units || []).filter(u => u.status === '학습완료').length;
+      const progressPercent = totalUnits > 0 ? Math.round((completedUnits / totalUnits) * 100) : 0;
+
+      return {
+        key: L._id,
+        label: (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            width: '100%',
+            padding: '8px 0'
+          }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
+              <Tag color="blue" bordered={false} style={{ margin: 0 }}>{L.learningType}</Tag>
+              <Typography.Text strong style={{
+                fontSize: 15,
+                wordBreak: 'keep-all',
+                flex: '1 1 auto'
+              }}>
+                {L.textbook?.title || '교재'}
+                <Tag
+                  color={elapsedColor}
+                  style={{ marginLeft: 8, fontWeight: 'normal' }}
+                >
+                  {elapsedLabel}
+                </Tag>
+                <Tag
+                  color="purple"
+                  style={{ marginLeft: 8, fontWeight: 'normal' }}
+                >
+                  진척률 {progressPercent}% ({completedUnits}/{totalUnits}개)
+                </Tag>
+              </Typography.Text>
+              <Tag
+                color={L.status === '완료' ? 'green' : L.status === '보류중' ? 'orange' : 'processing'}
+                bordered={false}
+                style={{ margin: 0 }}
+              >
+                {L.status || '진행중'}
+              </Tag>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+              onClick={(e) => e.stopPropagation()}
             >
-              {L.status || '진행중'}
-            </Tag>
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Select
-              size="small"
-              style={{ width: 90 }}
-              value={L.status || '진행중'}
-              options={LEARNING_STATUSES.map(s => ({ label: s, value: s }))}
-              onChange={(v) => updateStatus(L._id, v)}
-            />
-            <Popconfirm
-              title="학습 삭제"
-              description="이 교재의 모든 학습 기록과 평가 기록이 삭제됩니다. 정말 삭제할까요?"
-              onConfirm={() => deleteLearning(L._id)}
-              okText="삭제"
-              cancelText="취소"
-              okButtonProps={{ danger: true }}
-            >
-              <Button
-                type="text"
-                danger
+              <DatePicker
                 size="small"
-                icon={<DeleteOutlined />}
+                placeholder="시작일"
+                style={{ width: 120 }}
+                format={DATE_FORMATS}
+                value={L.startedAt ? dayjs(L.startedAt) : null}
+                onChange={(d) => updateLearning(L._id, { startedAt: d ? d.toISOString() : null })}
               />
-            </Popconfirm>
+              <Select
+                size="small"
+                style={{ width: 90 }}
+                value={L.status || '진행중'}
+                options={LEARNING_STATUSES.map(s => ({ label: s, value: s }))}
+                onChange={(v) => updateLearning(L._id, { status: v })}
+              />
+              <Popconfirm
+                title="학습 삭제"
+                description="이 교재의 모든 학습 기록과 평가 기록이 삭제됩니다. 정말 삭제할까요?"
+                onConfirm={() => deleteLearning(L._id)}
+                okText="삭제"
+                cancelText="취소"
+                okButtonProps={{ danger: true }}
+              >
+                <Button
+                  type="text"
+                  danger
+                  size="small"
+                  icon={<DeleteOutlined />}
+                />
+              </Popconfirm>
+            </div>
           </div>
-        </div>
-      ),
-      children: (
+        ),
+        children: (
         <div>
           <Space style={{ marginBottom: 8 }}>
             <Button size="small" onClick={() => openAssess(L, '과정평가')}>
@@ -305,9 +376,24 @@ export default function LearningPage() {
                       render: (s, t, i) => (
                         <Select
                           size="small"
-                          style={{ width: '100%', fontSize: '12px' }}
+                          style={{ 
+                            width: '100%', 
+                            fontSize: '12px',
+                            color: s === '학습완료' ? '#1677ff' : s === '학습중' ? '#d4b106' : undefined,
+                            fontWeight: (s === '학습완료' || s === '학습중') ? 'bold' : undefined
+                          }}
                           value={s || '미진행'}
-                          options={UNIT_STATUSES.map(v => ({ value: v, label: v }))}
+                          options={UNIT_STATUSES.map(v => ({ 
+                            value: v, 
+                            label: (
+                              <span style={{ 
+                                color: v === '학습완료' ? '#1677ff' : v === '학습중' ? '#d4b106' : undefined, 
+                                fontWeight: (v === '학습완료' || v === '학습중') ? 'bold' : undefined 
+                              }}>
+                                {v}
+                              </span>
+                            )
+                          }))}
                           onChange={(v) => saveTopic(L._id, unitRecord.chapterOrder, i, { status: v })}
                         />
                       )
@@ -391,9 +477,24 @@ export default function LearningPage() {
                 render: (status, u) => (
                   <Select
                     size="small"
-                    style={{ width: '100%', fontSize: '12px' }}
+                    style={{ 
+                      width: '100%', 
+                      fontSize: '12px',
+                      color: status === '학습완료' ? '#1677ff' : status === '학습중' ? '#d4b106' : undefined,
+                      fontWeight: (status === '학습완료' || status === '학습중') ? 'bold' : undefined
+                    }}
                     value={status}
-                    options={UNIT_STATUSES.map((s) => ({ value: s, label: s }))}
+                    options={UNIT_STATUSES.map((s) => ({ 
+                      value: s, 
+                      label: (
+                        <span style={{ 
+                          color: s === '학습완료' ? '#1677ff' : s === '학습중' ? '#d4b106' : undefined, 
+                          fontWeight: (s === '학습완료' || s === '학습중') ? 'bold' : undefined 
+                        }}>
+                          {s}
+                        </span>
+                      )
+                    }))}
                     onChange={(v) => saveUnit(L._id, u.chapterOrder, { status: v })}
                   />
                 ),
@@ -462,7 +563,8 @@ export default function LearningPage() {
           />
         </div>
       ),
-    }));
+    };
+  });
 
   return (
     <div>
@@ -470,9 +572,27 @@ export default function LearningPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <Typography.Title level={4} style={{ margin: 0 }}>
-              학습진도 — {student.name}
+              학습진도 —{' '}
+              <span
+                style={{
+                  cursor: 'pointer',
+                  color: '#1677ff',
+                  textDecoration: 'underline',
+                }}
+                onClick={() => navigate(`/students/${studentId}`)}
+              >
+                {student.name}
+              </span>
             </Typography.Title>
-            <Typography.Text type="secondary">
+            <div style={{ display: 'flex', gap: '16px', marginTop: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
+              <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+                💬 마지막 상담일: <span style={{ color: '#1e293b', fontWeight: 'bold' }}>{getElapsedText(student.lastCounselingAt)}</span>
+              </Typography.Text>
+              <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+                📝 학습 기록 최종 업데이트일: <span style={{ color: '#1e293b', fontWeight: 'bold' }}>{getElapsedText(student.lastStudyRecordUpdatedAt)}</span>
+              </Typography.Text>
+            </div>
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
               학습종류는 연산선행 → 응용선행 → 현행심화 순으로 표시됩니다.
             </Typography.Text>
           </div>

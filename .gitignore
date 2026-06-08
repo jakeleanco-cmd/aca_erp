@@ -11,3 +11,4 @@ client/dist/
 # Google Drive Keys
 server/config/google-drive-key.json
 *.json.key
+.aider*

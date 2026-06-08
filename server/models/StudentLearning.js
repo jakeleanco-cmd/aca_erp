@@ -38,6 +38,7 @@ const studentLearningSchema = new mongoose.Schema(
     learningType: { type: String, required: true, enum: LEARNING_TYPE_ORDER },
     textbook: { type: mongoose.Schema.Types.ObjectId, ref: 'Textbook', required: true },
     status: { type: String, required: true, enum: LEARNING_STATUSES, default: '진행중' },
+    startedAt: { type: Date, default: null }, // 과정별 시작날짜
     units: { type: [unitProgressSchema], default: [] },
   },
   { timestamps: true }

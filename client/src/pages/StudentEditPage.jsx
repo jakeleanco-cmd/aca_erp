@@ -41,6 +41,7 @@ export default function StudentEditPage() {
         classSlotIds: slotId ? [slotId] : [],
         status: '재원',
         cashReceiptUse: '사용',
+        memo: '',
       });
       return;
     }
@@ -55,6 +56,7 @@ export default function StudentEditPage() {
           lastCounselingAt: data.lastCounselingAt ? dayjs(data.lastCounselingAt) : null,
           lastStudyRecordUpdatedAt: data.lastStudyRecordUpdatedAt ? dayjs(data.lastStudyRecordUpdatedAt) : null,
           cashReceiptUse: data.cashReceiptUse ?? '사용',
+          memo: data.memo ?? '',
           classSlotIds: (data.classSlotIds || []).map((s) => (typeof s === 'object' ? s._id : s)),
         });
       } catch {
@@ -145,6 +147,9 @@ export default function StudentEditPage() {
         </Form.Item>
         <Form.Item name="lastStudyRecordUpdatedAt" label="학습기록 최종 업데이트일">
           <DatePicker style={{ width: '100%' }} allowClear format={DATE_FORMATS} />
+        </Form.Item>
+        <Form.Item name="memo" label="메모" extra="학생에 대한 특이사항이나 메모를 자유롭게 입력해 주세요 (300자 이상 입력 가능)">
+          <Input.TextArea rows={4} maxLength={1000} placeholder="학생 특이사항 입력..." showCount />
         </Form.Item>
         <Form.Item>
           <Space wrap>
