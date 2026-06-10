@@ -225,7 +225,7 @@ export default function BillingPage() {
               </Button>
             </>
           )}
-          {r.status === '납부완료' && r.paymentMethod === '현금' && !r.receiptIssued && (
+          {r.status === '납부완료' && r.paymentMethod === '현금' && !r.receiptIssued && r.student?.cashReceiptUse === '사용' && (
             <Button size="small" onClick={() => issueReceipt(r)}>
               현금영수증 발행
             </Button>

@@ -272,7 +272,12 @@ export default function TimetablePage() {
                                 >
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                      <span style={{ fontWeight: 700, fontSize: 14 }}>{stu.name}({stu.gradeLabel})</span>
+                                      <span 
+                                        style={{ fontWeight: 700, fontSize: 14, cursor: 'pointer', textDecoration: 'underline' }}
+                                        onClick={() => navigate(`/students/${stu._id}`)}
+                                      >
+                                        {stu.name}({stu.gradeLabel})
+                                      </span>
                                       {stu.lastCounselingAt && (() => {
                                         const days = getDaysSinceCounsel(stu.lastCounselingAt);
                                         const isWarning = days !== null && days >= 90;
@@ -339,56 +344,23 @@ export default function TimetablePage() {
                                         >
                                           현금
                                         </Button>
+                                        <Button 
+                                          size="small" 
+                                          onClick={() => openMessageModal(stu.billId)}
+                                          loading={loadingBillId === stu.billId}
+                                          style={{ fontSize: 10, height: 22, padding: '0 4px' }}
+                                        >
+                                          안내문
+                                        </Button>
                                       </>
-                                    ) : (
-                                      <>
-                                        <Tag color="green" bordered={false} style={{ fontSize: 10, margin: 0, padding: '0 4px', borderRadius: 4 }}>
-                                          {stu.paymentMethod ? `${stu.paymentMethod} 수납완료` : '수납완료'}
-                                        </Tag>
-                                        {/* 현금 수납 + 영수증 사용 설정 시 발행 버튼 또는 발행완료 태그 표시 */}
-                                        {stu.paymentMethod === '현금' && stu.cashReceiptUse === '사용' && (
-                                          stu.receiptIssued ? (
-                                            <Tag color="blue" bordered={false} style={{ fontSize: 10, margin: 0, padding: '0 4px', borderRadius: 4 }}>발행완료</Tag>
-                                          ) : (
-                                            <Button
-                                              size="small"
-                                              onClick={() => issueReceipt(stu.billId)}
-                                              style={{ fontSize: 10, height: 22, padding: '0 4px', color: '#f97316', borderColor: '#f97316' }}
-                                            >
-                                              영수증 발행
-                                            </Button>
-                                          )
-                                        )}
-                                      </>
-                                    )}
-
-                                    {/* 수강료 안내 메시지 보기 버튼 */}
-                                    {stu.billId && (
-                                      <Button 
-                                        size="small" 
-                                        icon={<MessageOutlined />}
-                                        onClick={() => openMessageModal(stu.billId)}
-                                        loading={loadingBillId === stu.billId}
-                                        style={{ fontSize: 10, height: 22, padding: '0 4px', color: 'var(--primary-vibrant)', borderColor: 'var(--primary-vibrant)' }}
-                                      >
-                                        안내문
-                                      </Button>
-                                    )}
+                                    ) : null}
 
                                     <Button 
                                       size="small" 
-                                      style={{ fontSize: 10, height: 22, padding: '0 4px' }}
-                                      onClick={() => navigate(`/students/${stu._id}`)}
-                                    >
-                                      상세
-                                    </Button>
-                                    <Button 
-                                      size="small" 
-                                      type="primary"
                                       style={{ fontSize: 10, height: 22, padding: '0 4px' }}
                                       onClick={() => navigate(`/students/${stu._id}/learning`)}
                                     >
-                                      학습
+                                      진도학습
                                     </Button>
                                   </Space>
                                 </div>
@@ -481,44 +453,30 @@ export default function TimetablePage() {
                               </Button>
                             </Space>
                           </Space>
-                        ) : (
-                          <Space key="paid-tag" size={4}>
-                            <Tag color="green" bordered={false} style={{ fontSize: 10, margin: 0 }}>
-                              {stu.paymentMethod ? `${stu.paymentMethod} 수납완료` : '수납완료'}
-                            </Tag>
-                          </Space>
-                        ),
-                        // 수강료 안내 메시지 보기 버튼
-                        stu.billId && (
+                        ) : null,
+                        // 미납인 학생용 안내문 버튼
+                        stu.billId && stu.billStatus === '미납' && (
                           <Button 
                             key="message"
+                            type="text"
                             size="small" 
-                            icon={<MessageOutlined />} 
                             onClick={() => openMessageModal(stu.billId)}
                             loading={loadingBillId === stu.billId}
-                            style={{ fontSize: 11, color: 'var(--primary-vibrant)', borderColor: 'var(--primary-vibrant)' }}
+                            style={{ color: '#888', fontSize: 12 }}
                           >
                             안내문
                           </Button>
                         ),
+
                         // 관리 버튼
                         <Button 
-                          key="detail"
+                          key="learning"
                           type="text" 
                           size="small"
                           style={{ color: '#888', fontSize: 12 }}
-                          onClick={() => navigate(`/students/${stu._id}`)}
-                        >
-                          상세보기
-                        </Button>,
-                        <Button 
-                          key="learning"
-                          type="link" 
-                          size="small"
-                          style={{ fontSize: 12, fontWeight: 600 }}
                           onClick={() => navigate(`/students/${stu._id}/learning`)}
                         >
-                          학습관리
+                          진도학습
                         </Button>
                       ]}
                     >
@@ -532,7 +490,14 @@ export default function TimetablePage() {
                             <UserOutlined style={{ color: 'var(--primary-vibrant)' }} />
                           </div>
                         }
-                        title={<span style={{ fontWeight: 600 }}>{stu.name}({stu.gradeLabel})</span>}
+                        title={
+                          <span 
+                            style={{ fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}
+                            onClick={() => navigate(`/students/${stu._id}`)}
+                          >
+                            {stu.name}({stu.gradeLabel})
+                          </span>
+                        }
                         description={
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                             {stu.lastCounselingAt && (() => {
