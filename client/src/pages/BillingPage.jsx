@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, DatePicker, message, Space, Tag, Typography, Popconfirm } from 'antd';
+import { Table, Button, DatePicker, message, Space, Tag, Typography, Popconfirm, Select } from 'antd';
 import dayjs from 'dayjs';
 import { CloseCircleOutlined, MessageOutlined } from '@ant-design/icons';
 import BillMessageModal from '../components/BillMessageModal';
@@ -13,6 +13,7 @@ export default function BillingPage() {
   const [rows, setRows] = useState([]);
   const [messageModalVisible, setMessageModalVisible] = useState(false);
   const [selectedBill, setSelectedBill] = useState(null);
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState('all');
 
   const yearMonth = month.format('YYYY-MM');
 
@@ -31,6 +32,12 @@ export default function BillingPage() {
   useEffect(() => {
     load();
   }, [yearMonth]);
+
+  const filteredRows = rows.filter((r) => {
+    if (paymentMethodFilter === 'all') return true;
+    if (paymentMethodFilter === '미결제') return !r.paymentMethod;
+    return r.paymentMethod === paymentMethodFilter;
+  });
 
   const generate = async () => {
     setLoading(true);
@@ -239,6 +246,20 @@ export default function BillingPage() {
       <Space style={{ marginBottom: 16 }} wrap align="center" size={[8, 12]}>
         <span>대상 월:</span>
         <DatePicker picker="month" format={MONTH_FORMATS} value={month} onChange={(d) => d && setMonth(d)} allowClear={false} />
+        
+        <span style={{ marginLeft: 8 }}>결제수단:</span>
+        <Select
+          value={paymentMethodFilter}
+          onChange={setPaymentMethodFilter}
+          style={{ width: 100 }}
+          options={[
+            { value: 'all', label: '전체' },
+            { value: '카드', label: '카드' },
+            { value: '현금', label: '현금' },
+            { value: '미결제', label: '미결제' },
+          ]}
+        />
+
         <Button type="primary" onClick={generate} loading={loading}>
           수강료 고지 생성
         </Button>
@@ -279,20 +300,20 @@ export default function BillingPage() {
         <div>
           <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>총 고지 금액</Typography.Text>
           <Typography.Text strong style={{ fontSize: 18, color: 'var(--text-main)' }}>
-            {rows.reduce((acc, r) => acc + (r.amount || 0), 0).toLocaleString()}원
+            {filteredRows.reduce((acc, r) => acc + (r.amount || 0), 0).toLocaleString()}원
           </Typography.Text>
         </div>
         <div style={{ width: 1, background: 'rgba(255, 255, 255, 0.1)', alignSelf: 'stretch' }} />
         <div>
           <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>납부 완료</Typography.Text>
           <Typography.Text strong style={{ fontSize: 18, color: '#52c41a' }}>
-            {rows.filter(r => r.status === '납부완료').reduce((acc, r) => acc + (r.amount || 0), 0).toLocaleString()}원
+            {filteredRows.filter(r => r.status === '납부완료').reduce((acc, r) => acc + (r.amount || 0), 0).toLocaleString()}원
           </Typography.Text>
         </div>
         <div>
           <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>미납 금액</Typography.Text>
           <Typography.Text strong style={{ fontSize: 18, color: '#faad14' }}>
-            {rows.filter(r => r.status === '미납').reduce((acc, r) => acc + (r.amount || 0), 0).toLocaleString()}원
+            {filteredRows.filter(r => r.status === '미납').reduce((acc, r) => acc + (r.amount || 0), 0).toLocaleString()}원
           </Typography.Text>
         </div>
       </div>
@@ -304,7 +325,7 @@ export default function BillingPage() {
         rowKey="_id" 
         loading={loading} 
         columns={columns} 
-        dataSource={rows} 
+        dataSource={filteredRows} 
         pagination={{ pageSize: 30 }} 
         scroll={{ x: 670 }}
         size="small"
