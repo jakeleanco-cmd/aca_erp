@@ -284,7 +284,7 @@ export default function TimetablePage() {
                                         return (
                                           <span style={{ 
                                             fontSize: 11, 
-                                            color: isWarning ? '#ff4d4f' : '#eab308', 
+                                            color: isWarning ? '#ff4d4f' : 'black', 
                                             fontWeight: isWarning ? 700 : 'normal',
                                             marginTop: 2 
                                           }}>
@@ -299,7 +299,7 @@ export default function TimetablePage() {
                                         return (
                                           <span style={{ 
                                             fontSize: 11, 
-                                            color: isWarning ? '#ff4d4f' : '#1e293b', 
+                                            color: isWarning ? '#ff4d4f' : 'black', 
                                             fontWeight: isWarning ? 700 : 'normal',
                                             marginTop: 1 
                                           }}>
@@ -506,7 +506,7 @@ export default function TimetablePage() {
                               return (
                                 <span style={{ 
                                   fontSize: 11, 
-                                  color: isWarning ? '#ff4d4f' : '#eab308', 
+                                  color: isWarning ? '#ff4d4f' : 'black', 
                                   fontWeight: isWarning ? 700 : 'normal' 
                                 }}>
                                   {isWarning ? '⚠️' : '💬'} 상담: {new Date(stu.lastCounselingAt).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' })}
@@ -520,7 +520,7 @@ export default function TimetablePage() {
                               return (
                                 <span style={{ 
                                   fontSize: 11, 
-                                  color: isWarning ? '#ff4d4f' : '#1e293b', 
+                                  color: isWarning ? '#ff4d4f' : 'black', 
                                   fontWeight: isWarning ? 700 : 'normal' 
                                 }}>
                                   {isWarning ? '⚠️' : '📝'} 기록: {new Date(stu.lastStudyRecordUpdatedAt).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' })}

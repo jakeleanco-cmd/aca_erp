@@ -42,6 +42,9 @@ export default function LearningPage() {
   const [assessForm] = Form.useForm();
   const [assessCtx, setAssessCtx] = useState(null);
   const [filterMode, setFilterMode] = useState('진행중'); // '진행중' (완료 제외) or '전체'
+  const [editCounseling, setEditCounseling] = useState(false);
+  const [editStudyRecord, setEditStudyRecord] = useState(false);
+  const [expandedKeys, setExpandedKeys] = useState([]);
 
   // 마지막 상담일, 학습기록 최종 업데이트일 경과 포맷 함수
   const getElapsedText = (dateString) => {
@@ -87,6 +90,24 @@ export default function LearningPage() {
       }
     })();
   }, [studentId, navigate]);
+
+  useEffect(() => {
+    if (student) {
+      setExpandedKeys(student.expandedLearningIds || []);
+    }
+  }, [student]);
+
+  const handleCollapseChange = async (keys) => {
+    const keysArray = Array.isArray(keys) ? keys : [keys].filter(Boolean);
+    setExpandedKeys(keysArray);
+    try {
+      await client.put(`/students/${studentId}`, {
+        expandedLearningIds: keysArray
+      });
+    } catch (err) {
+      console.error('아코디언 상태 동기화 실패:', err);
+    }
+  };
 
   const openAdd = () => {
     addForm.resetFields();
@@ -150,6 +171,19 @@ export default function LearningPage() {
       await loadAll();
     } catch (err) {
       message.error(err.response?.data?.message || '삭제에 실패했습니다.');
+    }
+  };
+
+  const updateStudentDate = async (field, date) => {
+    try {
+      const updatedValue = date ? date.toISOString() : null;
+      await client.put(`/students/${studentId}`, {
+        [field]: updatedValue
+      });
+      message.success('날짜가 업데이트되었습니다.');
+      await loadAll();
+    } catch (err) {
+      message.error('날짜 업데이트에 실패했습니다.');
     }
   };
 
@@ -566,6 +600,14 @@ export default function LearningPage() {
     };
   });
 
+  const isCounselingWarning = student.lastCounselingAt
+    ? dayjs().diff(dayjs(student.lastCounselingAt), 'day') >= 90
+    : false;
+
+  const isStudyRecordWarning = student.lastStudyRecordUpdatedAt
+    ? dayjs().diff(dayjs(student.lastStudyRecordUpdatedAt), 'day') >= 90
+    : false;
+
   return (
     <div>
       <Space direction="vertical" style={{ width: '100%' }} size="large">
@@ -584,12 +626,70 @@ export default function LearningPage() {
                 {student.name}
               </span>
             </Typography.Title>
-            <div style={{ display: 'flex', gap: '16px', marginTop: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
-              <Typography.Text type="secondary" style={{ fontSize: 13 }}>
-                💬 마지막 상담일: <span style={{ color: '#1e293b', fontWeight: 'bold' }}>{getElapsedText(student.lastCounselingAt)}</span>
+            <div style={{ display: 'flex', gap: '16px', marginTop: '6px', marginBottom: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <Typography.Text type="secondary" style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                💬 마지막 상담일: {' '}
+                {editCounseling ? (
+                  <DatePicker
+                    size="small"
+                    style={{ width: 130 }}
+                    format={DATE_FORMATS}
+                    value={student.lastCounselingAt ? dayjs(student.lastCounselingAt) : null}
+                    onChange={(d) => {
+                      updateStudentDate('lastCounselingAt', d);
+                      setEditCounseling(false);
+                    }}
+                    onOpenChange={(open) => {
+                      if (!open) setEditCounseling(false);
+                    }}
+                    defaultOpen
+                  />
+                ) : (
+                  <span 
+                    style={{ 
+                      color: isCounselingWarning ? '#ff4d4f' : 'black', 
+                      fontWeight: 'bold', 
+                      cursor: 'pointer',
+                      borderBottom: isCounselingWarning ? '1px dashed #ff4d4f' : '1px dashed black'
+                    }} 
+                    onClick={() => setEditCounseling(true)}
+                    title="클릭하여 변경"
+                  >
+                    {getElapsedText(student.lastCounselingAt)}
+                  </span>
+                )}
               </Typography.Text>
-              <Typography.Text type="secondary" style={{ fontSize: 13 }}>
-                📝 학습 기록 최종 업데이트일: <span style={{ color: '#1e293b', fontWeight: 'bold' }}>{getElapsedText(student.lastStudyRecordUpdatedAt)}</span>
+              <Typography.Text type="secondary" style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                📝 학습 기록 최종 업데이트일: {' '}
+                {editStudyRecord ? (
+                  <DatePicker
+                    size="small"
+                    style={{ width: 130 }}
+                    format={DATE_FORMATS}
+                    value={student.lastStudyRecordUpdatedAt ? dayjs(student.lastStudyRecordUpdatedAt) : null}
+                    onChange={(d) => {
+                      updateStudentDate('lastStudyRecordUpdatedAt', d);
+                      setEditStudyRecord(false);
+                    }}
+                    onOpenChange={(open) => {
+                      if (!open) setEditStudyRecord(false);
+                    }}
+                    defaultOpen
+                  />
+                ) : (
+                  <span 
+                    style={{ 
+                      color: isStudyRecordWarning ? '#ff4d4f' : 'black', 
+                      fontWeight: 'bold', 
+                      cursor: 'pointer',
+                      borderBottom: isStudyRecordWarning ? '1px dashed #ff4d4f' : '1px dashed black'
+                    }} 
+                    onClick={() => setEditStudyRecord(true)}
+                    title="클릭하여 변경"
+                  >
+                    {getElapsedText(student.lastStudyRecordUpdatedAt)}
+                  </span>
+                )}
               </Typography.Text>
             </div>
             <Typography.Text type="secondary" style={{ fontSize: 12 }}>
@@ -621,7 +721,11 @@ export default function LearningPage() {
         {items.length === 0 ? (
           <Card>등록된 학습이 없거나 필터와 일치하는 항목이 없습니다.</Card>
         ) : (
-          <Collapse items={items} />
+          <Collapse 
+            items={items} 
+            activeKey={expandedKeys}
+            onChange={handleCollapseChange}
+          />
         )}
       </Space>
 

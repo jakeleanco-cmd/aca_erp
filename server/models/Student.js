@@ -20,6 +20,7 @@ const studentSchema = new mongoose.Schema(
     lastStudyRecordUpdatedAt: { type: Date, default: null },
     cashReceiptUse: { type: String, enum: ['사용', '미사용'], default: '사용' },
     memo: { type: String, default: '' },
+    expandedLearningIds: { type: [String], default: [] },
   },
   { timestamps: true }
 );
