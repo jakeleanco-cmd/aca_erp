@@ -12,3 +12,6 @@ client/dist/
 server/config/google-drive-key.json
 *.json.key
 .aider*
+
+# Data Folder
+server/data/

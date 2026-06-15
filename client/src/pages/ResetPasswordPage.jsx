@@ -28,7 +28,10 @@ export default function ResetPasswordPage() {
       flexDirection: 'column',
       justifyContent: 'center',
       padding: '24px',
-      background: 'radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.1) 0%, rgba(10, 14, 20, 1) 100%)'
+      background: 'radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.1) 0%, rgba(10, 14, 20, 1) 100%)',
+      maxWidth: 'var(--max-app-width)',
+      width: '100%',
+      margin: '0 auto'
     }}>
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
         <Typography.Title level={2} style={{ margin: 0, fontWeight: 800 }}>비밀번호 찾기</Typography.Title>

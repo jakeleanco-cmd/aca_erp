@@ -69,10 +69,11 @@ export default function AppLayout() {
       {viewMode === 'web' && (
         <Sider
           width={200}
-          theme="dark"
+          theme="light"
           style={{
-            background: 'rgba(15, 20, 28, 0.9)',
-            borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+            background: 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(10px)',
+            borderRight: '1px solid var(--glass-border)',
             position: 'sticky',
             top: 0,
             height: '100vh',
@@ -86,7 +87,7 @@ export default function AppLayout() {
             }}>
               <BookOutlined style={{ color: '#fff', fontSize: 16 }} />
             </div>
-            <span style={{ fontWeight: 800, fontSize: 16, color: '#fff' }}>ACA ERP</span>
+            <span style={{ fontWeight: 800, fontSize: 16, color: 'var(--text-main)' }}>ACA ERP</span>
           </div>
           <div style={{ padding: '10px 0' }}>
             {menuItems.map((item) => (
@@ -99,14 +100,14 @@ export default function AppLayout() {
                   alignItems: 'center',
                   gap: 12,
                   cursor: 'pointer',
-                  color: activeKey === item.key ? 'var(--primary-vibrant)' : 'var(--text-muted)',
-                  background: activeKey === item.key ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                  color: activeKey === item.key ? 'var(--primary-vibrant)' : '#475569',
+                  background: activeKey === item.key ? 'rgba(79, 70, 229, 0.08)' : 'transparent',
                   transition: 'all 0.2s ease',
                   borderRight: activeKey === item.key ? '3px solid var(--primary-vibrant)' : 'none',
                 }}
               >
                 {item.icon}
-                <span style={{ fontWeight: activeKey === item.key ? 600 : 400 }}>{item.label}</span>
+                <span style={{ fontWeight: activeKey === item.key ? 700 : 500 }}>{item.label}</span>
               </div>
             ))}
           </div>
@@ -123,12 +124,12 @@ export default function AppLayout() {
             width: '100%',
             height: 64,
             padding: '0 20px',
-            background: 'rgba(10, 14, 20, 0.8)',
+            background: 'rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(10px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+            borderBottom: '1px solid var(--glass-border)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -141,7 +142,7 @@ export default function AppLayout() {
                 <BookOutlined style={{ color: '#fff', fontSize: 18 }} />
               </div>
             )}
-            <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: -0.5 }}>{currentPageLabel}</span>
+            <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-main)', letterSpacing: -0.5 }}>{currentPageLabel}</span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -155,10 +156,10 @@ export default function AppLayout() {
                 gap: 8,
                 padding: '4px 12px',
                 borderRadius: 20,
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                background: 'rgba(0, 0, 0, 0.04)',
+                border: '1px solid rgba(0, 0, 0, 0.08)',
                 transition: 'all 0.3s ease',
-                color: 'var(--text-muted)'
+                color: '#475569'
               }}
               className="btn-tap"
             >
@@ -176,7 +177,7 @@ export default function AppLayout() {
             </div>
 
             <Badge dot status="processing">
-              <UserOutlined style={{ fontSize: 20, color: 'var(--text-muted)' }} />
+              <UserOutlined style={{ fontSize: 20, color: 'var(--text-main)' }} />
             </Badge>
             <LogoutOutlined
               style={{ fontSize: 20, color: '#ff4d4f', cursor: 'pointer' }}
@@ -213,9 +214,9 @@ export default function AppLayout() {
               maxWidth: 'var(--max-app-width)',
               height: 72,
               padding: '0 10px',
-              background: 'rgba(15, 20, 28, 0.95)',
+              background: 'rgba(255, 255, 255, 0.95)',
               backdropFilter: 'blur(20px)',
-              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+              borderTop: '1px solid var(--glass-border)',
               display: 'flex',
               justifyContent: 'space-around',
               alignItems: 'center',
@@ -236,7 +237,7 @@ export default function AppLayout() {
                     justifyContent: 'center',
                     cursor: 'pointer',
                     width: 48,
-                    color: isActive ? 'var(--primary-vibrant)' : 'var(--text-muted)',
+                    color: isActive ? 'var(--primary-vibrant)' : '#475569',
                     transition: 'all 0.3s ease',
                   }}
                 >
@@ -244,11 +245,11 @@ export default function AppLayout() {
                     fontSize: 20, 
                     marginBottom: 2, 
                     transform: isActive ? 'translateY(-2px)' : 'none',
-                    filter: isActive ? 'drop-shadow(0 0 8px rgba(99, 102, 241, 0.5))' : 'none'
+                    filter: isActive ? 'drop-shadow(0 0 8px rgba(99, 102, 241, 0.3))' : 'none'
                   }}>
                     {item.icon}
                   </div>
-                  <span style={{ fontSize: 10, fontWeight: isActive ? 600 : 400 }}>{item.label}</span>
+                  <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 500 }}>{item.label}</span>
                   {isActive && (
                     <div style={{ 
                       width: 4, height: 4, borderRadius: '50%', 

@@ -51,7 +51,10 @@ export default function RegisterFirstPage() {
       display: 'flex', 
       flexDirection: 'column',
       padding: '24px',
-      background: 'radial-gradient(circle at 90% 10%, rgba(99, 102, 241, 0.1) 0%, rgba(10, 14, 20, 1) 100%)'
+      background: 'radial-gradient(circle at 90% 10%, rgba(99, 102, 241, 0.1) 0%, rgba(10, 14, 20, 1) 100%)',
+      maxWidth: 'var(--max-app-width)',
+      width: '100%',
+      margin: '0 auto'
     }}>
       <div style={{ marginBottom: 32 }}>
         <Button 

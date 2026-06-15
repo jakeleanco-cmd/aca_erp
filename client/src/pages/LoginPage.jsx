@@ -38,7 +38,10 @@ export default function LoginPage() {
       flexDirection: 'column',
       justifyContent: 'center',
       padding: '24px',
-      background: 'radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.1) 0%, rgba(10, 14, 20, 1) 100%)'
+      background: 'radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.1) 0%, rgba(10, 14, 20, 1) 100%)',
+      maxWidth: 'var(--max-app-width)',
+      width: '100%',
+      margin: '0 auto'
     }}>
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
         <div style={{ 
@@ -106,18 +109,55 @@ export default function LoginPage() {
         </Form>
       </Card>
 
-      <div style={{ marginTop: 24, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
-          <Link to="/find-id" style={{ color: 'var(--text-muted)', fontSize: 14 }}>
-            <span style={{ color: 'var(--primary-vibrant)', fontWeight: 600 }}>아이디 찾기</span>
+      <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Link to="/find-id" style={{ flex: 1 }}>
+            <Button
+              block
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: 'rgba(255,255,255,0.7)',
+                borderRadius: 12,
+                height: 44,
+                fontSize: 14,
+                fontWeight: 500,
+              }}
+            >
+              아이디 찾기
+            </Button>
           </Link>
-          <span style={{ color: 'rgba(255,255,255,0.1)' }}>|</span>
-          <Link to="/reset-password" style={{ color: 'var(--text-muted)', fontSize: 14 }}>
-            <span style={{ color: 'var(--primary-vibrant)', fontWeight: 600 }}>비밀번호 찾기</span>
+          <Link to="/reset-password" style={{ flex: 1 }}>
+            <Button
+              block
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: 'rgba(255,255,255,0.7)',
+                borderRadius: 12,
+                height: 44,
+                fontSize: 14,
+                fontWeight: 500,
+              }}
+            >
+              비밀번호 찾기
+            </Button>
           </Link>
         </div>
-        <Link to="/register-first" style={{ color: 'var(--text-muted)', fontSize: 14 }}>
-          계정이 없으신가요? <span style={{ color: 'var(--primary-vibrant)', fontWeight: 600 }}>관리자 가입</span>
+        <Link to="/register-first">
+          <Button
+            block
+            style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              color: 'rgba(255,255,255,0.45)',
+              borderRadius: 12,
+              height: 40,
+              fontSize: 13,
+            }}
+          >
+            계정이 없으신가요? &nbsp;<span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>관리자 가입</span>
+          </Button>
         </Link>
       </div>
     </div>

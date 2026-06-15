@@ -32,7 +32,10 @@ export default function FindIdPage() {
       flexDirection: 'column',
       justifyContent: 'center',
       padding: '24px',
-      background: '#0a0e14'
+      background: '#0a0e14',
+      maxWidth: 'var(--max-app-width)',
+      width: '100%',
+      margin: '0 auto'
     }}>
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
         <Typography.Title level={2} style={{ color: '#fff', fontWeight: 800 }}>아이디 찾기</Typography.Title>
