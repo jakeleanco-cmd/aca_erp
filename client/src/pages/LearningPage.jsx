@@ -45,6 +45,7 @@ export default function LearningPage() {
   const [editCounseling, setEditCounseling] = useState(false);
   const [editStudyRecord, setEditStudyRecord] = useState(false);
   const [expandedKeys, setExpandedKeys] = useState([]);
+  const [expandedUnitKeys, setExpandedUnitKeys] = useState({});
 
   // 마지막 상담일, 학습기록 최종 업데이트일 경과 포맷 함수
   const getElapsedText = (dateString) => {
@@ -92,10 +93,30 @@ export default function LearningPage() {
   }, [studentId, navigate]);
 
   useEffect(() => {
-    if (student) {
-      setExpandedKeys(student.expandedLearningIds || []);
+    if (student && learnings.length > 0) {
+      // 1. '학습중'인 단원이 있는 교재(Collapse) 자동 펼침
+      const activeLearningIds = learnings
+        .filter(L => (L.units || []).some(u => u.status === '학습중'))
+        .map(L => L._id);
+
+      const savedIds = student.expandedLearningIds || [];
+      const combined = Array.from(new Set([...savedIds, ...activeLearningIds]));
+      setExpandedKeys(combined);
+
+      // 2. '학습중' 상태인 단원(테이블 행) 자동 펼침
+      setExpandedUnitKeys(prev => {
+        const newUnitKeys = { ...prev };
+        learnings.forEach(L => {
+          const activeChapters = (L.units || [])
+            .filter(u => u.status === '학습중')
+            .map(u => u.chapterOrder);
+          const existing = prev[L._id] || [];
+          newUnitKeys[L._id] = Array.from(new Set([...existing, ...activeChapters]));
+        });
+        return newUnitKeys;
+      });
     }
-  }, [student]);
+  }, [student, learnings]);
 
   const handleCollapseChange = async (keys) => {
     const keysArray = Array.isArray(keys) ? keys : [keys].filter(Boolean);
@@ -107,6 +128,13 @@ export default function LearningPage() {
     } catch (err) {
       console.error('아코디언 상태 동기화 실패:', err);
     }
+  };
+
+  const handleUnitExpand = (learningId, keys) => {
+    setExpandedUnitKeys(prev => ({
+      ...prev,
+      [learningId]: keys
+    }));
   };
 
   const openAdd = () => {
@@ -482,7 +510,9 @@ export default function LearningPage() {
                     }
                   ]}
                 />
-              )
+              ),
+              expandedRowKeys: expandedUnitKeys[L._id] || [],
+              onExpandedRowsChange: (keys) => handleUnitExpand(L._id, keys)
             }}
             columns={[
             {
