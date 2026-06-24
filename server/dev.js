@@ -1,7 +1,9 @@
 /**
  * 로컬 개발용: Express를 직접 listen. Vercel 배포 시에는 api/index.js만 사용된다.
  */
-require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+require('dotenv').config({ path: path.join(__dirname, '..', '.env.local'), override: true });
 
 const app = require('./app');
 

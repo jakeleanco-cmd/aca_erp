@@ -6,7 +6,7 @@ const fs = require('fs');
  * 환경 변수 로딩 시점 문제를 해결하기 위해 Getter 방식을 사용합니다.
  */
 
-// 드라이브 클라이언트와 폴더 ID를 가져오는 함수
+// 드라이브 클라이언트와 폴더 ID를 가져오는 함수 (OAuth2 방식)
 const getDriveContext = () => {
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_DRIVE_CLIENT_ID,

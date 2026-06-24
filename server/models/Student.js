@@ -17,6 +17,7 @@ const studentSchema = new mongoose.Schema(
     enrolledAt: { type: Date, required: true },
     leftAt: { type: Date, default: null },
     lastCounselingAt: { type: Date, default: null },
+    lastCounselingContent: { type: String, default: '' },
     lastStudyRecordUpdatedAt: { type: Date, default: null },
     cashReceiptUse: { type: String, enum: ['사용', '미사용'], default: '사용' },
     memo: { type: String, default: '' },

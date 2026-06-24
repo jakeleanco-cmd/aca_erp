@@ -42,6 +42,7 @@ export default function StudentEditPage() {
         status: '재원',
         cashReceiptUse: '사용',
         memo: '',
+        lastCounselingContent: '',
       });
       return;
     }
@@ -54,6 +55,7 @@ export default function StudentEditPage() {
           enrolledAt: data.enrolledAt ? dayjs(data.enrolledAt) : null,
           leftAt: data.leftAt ? dayjs(data.leftAt) : null,
           lastCounselingAt: data.lastCounselingAt ? dayjs(data.lastCounselingAt) : null,
+          lastCounselingContent: data.lastCounselingContent ?? '',
           lastStudyRecordUpdatedAt: data.lastStudyRecordUpdatedAt ? dayjs(data.lastStudyRecordUpdatedAt) : null,
           cashReceiptUse: data.cashReceiptUse ?? '사용',
           memo: data.memo ?? '',
@@ -144,6 +146,9 @@ export default function StudentEditPage() {
         </Form.Item>
         <Form.Item name="lastCounselingAt" label="마지막 상담일">
           <DatePicker style={{ width: '100%' }} allowClear format={DATE_FORMATS} />
+        </Form.Item>
+        <Form.Item name="lastCounselingContent" label="마지막 상담 내용" extra="마지막 상담 관련 구체적인 학습기록 및 상담 피드백 내용을 기록해 주세요.">
+          <Input.TextArea rows={6} maxLength={5000} placeholder="마지막 상담 내용 입력..." showCount />
         </Form.Item>
         <Form.Item name="lastStudyRecordUpdatedAt" label="학습기록 최종 업데이트일">
           <DatePicker style={{ width: '100%' }} allowClear format={DATE_FORMATS} />
