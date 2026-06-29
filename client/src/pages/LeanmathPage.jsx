@@ -25,8 +25,10 @@ import {
   Popconfirm,
   Row,
   Col,
-  Divider
+  Divider,
+  DatePicker
 } from 'antd';
+import dayjs from 'dayjs';
 import { 
   UserOutlined, 
   PlusOutlined, 
@@ -37,7 +39,10 @@ import {
   BookOutlined,
   CalendarOutlined,
   DollarOutlined,
-  FileTextOutlined
+  FileTextOutlined,
+  SaveOutlined,
+  FileDoneOutlined,
+  PrinterOutlined
 } from '@ant-design/icons';
 import { useLeanmathStore } from '../store/leanmathStore';
 
@@ -67,6 +72,9 @@ export default function LeanmathPage() {
   const [editingStudent, setEditingStudent] = useState(null); // 현재 수정 중인 학생 데이터 (null 이면 신규 등록)
   const [form] = Form.useForm(); // Antd 폼 인스턴스
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768); // 모바일 화면 감지
+  const [activeTab, setActiveTab] = useState('basic'); // 모달 활성화 탭 관리
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false); // 리포트 모달 오픈 여부
+  const [reportStudent, setReportStudent] = useState(null); // 리포트 대상 학생 데이터
 
   // 화면 리사이즈 감지 (Flexible Layout)
   useEffect(() => {
@@ -82,12 +90,61 @@ export default function LeanmathPage() {
     fetchStudents();
   }, []);
 
+  // 3-2. 경과 일수 계산 함수
+  const getDaysAgoText = (dateStr) => {
+    if (!dateStr) return '';
+    const targetDate = dayjs(dateStr).startOf('day');
+    const today = dayjs().startOf('day');
+    const diffDays = today.diff(targetDate, 'day');
+    if (diffDays === 0) return ' (오늘)';
+    if (diffDays > 0) return ` (${diffDays}일 전)`;
+    return ` (${Math.abs(diffDays)}일 후)`;
+  };
+
   // 3. 상태(status) 태그 스타일 지정 함수
   const getStatusTag = (status) => {
     const s = String(status || '').trim();
     if (s === '대기') return <Tag color="orange" bordered={false}>대기</Tag>;
     if (s === '퇴원') return <Tag color="default" bordered={false}>퇴원</Tag>;
     return <Tag color="green" bordered={false}>재원</Tag>;
+  };
+
+  // 수업 시간 포맷터 헬퍼 함수
+  const formatClassTime = (student) => {
+    if (!student) return '';
+    const dayMap = {
+      '1': '월', '2': '화', '3': '수', '4': '목', '5': '금', '6': '토', '7': '일',
+      '월': '월', '화': '화', '수': '수', '목': '목', '금': '금', '토': '토', '일': '일'
+    };
+
+    const formatPart = (day, time) => {
+      if (!day && !time) return null;
+      let dText = String(day || '').trim();
+      if (dText && dayMap[dText.substring(0, 1)]) {
+        dText = dayMap[dText.substring(0, 1)];
+      }
+      
+      let tText = String(time || '').trim();
+      if (tText && !isNaN(tText)) {
+        tText = `${tText}:00`;
+      }
+      
+      if (dText && tText) return `${dText} ${tText}`;
+      return dText || tText;
+    };
+
+    const parts = [
+      formatPart(student.class_day1, student.class_time1),
+      formatPart(student.class_day2, student.class_time2),
+      formatPart(student.class_day3, student.class_time3),
+    ].filter(Boolean);
+
+    return parts.join(', ') || '지정된 수업 시간 없음';
+  };
+
+  const handleOpenReportModal = (record) => {
+    setReportStudent(record);
+    setIsReportModalOpen(true);
   };
 
   // 4. 검색 필터 핸들러
@@ -103,10 +160,11 @@ export default function LeanmathPage() {
   const handleOpenAddModal = () => {
     setEditingStudent(null);
     form.resetFields();
+    setActiveTab('basic');
     setIsModalOpen(true);
   };
 
-  const handleOpenEditModal = (record) => {
+  const handleOpenEditModal = (record, tabKey = 'basic') => {
     setEditingStudent(record);
     form.setFieldsValue({
       ...record,
@@ -115,6 +173,7 @@ export default function LeanmathPage() {
       discount1: record.discount1 || 0,
       discount2: record.discount2 || 0,
     });
+    setActiveTab(tabKey);
     setIsModalOpen(true);
   };
 
@@ -204,6 +263,32 @@ export default function LeanmathPage() {
       dataIndex: 'm_phone',
       key: 'm_phone',
       render: (phone) => phone || <Text type="secondary">-</Text>,
+    },
+    {
+      title: '최근 기록일',
+      dataIndex: 'latest_record_date',
+      key: 'latest_record_date',
+      render: (date, record) => (
+        <Space size={4}>
+          <Button 
+            size="small"
+            type="text"
+            icon={<FileDoneOutlined style={{ color: '#10b981' }} />}
+            onClick={() => handleOpenReportModal(record)}
+            title="리포트 보기"
+            style={{ padding: 0 }}
+          />
+          <Button 
+            size="small"
+            type="text"
+            icon={<FileTextOutlined style={{ color: 'var(--primary-vibrant)' }} />}
+            onClick={() => handleOpenEditModal(record, 'learning')}
+            title="학습 및 평가 바로가기"
+            style={{ padding: 0 }}
+          />
+          {date ? `${date}${getDaysAgoText(date)}` : <Text type="secondary">-</Text>}
+        </Space>
+      ),
     },
     {
       title: '작업',
@@ -408,6 +493,48 @@ export default function LeanmathPage() {
       label: '학습 및 평가',
       children: (
         <Row gutter={[16, 16]}>
+          {/* 상단 닫기 / 저장 버튼 세트 */}
+          <Col xs={24} style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingBottom: 8 }}>
+            <Button 
+              onClick={() => setIsModalOpen(false)}
+              style={{ borderRadius: 10 }}
+            >
+              닫기
+            </Button>
+            <Button 
+              type="primary" 
+              onClick={handleSave}
+              style={{ 
+                borderRadius: 10, 
+                background: 'var(--primary-gradient)', 
+                border: 'none',
+                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.35)'
+              }}
+            >
+              저장
+            </Button>
+          </Col>
+
+          <Col xs={24} sm={12}>
+            <Form.Item 
+              label="최근 기록 날짜" 
+              name="latest_record_date"
+              getValueProps={(val) => ({ value: val ? dayjs(val) : null })}
+              normalize={(val) => val ? val.format('YYYY-MM-DD') : null}
+            >
+              <DatePicker 
+                style={{ width: '100%' }} 
+                placeholder="날짜 선택" 
+                format="YYYY-MM-DD"
+                className="glass-effect-input"
+              />
+            </Form.Item>
+          </Col>
+          <Col xs={24}>
+            <Form.Item label="자기주도학습시간" name="study_time">
+              <Input.TextArea autoSize={{ minRows: 2, maxRows: 6 }} placeholder="자기주도학습 시간 기록" className="glass-effect-input" />
+            </Form.Item>
+          </Col>
           <Col xs={24}>
             <Form.Item label="레벨 테스트 결과" name="level_test">
               <Input.TextArea autoSize={{ minRows: 2, maxRows: 6 }} placeholder="레벨 테스트 날짜 및 점수 기록" className="glass-effect-input" />
@@ -525,9 +652,9 @@ export default function LeanmathPage() {
         style={{ 
           marginBottom: 20, 
           borderRadius: 20, 
-          border: 'none', 
-          background: 'rgba(255,255,255,0.02)',
-          boxShadow: '0 8px 32px 0 rgba(0,0,0,0.2)'
+          border: '1px solid var(--glass-border)', 
+          background: 'var(--bg-card)',
+          boxShadow: 'var(--card-shadow)'
         }}
         bodyStyle={{ padding: 16 }}
       >
@@ -542,9 +669,9 @@ export default function LeanmathPage() {
               style={{ 
                 height: 44, 
                 borderRadius: 14, 
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                color: '#fff'
+                background: 'var(--bg-card)',
+                border: '1px solid var(--glass-border)',
+                color: 'var(--text-main)'
               }}
             />
           </Col>
@@ -604,9 +731,9 @@ export default function LeanmathPage() {
               style={{ 
                 marginBottom: 16, 
                 borderRadius: 20, 
-                border: 'none',
-                background: 'rgba(255,255,255,0.03)',
-                boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+                border: '1px solid var(--glass-border)',
+                background: 'var(--bg-card)',
+                boxShadow: 'var(--card-shadow)'
               }}
               bodyStyle={{ padding: '16px 20px' }}
             >
@@ -627,7 +754,7 @@ export default function LeanmathPage() {
               
               <div style={{ 
                 padding: '12px 14px', 
-                background: 'rgba(255,255,255,0.02)', 
+                background: 'rgba(0,0,0,0.02)', 
                 borderRadius: 12,
                 display: 'flex',
                 flexDirection: 'column',
@@ -646,9 +773,31 @@ export default function LeanmathPage() {
                   <Text type="secondary"><PhoneOutlined style={{ marginRight: 6 }} />비상연락처</Text>
                   <Text>{item.m_phone || '-'}</Text>
                 </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
+                  <Text type="secondary"><CalendarOutlined style={{ marginRight: 6 }} />최근 기록일</Text>
+                  <Space size={4}>
+                    <Button 
+                      size="small"
+                      type="text"
+                      icon={<FileDoneOutlined style={{ color: '#10b981' }} />}
+                      onClick={() => handleOpenReportModal(item)}
+                      title="리포트 보기"
+                      style={{ padding: '0 4px', height: 22 }}
+                    />
+                    <Button 
+                      size="small"
+                      type="text"
+                      icon={<FileTextOutlined style={{ color: 'var(--primary-vibrant)' }} />}
+                      onClick={() => handleOpenEditModal(item, 'learning')}
+                      title="학습 및 평가 바로가기"
+                      style={{ padding: '0 4px', height: 22 }}
+                    />
+                    <Text strong>{item.latest_record_date ? `${item.latest_record_date}${getDaysAgoText(item.latest_record_date)}` : '-'}</Text>
+                  </Space>
+                </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 10, borderTop: '1px solid var(--glass-border)' }}>
                 <Button 
                   size="small" 
                   type="text" 
@@ -683,7 +832,7 @@ export default function LeanmathPage() {
             <Button 
               disabled={page <= 1} 
               onClick={() => setPage(page - 1)}
-              style={{ borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+              style={{ borderRadius: 10, background: 'var(--bg-card)', border: '1px solid var(--glass-border)' }}
             >
               이전
             </Button>
@@ -691,7 +840,7 @@ export default function LeanmathPage() {
             <Button 
               disabled={page >= Math.ceil(totalCount / limit)} 
               onClick={() => setPage(page + 1)}
-              style={{ borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+              style={{ borderRadius: 10, background: 'var(--bg-card)', border: '1px solid var(--glass-border)' }}
             >
               다음
             </Button>
@@ -723,12 +872,115 @@ export default function LeanmathPage() {
           style={{ marginTop: 16 }}
         >
           <Tabs 
-            defaultActiveKey="basic" 
+            activeKey={activeTab} 
+            onChange={setActiveTab}
             items={renderTabItems()}
             className="leanmath-tabs"
             style={{ padding: '0 8px' }}
           />
         </Form>
+      </Modal>
+
+      {/* 6. 리포트 모달 */}
+      <Modal
+        title={null}
+        open={isReportModalOpen}
+        onCancel={() => setIsReportModalOpen(false)}
+        footer={[
+          <Button key="close" onClick={() => setIsReportModalOpen(false)}>
+            닫기
+          </Button>,
+          <Button key="print" type="primary" icon={<PrinterOutlined />} onClick={() => window.print()}>
+            출력
+          </Button>
+        ]}
+        width={720}
+        style={{ top: 20 }}
+        bodyStyle={{ padding: 0 }}
+        className="report-modal"
+      >
+        {reportStudent && (
+          <div style={{
+            background: '#fff',
+            color: '#1e293b',
+            fontFamily: '"Pretendard", "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif',
+            padding: '40px 45px',
+            minHeight: '840px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px'
+          }}>
+            {/* 리포트 헤더 */}
+            <div style={{ textAlign: 'center', borderBottom: '2px solid #0f172a', paddingBottom: '14px' }}>
+              <div style={{ fontSize: '13px', letterSpacing: '4px', textTransform: 'uppercase', color: '#64748b', marginBottom: '6px' }}>
+                LeanMath Student Report
+              </div>
+              <h1 style={{ fontSize: '24px', fontWeight: '800', margin: 0, color: '#0f172a' }}>
+                {reportStudent.name} <span style={{ fontSize: '16px', fontWeight: 'normal', color: '#475569' }}>({formatClassTime(reportStudent)})</span>
+              </h1>
+            </div>
+
+            {/* 리포트 본문 - 왼쪽 정렬 순차 레이아웃 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', textAlign: 'left' }}>
+              
+              {/* 1. 인적사항 */}
+              <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', borderLeft: '4px solid #3b82f6', paddingLeft: '8px', marginBottom: '8px' }}>
+                  인적사항
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 12px', paddingLeft: '12px', fontSize: '13px', color: '#334155' }}>
+                  <div><strong>학교 / 학년 :</strong> {reportStudent.school_name || '-'} / {reportStudent.grade1 || ''} {reportStudent.grade || ''}</div>
+                  <div><strong>수강 등급 :</strong> {reportStudent.level1 || '미정'} {reportStudent.level2 ? ` / ${reportStudent.level2}` : ''} {reportStudent.level3 ? ` / ${reportStudent.level3}` : ''}</div>
+                  <div><strong>학생 연락처 :</strong> {reportStudent.s_phone || '-'}</div>
+                  <div><strong>학부모 연락처 :</strong> {reportStudent.m_phone || '-'}</div>
+                  <div><strong>원생 상태 :</strong> {reportStudent.status || '-'}</div>
+                  <div><strong>입원일 :</strong> {reportStudent.start_date || '-'}</div>
+                </div>
+              </div>
+
+              {/* 2. 자기주도학습시간 */}
+              <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', borderLeft: '4px solid #3b82f6', paddingLeft: '8px', marginBottom: '8px' }}>
+                  자기주도학습시간
+                </h3>
+                <div style={{ paddingLeft: '12px', fontSize: '13px', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+                  {reportStudent.study_time || '기록된 자기주도학습시간이 없습니다.'}
+                </div>
+              </div>
+
+              {/* 3. 레벨테스트 */}
+              <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', borderLeft: '4px solid #3b82f6', paddingLeft: '8px', marginBottom: '8px' }}>
+                  레벨테스트
+                </h3>
+                <div style={{ paddingLeft: '12px', fontSize: '13px', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+                  {reportStudent.level_test || '기록된 레벨테스트 결과가 없습니다.'}
+                </div>
+              </div>
+
+              {/* 4. 교재이력 */}
+              <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', borderLeft: '4px solid #3b82f6', paddingLeft: '8px', marginBottom: '8px' }}>
+                  교재이력
+                </h3>
+                <div style={{ paddingLeft: '12px', fontSize: '13px', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+                  {reportStudent.book_history || '기록된 교재 이력이 없습니다.'}
+                </div>
+              </div>
+
+              {/* 5. 과정평가 결과 */}
+              <div>
+                <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', borderLeft: '4px solid #3b82f6', paddingLeft: '8px', marginBottom: '8px' }}>
+                  과정평가 결과
+                </h3>
+                <div style={{ paddingLeft: '12px', fontSize: '13px', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+                  {reportStudent.course_test || '기록된 과정평가 결과가 없습니다.'}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

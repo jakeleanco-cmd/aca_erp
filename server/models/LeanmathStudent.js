@@ -34,6 +34,7 @@ const leanmathStudentSchema = new mongoose.Schema(
     course_test: { type: String, default: null },
     study_progress: { type: String, default: null },
     chapter_test: { type: String, default: null },
+    latest_record_date: { type: String, default: null }, // 최근 기록 날짜 (학습/평가 탭에서 관리)
     study_point: { type: String, default: null },
     s_memo: { type: String, default: null },
     
