@@ -185,11 +185,11 @@ export default function LeanmathPage() {
       if (editingStudent) {
         // 수정 모드
         await updateStudent(editingStudent._id, values);
-        message.success(`${values.name} 학생의 정보가 수정되었습니다.`);
+        message.success(`${values.name || editingStudent.name} 학생의 정보가 수정되었습니다.`);
       } else {
         // 신규 등록 모드
         await createStudent(values);
-        message.success(`${values.name} 학생이 등록되었습니다.`);
+        message.success(`${values.name || '신규'} 학생이 등록되었습니다.`);
       }
       setIsModalOpen(false);
     } catch (err) {
@@ -325,6 +325,7 @@ export default function LeanmathPage() {
     {
       key: 'basic',
       label: '기본 정보',
+      forceRender: true,
       children: (
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={12}>
@@ -409,6 +410,7 @@ export default function LeanmathPage() {
     {
       key: 'class',
       label: '수강 정보',
+      forceRender: true,
       children: (
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={12}>
@@ -491,6 +493,7 @@ export default function LeanmathPage() {
     {
       key: 'learning',
       label: '학습 및 평가',
+      forceRender: true,
       children: (
         <Row gutter={[16, 16]}>
           {/* 상단 닫기 / 저장 버튼 세트 */}
@@ -566,6 +569,7 @@ export default function LeanmathPage() {
     {
       key: 'memos',
       label: '관리자 메모',
+      forceRender: true,
       children: (
         <Row gutter={[16, 16]}>
           <Col xs={24}>
@@ -929,7 +933,7 @@ export default function LeanmathPage() {
                   인적사항
                 </h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 12px', paddingLeft: '12px', fontSize: '13px', color: '#334155' }}>
-                  <div><strong>학교 / 학년 :</strong> {reportStudent.school_name || '-'} / {reportStudent.grade1 || ''} {reportStudent.grade || ''}</div>
+                  <div><strong>학교 / 학년 :</strong> {reportStudent.school_name || '-'} / {reportStudent.grade1 || ''} {reportStudent.grade2 || ''}</div>
                   <div><strong>수강 등급 :</strong> {reportStudent.level1 || '미정'} {reportStudent.level2 ? ` / ${reportStudent.level2}` : ''} {reportStudent.level3 ? ` / ${reportStudent.level3}` : ''}</div>
                   <div><strong>학생 연락처 :</strong> {reportStudent.s_phone || '-'}</div>
                   <div><strong>학부모 연락처 :</strong> {reportStudent.m_phone || '-'}</div>
