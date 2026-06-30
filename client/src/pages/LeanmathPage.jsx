@@ -904,7 +904,7 @@ export default function LeanmathPage() {
         className="report-modal"
       >
         {reportStudent && (
-          <div style={{
+          <div className="report-print-area" style={{
             background: '#fff',
             color: '#1e293b',
             fontFamily: '"Pretendard", "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif',
