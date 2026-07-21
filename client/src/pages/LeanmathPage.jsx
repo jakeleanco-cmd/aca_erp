@@ -75,6 +75,8 @@ export default function LeanmathPage() {
   const [activeTab, setActiveTab] = useState('basic'); // 모달 활성화 탭 관리
   const [isReportModalOpen, setIsReportModalOpen] = useState(false); // 리포트 모달 오픈 여부
   const [reportStudent, setReportStudent] = useState(null); // 리포트 대상 학생 데이터
+  const [isGenModalOpen, setIsGenModalOpen] = useState(false); // 리포트 자동생성 모달 오픈 여부
+  const [generatedReportText, setGeneratedReportText] = useState(''); // 자동 생성된 리포트 텍스트
 
   // 화면 리사이즈 감지 (Flexible Layout)
   useEffect(() => {
@@ -145,6 +147,51 @@ export default function LeanmathPage() {
   const handleOpenReportModal = (record) => {
     setReportStudent(record);
     setIsReportModalOpen(true);
+  };
+
+  const handleGenerateReport = () => {
+    const values = form.getFieldsValue();
+    const dateVal = values.latest_record_date;
+    
+    let dateStr = '';
+    if (dateVal) {
+      const d = dayjs(dateVal);
+      const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+      dateStr = `${d.format('YYYY년 M월 D일')} ${days[d.day()]}`;
+    } else {
+      const d = dayjs();
+      const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+      dateStr = `${d.format('YYYY년 M월 D일')} ${days[d.day()]}`;
+    }
+      
+    const text = `${dateStr} 업데이트
+
+<자기주도 학습시간>
+${values.study_time || '기록 없음'}
+
+<레벨평가 결과>
+${values.level_test || '기록 없음'}
+
+<교재 이력>
+${values.book_history || '기록 없음'}
+
+<과정평가 결과>
+${values.course_test || '기록 없음'}
+
+<학습진도 상황>
+${values.study_progress || '기록 없음'}
+
+<단원평가 결과>
+${values.chapter_test || '기록 없음'}`;
+
+    setGeneratedReportText(text);
+    setIsGenModalOpen(true);
+  };
+
+  const handleApplyGeneratedReport = () => {
+    form.setFieldsValue({ report_text: generatedReportText });
+    setIsGenModalOpen(false);
+    message.success('통합 리포트 영역에 생성된 리포트가 반영되었습니다.');
   };
 
   // 4. 검색 필터 핸들러
@@ -518,21 +565,41 @@ export default function LeanmathPage() {
             </Button>
           </Col>
 
-          <Col xs={24} sm={12}>
-            <Form.Item 
-              label="최근 기록 날짜" 
-              name="latest_record_date"
-              getValueProps={(val) => ({ value: val ? dayjs(val) : null })}
-              normalize={(val) => val ? val.format('YYYY-MM-DD') : null}
-            >
-              <DatePicker 
-                style={{ width: '100%' }} 
-                placeholder="날짜 선택" 
-                format="YYYY-MM-DD"
-                className="glass-effect-input"
-              />
+          <Col xs={24} sm={16}>
+            <Form.Item label="최근 기록 날짜">
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Form.Item
+                  name="latest_record_date"
+                  noStyle
+                  getValueProps={(val) => ({ value: val ? dayjs(val) : null })}
+                  normalize={(val) => val ? val.format('YYYY-MM-DD') : null}
+                >
+                  <DatePicker 
+                    style={{ flex: 1 }} 
+                    placeholder="날짜 선택" 
+                    format="YYYY-MM-DD"
+                    className="glass-effect-input"
+                  />
+                </Form.Item>
+                <Button 
+                  type="primary" 
+                  onClick={handleGenerateReport}
+                  style={{
+                    background: 'var(--primary-gradient)',
+                    border: 'none',
+                    borderRadius: '10px',
+                    height: '38px',
+                    boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
+                  }}
+                >
+                  리포트
+                </Button>
+              </div>
             </Form.Item>
           </Col>
+          <Form.Item name="report_text" style={{ display: 'none' }}>
+            <Input />
+          </Form.Item>
           <Col xs={24}>
             <Form.Item label="자기주도학습시간" name="study_time">
               <Input.TextArea autoSize={{ minRows: 2, maxRows: 6 }} placeholder="자기주도학습 시간 기록" className="glass-effect-input" />
@@ -549,6 +616,11 @@ export default function LeanmathPage() {
             </Form.Item>
           </Col>
           <Col xs={24}>
+            <Form.Item label="과정 평가" name="course_test">
+              <Input.TextArea autoSize={{ minRows: 2, maxRows: 5 }} placeholder="학기/전체 과정 종합 테스트 결과" className="glass-effect-input" />
+            </Form.Item>
+          </Col>
+          <Col xs={24}>
             <Form.Item label="학습 진행도" name="study_progress">
               <Input.TextArea autoSize={{ minRows: 3, maxRows: 8 }} placeholder="연산선행, 개념선행, 현행심화 등 진행 내역" className="glass-effect-input" />
             </Form.Item>
@@ -556,11 +628,6 @@ export default function LeanmathPage() {
           <Col xs={24}>
             <Form.Item label="단원 평가 결과" name="chapter_test">
               <Input.TextArea autoSize={{ minRows: 3, maxRows: 8 }} placeholder="기본과정, 실력과정 중단원/대단원 테스트 결과" className="glass-effect-input" />
-            </Form.Item>
-          </Col>
-          <Col xs={24}>
-            <Form.Item label="과정 평가" name="course_test">
-              <Input.TextArea autoSize={{ minRows: 2, maxRows: 5 }} placeholder="학기/전체 과정 종합 테스트 결과" className="glass-effect-input" />
             </Form.Item>
           </Col>
         </Row>
@@ -942,49 +1009,109 @@ export default function LeanmathPage() {
                 </div>
               </div>
 
-              {/* 2. 자기주도학습시간 */}
-              <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', borderLeft: '4px solid #3b82f6', paddingLeft: '8px', marginBottom: '8px' }}>
-                  자기주도학습시간
-                </h3>
-                <div style={{ paddingLeft: '12px', fontSize: '13px', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
-                  {reportStudent.study_time || '기록된 자기주도학습시간이 없습니다.'}
+              {/* 2. 상세 학습 리포트 내용 */}
+              {reportStudent.report_text ? (
+                <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', borderLeft: '4px solid #3b82f6', paddingLeft: '8px', marginBottom: '12px' }}>
+                    통합 학습 및 평가 리포트
+                  </h3>
+                  <div style={{ 
+                    paddingLeft: '12px', 
+                    fontSize: '13px', 
+                    color: '#334155', 
+                    whiteSpace: 'pre-wrap', 
+                    lineHeight: '1.6' 
+                  }}>
+                    {reportStudent.report_text}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  {/* 자기주도학습시간 */}
+                  <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+                    <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', borderLeft: '4px solid #3b82f6', paddingLeft: '8px', marginBottom: '8px' }}>
+                      자기주도학습시간
+                    </h3>
+                    <div style={{ paddingLeft: '12px', fontSize: '13px', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+                      {reportStudent.study_time || '기록된 자기주도학습시간이 없습니다.'}
+                    </div>
+                  </div>
 
-              {/* 3. 레벨테스트 */}
-              <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', borderLeft: '4px solid #3b82f6', paddingLeft: '8px', marginBottom: '8px' }}>
-                  레벨테스트
-                </h3>
-                <div style={{ paddingLeft: '12px', fontSize: '13px', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
-                  {reportStudent.level_test || '기록된 레벨테스트 결과가 없습니다.'}
-                </div>
-              </div>
+                  {/* 레벨테스트 */}
+                  <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+                    <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', borderLeft: '4px solid #3b82f6', paddingLeft: '8px', marginBottom: '8px' }}>
+                      레벨테스트
+                    </h3>
+                    <div style={{ paddingLeft: '12px', fontSize: '13px', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+                      {reportStudent.level_test || '기록된 레벨테스트 결과가 없습니다.'}
+                    </div>
+                  </div>
 
-              {/* 4. 교재이력 */}
-              <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', borderLeft: '4px solid #3b82f6', paddingLeft: '8px', marginBottom: '8px' }}>
-                  교재이력
-                </h3>
-                <div style={{ paddingLeft: '12px', fontSize: '13px', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
-                  {reportStudent.book_history || '기록된 교재 이력이 없습니다.'}
-                </div>
-              </div>
+                  {/* 교재이력 */}
+                  <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+                    <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', borderLeft: '4px solid #3b82f6', paddingLeft: '8px', marginBottom: '8px' }}>
+                      교재이력
+                    </h3>
+                    <div style={{ paddingLeft: '12px', fontSize: '13px', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+                      {reportStudent.book_history || '기록된 교재 이력이 없습니다.'}
+                    </div>
+                  </div>
 
-              {/* 5. 과정평가 결과 */}
-              <div>
-                <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', borderLeft: '4px solid #3b82f6', paddingLeft: '8px', marginBottom: '8px' }}>
-                  과정평가 결과
-                </h3>
-                <div style={{ paddingLeft: '12px', fontSize: '13px', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
-                  {reportStudent.course_test || '기록된 과정평가 결과가 없습니다.'}
-                </div>
-              </div>
+                  {/* 과정평가 결과 */}
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', borderLeft: '4px solid #3b82f6', paddingLeft: '8px', marginBottom: '8px' }}>
+                      과정평가 결과
+                    </h3>
+                    <div style={{ paddingLeft: '12px', fontSize: '13px', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+                      {reportStudent.course_test || '기록된 과정평가 결과가 없습니다.'}
+                    </div>
+                  </div>
+                </>
+              )}
 
             </div>
           </div>
         )}
+      </Modal>
+      
+      {/* 7. 리포트 자동 생성/편집 및 적용 모달 */}
+      <Modal
+        title={
+          <Title level={4} style={{ margin: 0, fontWeight: 800 }}>
+            통합 리포트 생성기
+          </Title>
+        }
+        open={isGenModalOpen}
+        onCancel={() => setIsGenModalOpen(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setIsGenModalOpen(false)}>
+            취소
+          </Button>,
+          <Button 
+            key="apply" 
+            type="primary" 
+            style={{ background: 'var(--primary-gradient)', border: 'none' }} 
+            onClick={handleApplyGeneratedReport}
+          >
+            통합 리포트에 적용하기
+          </Button>
+        ]}
+        width={650}
+        style={{ top: 60 }}
+        className="glass-modal"
+      >
+        <div style={{ marginTop: 16 }}>
+          <Text type="secondary" style={{ fontSize: '13px', display: 'block', marginBottom: '12px' }}>
+            입력된 각 개별 평가 항목을 취합하여 만든 통합 리포트 내용입니다. 필요 시 아래 편집창에서 내용을 직접 수정한 뒤 [통합 리포트에 적용하기] 버튼을 누르면 입력 필드에 자동으로 반영됩니다.
+          </Text>
+          <Input.TextArea 
+            value={generatedReportText}
+            onChange={(e) => setGeneratedReportText(e.target.value)}
+            autoSize={{ minRows: 10, maxRows: 22 }}
+            className="glass-effect-input"
+            style={{ width: '100%', fontSize: '13px', lineHeight: '1.6' }}
+          />
+        </div>
       </Modal>
     </div>
   );

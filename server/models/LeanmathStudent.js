@@ -23,6 +23,7 @@ const leanmathStudentSchema = new mongoose.Schema(
     
     // 학부모 상담 및 리포트 관련
     report_short_memo: { type: String, default: '' },
+    report_text: { type: String, default: '' }, // 통합 리포트 내용
     report_date: { type: String, default: null },
     report_update_date: { type: String, default: null },
     report_type: { type: String, default: null },
