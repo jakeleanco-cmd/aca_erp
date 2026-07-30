@@ -73,7 +73,7 @@ router.post('/register-first', async (req, res) => {
     const token = signToken(admin._id.toString());
     return res.status(201).json({
       token,
-      admin: { id: admin._id, email: admin.email, name: admin.name },
+      admin: { id: admin._id, email: admin.email, name: admin.name, viewMode: admin.viewMode },
     });
   } catch (err) {
     return handleAuthError(res, err, '관리자 등록에 실패했습니다.');
@@ -97,7 +97,7 @@ router.post('/login', async (req, res) => {
     const token = signToken(admin._id.toString());
     return res.json({
       token,
-      admin: { id: admin._id, email: admin.email, name: admin.name },
+      admin: { id: admin._id, email: admin.email, name: admin.name, viewMode: admin.viewMode },
     });
   } catch (err) {
     return handleAuthError(res, err, '로그인 처리 중 오류가 발생했습니다.');
@@ -170,7 +170,7 @@ router.get('/me', requireAuth, async (req, res) => {
       return res.status(404).json({ message: '관리자를 찾을 수 없습니다.' });
     }
     return res.json({
-      admin: { id: admin._id, email: admin.email, name: admin.name },
+      admin: { id: admin._id, email: admin.email, name: admin.name, viewMode: admin.viewMode },
     });
   } catch (err) {
     console.error(err);
@@ -242,6 +242,31 @@ router.delete('/:id', requireAuth, async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: '삭제에 실패했습니다.' });
+  }
+});
+
+/** 관리자의 viewMode(화면 모드) 설정 업데이트 */
+router.put('/view-mode', requireAuth, async (req, res) => {
+  try {
+    const { viewMode } = req.body;
+    if (viewMode !== 'mobile' && viewMode !== 'web') {
+      return res.status(400).json({ message: '올바르지 않은 화면 모드입니다.' });
+    }
+
+    const admin = await Admin.findByIdAndUpdate(
+      req.adminId,
+      { viewMode },
+      { new: true }
+    );
+
+    if (!admin) {
+      return res.status(404).json({ message: '관리자를 찾을 수 없습니다.' });
+    }
+
+    return res.json({ message: '화면 모드가 업데이트되었습니다.', viewMode: admin.viewMode });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: '화면 모드 업데이트에 실패했습니다.' });
   }
 });
 

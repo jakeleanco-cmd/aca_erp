@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
 import { lightThemeConfig } from './theme/theme.js';
 import { useAuthStore } from './store/authStore';
+import { useUiStore } from './store/uiStore';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterFirstPage from './pages/RegisterFirstPage.jsx';
 import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
@@ -30,6 +32,38 @@ function PrivateRoute({ children }) {
 }
 
 export default function App() {
+  const { viewMode, setViewModeOnly } = useUiStore();
+
+  // 최초 마운트 시, Vercel/SSR 배포 환경 등에서 발생할 수 있는 초기 상태 불일치를 방지하기 위해
+  // 로그인된 계정 정보(authStore) 또는 로컬 스토리지에 저장된 마지막 뷰 모드를 불러와 스토어에 동기화합니다.
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedAuth = localStorage.getItem('aca-auth');
+      const adminViewMode = savedAuth ? JSON.parse(savedAuth)?.state?.admin?.viewMode : null;
+      const saved = adminViewMode || localStorage.getItem('viewMode');
+      
+      if (saved === 'web' || saved === 'mobile') {
+        setViewModeOnly(saved);
+      }
+    }
+  }, [setViewModeOnly]);
+
+  // 로그인 페이지를 포함하여 앱 전체 범위에서 마지막에 설정한 뷰 모드(PC/모바일) 스타일이 적용되도록 합니다.
+  useEffect(() => {
+    const root = document.getElementById('root');
+    if (root) {
+      root.classList.remove('view-mobile', 'view-web');
+      root.classList.add(`view-${viewMode}`);
+    }
+    
+    // 모바일 모드일 때만 배경 그라데이션 표시
+    if (viewMode === 'mobile') {
+      document.body.classList.add('has-bg');
+    } else {
+      document.body.classList.remove('has-bg');
+    }
+  }, [viewMode]);
+
   return (
     <ConfigProvider theme={lightThemeConfig}>
       <BrowserRouter>
