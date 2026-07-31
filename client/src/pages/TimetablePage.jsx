@@ -23,9 +23,16 @@ export default function TimetablePage() {
 
   const weekdays = ['월', '화', '수', '목', '금', '토', '일'];
   
+  // 날짜 형식 유효성 확인 함수 (예: '-', 빈 값, 파싱 불가 문자열 차단)
+  const isValidDate = (dateString) => {
+    if (!dateString || String(dateString).trim() === '' || dateString === '-') return false;
+    const d = new Date(dateString);
+    return d instanceof Date && !isNaN(d.getTime());
+  };
+  
   // 오늘 날짜 기준으로 마지막 상담일 경과 일수 계산
   const getDaysSinceCounsel = (dateString) => {
-    if (!dateString) return null;
+    if (!isValidDate(dateString)) return null;
     const counselDate = new Date(dateString);
     const today = new Date();
     // 날짜의 시각 차이를 배제하기 위해 일(Date) 기준으로 차이 계산
@@ -278,7 +285,7 @@ export default function TimetablePage() {
                                       >
                                         {stu.name}({stu.gradeLabel})
                                       </span>
-                                      {stu.lastCounselingAt && (() => {
+                                      {stu.lastCounselingAt && isValidDate(stu.lastCounselingAt) && (() => {
                                         const days = getDaysSinceCounsel(stu.lastCounselingAt);
                                         const isWarning = days !== null && days >= 90;
                                         return (
@@ -293,7 +300,7 @@ export default function TimetablePage() {
                                           </span>
                                         );
                                       })()}
-                                      {stu.lastStudyRecordUpdatedAt && (() => {
+                                      {stu.lastStudyRecordUpdatedAt && isValidDate(stu.lastStudyRecordUpdatedAt) && (() => {
                                         const days = getDaysSinceCounsel(stu.lastStudyRecordUpdatedAt);
                                         const isWarning = days !== null && days >= 90;
                                         return (
@@ -304,6 +311,21 @@ export default function TimetablePage() {
                                             marginTop: 1 
                                           }}>
                                             {isWarning ? '⚠️' : '📝'} 기록: {new Date(stu.lastStudyRecordUpdatedAt).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' })}
+                                            {days !== null && ` (${days === 0 ? '오늘' : `${days}일 전`})`}
+                                          </span>
+                                        );
+                                      })()}
+                                      {stu.leanmathRecordDate && isValidDate(stu.leanmathRecordDate) && (() => {
+                                        const days = getDaysSinceCounsel(stu.leanmathRecordDate);
+                                        const isWarning = days !== null && days >= 90;
+                                        return (
+                                          <span style={{ 
+                                            fontSize: 11, 
+                                            color: isWarning ? '#ff4d4f' : 'black', 
+                                            fontWeight: isWarning ? 700 : 'normal',
+                                            marginTop: 1 
+                                          }}>
+                                            {isWarning ? '⚠️' : '📊'} 린매쓰: {new Date(stu.leanmathRecordDate).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' })}
                                             {days !== null && ` (${days === 0 ? '오늘' : `${days}일 전`})`}
                                           </span>
                                         );
@@ -500,7 +522,7 @@ export default function TimetablePage() {
                         }
                         description={
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            {stu.lastCounselingAt && (() => {
+                            {stu.lastCounselingAt && isValidDate(stu.lastCounselingAt) && (() => {
                               const days = getDaysSinceCounsel(stu.lastCounselingAt);
                               const isWarning = days !== null && days >= 90;
                               return (
@@ -514,7 +536,7 @@ export default function TimetablePage() {
                                 </span>
                               );
                             })()}
-                            {stu.lastStudyRecordUpdatedAt && (() => {
+                            {stu.lastStudyRecordUpdatedAt && isValidDate(stu.lastStudyRecordUpdatedAt) && (() => {
                               const days = getDaysSinceCounsel(stu.lastStudyRecordUpdatedAt);
                               const isWarning = days !== null && days >= 90;
                               return (
@@ -524,6 +546,20 @@ export default function TimetablePage() {
                                   fontWeight: isWarning ? 700 : 'normal' 
                                 }}>
                                   {isWarning ? '⚠️' : '📝'} 기록: {new Date(stu.lastStudyRecordUpdatedAt).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' })}
+                                  {days !== null && ` (${days === 0 ? '오늘' : `${days}일 전`})`}
+                                </span>
+                              );
+                            })()}
+                            {stu.leanmathRecordDate && isValidDate(stu.leanmathRecordDate) && (() => {
+                              const days = getDaysSinceCounsel(stu.leanmathRecordDate);
+                              const isWarning = days !== null && days >= 90;
+                              return (
+                                <span style={{ 
+                                  fontSize: 11, 
+                                  color: isWarning ? '#ff4d4f' : 'black', 
+                                  fontWeight: isWarning ? 700 : 'normal' 
+                                }}>
+                                  {isWarning ? '⚠️' : '📊'} 린매쓰: {new Date(stu.leanmathRecordDate).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' })}
                                   {days !== null && ` (${days === 0 ? '오늘' : `${days}일 전`})`}
                                 </span>
                               );

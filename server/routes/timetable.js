@@ -12,6 +12,7 @@ router.use(requireAuth);
  * 왜: 시간표 대시보드에서 그리드 렌더링을 단순화하기 위함.
  */
 const MonthlyBill = require('../models/MonthlyBill');
+const LeanmathStudent = require('../models/LeanmathStudent');
 
 router.get('/dashboard', async (req, res) => {
   try {
@@ -24,6 +25,20 @@ router.get('/dashboard', async (req, res) => {
     const students = await Student.find({ status: '재원' })
       .select('name status classSlotIds schoolLevel gradeLabel lastCounselingAt lastStudyRecordUpdatedAt cashReceiptUse')
       .lean();
+
+    // 린매쓰 학생들의 최근 기록 날짜 가져오기
+    const studentNames = students.map(s => s.name);
+    const leanmathStudents = await LeanmathStudent.find({ name: { $in: studentNames } })
+      .select('name latest_record_date')
+      .lean();
+
+    // 이름 -> 린매쓰 최근 기록 날짜 매핑 딕셔너리 생성
+    const nameToLeanmathRecordDate = {};
+    for (const ls of leanmathStudents) {
+      if (ls.latest_record_date) {
+        nameToLeanmathRecordDate[ls.name] = ls.latest_record_date;
+      }
+    }
 
     // 해당 월의 수납 정보 조회
     const bills = await MonthlyBill.find({ yearMonth }).lean();
@@ -43,6 +58,7 @@ router.get('/dashboard', async (req, res) => {
         gradeLabel: s.gradeLabel,
         lastCounselingAt: s.lastCounselingAt || null,
         lastStudyRecordUpdatedAt: s.lastStudyRecordUpdatedAt || null,
+        leanmathRecordDate: nameToLeanmathRecordDate[s.name] || null,
         cashReceiptUse: s.cashReceiptUse ?? '사용',
         billId: bill?._id || null,
         billStatus: bill?.status || null,
