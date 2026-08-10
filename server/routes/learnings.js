@@ -6,6 +6,7 @@ const {
   UNIT_STATUSES,
   LEARNING_STATUSES,
 } = require('../constants');
+const Student = require('../models/Student');
 const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -93,6 +94,9 @@ router.post('/', async (req, res) => {
       units,
     });
 
+    // 학생의 lastStudyRecordUpdatedAt 갱신
+    await Student.findByIdAndUpdate(student, { lastStudyRecordUpdatedAt: new Date() });
+
     const populated = await StudentLearning.findById(created._id).populate('textbook').lean();
     populated.units = sortUnitsByChapterOrder(populated.units || []);
     return res.status(201).json(populated);
@@ -127,6 +131,11 @@ router.patch('/:id', async (req, res) => {
 
     if (!doc) {
       return res.status(404).json({ message: '학습 정보를 찾을 수 없습니다.' });
+    }
+
+    // 학생의 lastStudyRecordUpdatedAt 갱신
+    if (doc.student) {
+      await Student.findByIdAndUpdate(doc.student, { lastStudyRecordUpdatedAt: new Date() });
     }
     
     const sortUnitsByChapterOrder = (units) => {
@@ -170,6 +179,12 @@ router.patch('/:id/units/:chapterOrder', async (req, res) => {
     if (unitEvaluationResult !== undefined) unit.unitEvaluationResult = unitEvaluationResult;
 
     await learning.save();
+
+    // 학생의 lastStudyRecordUpdatedAt 갱신
+    if (learning.student) {
+      await Student.findByIdAndUpdate(learning.student, { lastStudyRecordUpdatedAt: new Date() });
+    }
+
     const populated = await StudentLearning.findById(learning._id).populate('textbook').lean();
     populated.units = sortUnitsByChapterOrder(populated.units || []);
     return res.json(populated);
@@ -209,6 +224,12 @@ router.patch('/:id/units/:chapterOrder/topics/:topicIndex', async (req, res) => 
     if (result !== undefined) topic.result = result;
 
     await learning.save();
+
+    // 학생의 lastStudyRecordUpdatedAt 갱신
+    if (learning.student) {
+      await Student.findByIdAndUpdate(learning.student, { lastStudyRecordUpdatedAt: new Date() });
+    }
+
     const populated = await StudentLearning.findById(learning._id).populate('textbook').lean();
     populated.units = sortUnitsByChapterOrder(populated.units || []);
     return res.json(populated);

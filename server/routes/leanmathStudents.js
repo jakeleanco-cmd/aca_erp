@@ -126,11 +126,43 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ message: '학생 이름은 필수 입력 항목입니다.' });
     }
 
+    // 이전 데이터 조회하여 학습 기록 변경 여부 확인
+    const oldStudent = await LeanmathStudent.findById(req.params.id);
+    let latestRecordDate = oldStudent ? oldStudent.latest_record_date : null;
+
+    if (oldStudent) {
+      const recordFields = [
+        'study_time',
+        'level_test',
+        'book_history',
+        'course_test',
+        'study_progress',
+        'chapter_test'
+      ];
+      const isRecordModified = recordFields.some(field => {
+        const oldVal = oldStudent[field] === undefined ? null : oldStudent[field];
+        const newVal = req.body[field] === undefined ? null : req.body[field];
+        return String(oldVal || '') !== String(newVal || '');
+      });
+
+      if (isRecordModified) {
+        // 학습 기록이 수정되었으므로 현재 날짜(KST 기준 YYYY-MM-DD)로 업데이트
+        const now = new Date();
+        const kstOffset = 9 * 60 * 60 * 1000;
+        const kstDate = new Date(now.getTime() + kstOffset);
+        latestRecordDate = kstDate.toISOString().substring(0, 10);
+      }
+    }
+
     // 수정 시간 갱신
     const updateData = {
       ...req.body,
       modified_time: new Date().toISOString().replace('T', ' ').substring(0, 19),
     };
+
+    if (latestRecordDate) {
+      updateData.latest_record_date = latestRecordDate;
+    }
 
     const updatedStudent = await LeanmathStudent.findByIdAndUpdate(
       req.params.id,

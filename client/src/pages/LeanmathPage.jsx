@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
   Table, 
   Card, 
@@ -87,10 +88,31 @@ export default function LeanmathPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 초기 데이터 로딩
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // 초기 데이터 로딩 및 URL 파라미터 처리
   useEffect(() => {
-    fetchStudents();
-  }, []);
+    const searchName = searchParams.get('search');
+    if (searchName) {
+      setFilters({ search: searchName });
+    } else {
+      fetchStudents();
+    }
+  }, [searchParams]);
+
+  // 로딩 완료 후, 쿼리 매개변수로 지정된 학생이 있으면 모달 자동 팝업
+  useEffect(() => {
+    const searchName = searchParams.get('search');
+    const targetTab = searchParams.get('tab');
+    if (!loading && searchName && students.length > 0) {
+      const student = students.find(s => s.name === searchName) || students[0];
+      if (student && student.name === searchName) {
+        handleOpenEditModal(student, targetTab || 'basic');
+        // 모달을 오픈한 후, 쿼리 매개변수를 초기화하여 뒤로가기나 새로고침 시 반복 실행 방지
+        setSearchParams({});
+      }
+    }
+  }, [loading, students, searchParams]);
 
   // 3-2. 경과 일수 계산 함수
   const getDaysAgoText = (dateStr) => {

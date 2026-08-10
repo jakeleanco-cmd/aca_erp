@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, List, Button, Space, Typography, message, Spin, Tag, Empty, Popconfirm, Modal, Select, Dropdown } from 'antd';
+import { Card, List, Button, Space, Typography, message, Spin, Tag, Empty, Popconfirm, Modal, Select, Dropdown, DatePicker } from 'antd';
 import { ClockCircleOutlined, UserOutlined, RightOutlined, CreditCardOutlined, DollarOutlined, PlusOutlined, CalendarOutlined, PlusCircleOutlined, MessageOutlined } from '@ant-design/icons';
 import client from '../api/client';
 import { useUiStore } from '../store/uiStore';
 import { useMemo } from 'react';
 import BillMessageModal from '../components/BillMessageModal';
+import dayjs from 'dayjs';
 
 export default function TimetablePage() {
   const navigate = useNavigate();
@@ -20,6 +21,12 @@ export default function TimetablePage() {
   const [messageModalVisible, setMessageModalVisible] = useState(false);
   const [selectedBill, setSelectedBill] = useState(null);
   const [loadingBillId, setLoadingBillId] = useState(null);
+
+  // 상담 날짜 수정 모달을 위한 상태
+  const [counselingModalVisible, setCounselingModalVisible] = useState(false);
+  const [counselingStudent, setCounselingStudent] = useState(null);
+  const [counselingDate, setCounselingDate] = useState(null);
+  const [updatingCounsel, setUpdatingCounsel] = useState(false);
 
   const weekdays = ['월', '화', '수', '목', '금', '토', '일'];
   
@@ -72,6 +79,33 @@ export default function TimetablePage() {
       return row;
     });
   }, [grid, viewMode]);
+
+  // 상담 모달 오픈
+  const openCounselingModal = (student) => {
+    setCounselingStudent(student);
+    setCounselingDate(student.lastCounselingAt ? dayjs(student.lastCounselingAt) : null);
+    setCounselingModalVisible(true);
+  };
+
+  // 상담 날짜 저장
+  const handleSaveCounselingDate = async () => {
+    if (!counselingStudent) return;
+    setUpdatingCounsel(true);
+    try {
+      const formattedDate = counselingDate ? counselingDate.format('YYYY-MM-DD') : null;
+      await client.put(`/students/${counselingStudent._id}`, {
+        lastCounselingAt: formattedDate
+      });
+      message.success(`${counselingStudent.name} 학생의 상담 날짜가 수정되었습니다.`);
+      setCounselingModalVisible(false);
+      fetchTimetable();
+    } catch (err) {
+      console.error(err);
+      message.error(err.response?.data?.message || '상담 날짜 수정에 실패했습니다.');
+    } finally {
+      setUpdatingCounsel(false);
+    }
+  };
 
   const fetchTimetable = async () => {
     try {
@@ -285,17 +319,26 @@ export default function TimetablePage() {
                                       >
                                         {stu.name}({stu.gradeLabel})
                                       </span>
-                                      {stu.lastCounselingAt && isValidDate(stu.lastCounselingAt) && (() => {
-                                        const days = getDaysSinceCounsel(stu.lastCounselingAt);
+                                      {(() => {
+                                        const hasDate = stu.lastCounselingAt && isValidDate(stu.lastCounselingAt);
+                                        const days = hasDate ? getDaysSinceCounsel(stu.lastCounselingAt) : null;
                                         const isWarning = days !== null && days >= 90;
+                                        const dateText = hasDate 
+                                          ? new Date(stu.lastCounselingAt).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' })
+                                          : '미입력';
                                         return (
-                                          <span style={{ 
-                                            fontSize: 11, 
-                                            color: isWarning ? '#ff4d4f' : 'black', 
-                                            fontWeight: isWarning ? 700 : 'normal',
-                                            marginTop: 2 
-                                          }}>
-                                            {isWarning ? '⚠️' : '💬'} 상담: {new Date(stu.lastCounselingAt).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' })}
+                                          <span 
+                                            onClick={() => openCounselingModal(stu)}
+                                            style={{ 
+                                              fontSize: 11, 
+                                              color: isWarning ? '#ff4d4f' : (hasDate ? '#6366f1' : '#8c8c8c'), 
+                                              fontWeight: isWarning ? 700 : 500,
+                                              marginTop: 1,
+                                              cursor: 'pointer',
+                                              textDecoration: 'underline'
+                                            }}
+                                          >
+                                            {isWarning ? '⚠️' : '💬'} 상담: {dateText}
                                             {days !== null && ` (${days === 0 ? '오늘' : `${days}일 전`})`}
                                           </span>
                                         );
@@ -319,12 +362,17 @@ export default function TimetablePage() {
                                         const days = getDaysSinceCounsel(stu.leanmathRecordDate);
                                         const isWarning = days !== null && days >= 90;
                                         return (
-                                          <span style={{ 
-                                            fontSize: 11, 
-                                            color: isWarning ? '#ff4d4f' : 'black', 
-                                            fontWeight: isWarning ? 700 : 'normal',
-                                            marginTop: 1 
-                                          }}>
+                                          <span 
+                                            onClick={() => navigate(`/leanmath?search=${encodeURIComponent(stu.name)}&tab=learning`)}
+                                            style={{ 
+                                              fontSize: 11, 
+                                              color: isWarning ? '#ff4d4f' : '#6366f1', 
+                                              fontWeight: isWarning ? 700 : 500,
+                                              marginTop: 1,
+                                              cursor: 'pointer',
+                                              textDecoration: 'underline'
+                                            }}
+                                          >
                                             {isWarning ? '⚠️' : '📊'} 린매쓰: {new Date(stu.leanmathRecordDate).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' })}
                                             {days !== null && ` (${days === 0 ? '오늘' : `${days}일 전`})`}
                                           </span>
@@ -522,16 +570,25 @@ export default function TimetablePage() {
                         }
                         description={
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            {stu.lastCounselingAt && isValidDate(stu.lastCounselingAt) && (() => {
-                              const days = getDaysSinceCounsel(stu.lastCounselingAt);
+                            {(() => {
+                              const hasDate = stu.lastCounselingAt && isValidDate(stu.lastCounselingAt);
+                              const days = hasDate ? getDaysSinceCounsel(stu.lastCounselingAt) : null;
                               const isWarning = days !== null && days >= 90;
+                              const dateText = hasDate 
+                                ? new Date(stu.lastCounselingAt).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' })
+                                : '미입력';
                               return (
-                                <span style={{ 
-                                  fontSize: 11, 
-                                  color: isWarning ? '#ff4d4f' : 'black', 
-                                  fontWeight: isWarning ? 700 : 'normal' 
-                                }}>
-                                  {isWarning ? '⚠️' : '💬'} 상담: {new Date(stu.lastCounselingAt).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' })}
+                                <span 
+                                  onClick={() => openCounselingModal(stu)}
+                                  style={{ 
+                                    fontSize: 11, 
+                                    color: isWarning ? '#ff4d4f' : (hasDate ? '#6366f1' : '#8c8c8c'), 
+                                    fontWeight: isWarning ? 700 : 500,
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline'
+                                  }}
+                                >
+                                  {isWarning ? '⚠️' : '💬'} 상담: {dateText}
                                   {days !== null && ` (${days === 0 ? '오늘' : `${days}일 전`})`}
                                 </span>
                               );
@@ -554,11 +611,16 @@ export default function TimetablePage() {
                               const days = getDaysSinceCounsel(stu.leanmathRecordDate);
                               const isWarning = days !== null && days >= 90;
                               return (
-                                <span style={{ 
-                                  fontSize: 11, 
-                                  color: isWarning ? '#ff4d4f' : 'black', 
-                                  fontWeight: isWarning ? 700 : 'normal' 
-                                }}>
+                                <span 
+                                  onClick={() => navigate(`/leanmath?search=${encodeURIComponent(stu.name)}&tab=learning`)}
+                                  style={{ 
+                                    fontSize: 11, 
+                                    color: isWarning ? '#ff4d4f' : '#6366f1', 
+                                    fontWeight: isWarning ? 700 : 500,
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline'
+                                  }}
+                                >
                                   {isWarning ? '⚠️' : '📊'} 린매쓰: {new Date(stu.leanmathRecordDate).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' })}
                                   {days !== null && ` (${days === 0 ? '오늘' : `${days}일 전`})`}
                                 </span>
@@ -617,6 +679,30 @@ export default function TimetablePage() {
           setSelectedBill(null);
         }}
       />
+      <Modal
+        title={`${counselingStudent?.name || ''} 학생 상담 날짜 수정`}
+        open={counselingModalVisible}
+        onOk={handleSaveCounselingDate}
+        onCancel={() => setCounselingModalVisible(false)}
+        confirmLoading={updatingCounsel}
+        okText="저장"
+        cancelText="취소"
+        className="glass-effect"
+        bodyStyle={{ paddingTop: 16 }}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <Typography.Text type="secondary">
+            상담 날짜를 선택해 주세요.
+          </Typography.Text>
+        </div>
+        <DatePicker
+          style={{ width: '100%' }}
+          placeholder="상담 날짜 선택"
+          value={counselingDate}
+          onChange={(date) => setCounselingDate(date)}
+          format="YYYY-MM-DD"
+        />
+      </Modal>
     </div>
   );
 }
