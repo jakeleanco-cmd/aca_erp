@@ -541,8 +541,13 @@ export default function MidtermPrepMatrixTab({ studentId, student }) {
   const handleSyncExams = async () => {
     setLoading(true);
     try {
-      const res = await client.post('/exam-papers/sync-local');
-      message.success(`동기화 완료: ${res.data.successCount}개 추가, ${res.data.skipCount}개 건너뜀`);
+      // 현재 선택된 필터 조건만 동기화 범위로 전달
+      const res = await client.post('/exam-papers/sync-local', {
+        gradeLabel: filterGrade,
+        semester: filterSemester,
+        examTerm: filterTerm
+      });
+      message.success(`동기화 완료: ${res.data.successCount}개 추가, ${res.data.skipCount}개 건너뜀, ${res.data.prunedCount || 0}개 정리`);
       fetchMatrixData();
     } catch (err) {
       console.error(err);

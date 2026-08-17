@@ -41,7 +41,9 @@ router.use(requireAuth);
  */
 router.post('/sync-local', async (req, res) => {
   try {
-    const result = await syncLocalExams();
+    // 프론트엔드에서 전달한 필터 조건(학년/학기/고사)을 동기화 범위 제한에 사용
+    const { gradeLabel, semester, examTerm } = req.body || {};
+    const result = await syncLocalExams({ gradeLabel, semester, examTerm });
     res.json({ ok: true, ...result });
   } catch (error) {
     console.error('동기화 실패:', error);
