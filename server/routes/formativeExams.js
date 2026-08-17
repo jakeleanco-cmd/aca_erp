@@ -108,7 +108,7 @@ router.post('/', upload.array('files', 10), async (req, res) => {
       schoolLevel, gradeLabel, level,
       totalQuestions, correctCount, score,
       examDate, semester, examPeriod,
-      schoolName, chapterName, memo,
+      schoolName, year, chapterName, memo,
     } = req.body;
 
     // 구글 드라이브 업로드 처리 
@@ -147,6 +147,7 @@ router.post('/', upload.array('files', 10), async (req, res) => {
       semester,
       examPeriod,
       schoolName,
+      year: year || null,
       chapterName,
       memo,
       attachments
@@ -212,7 +213,7 @@ router.put('/:id', upload.array('files', 10), async (req, res) => {
       'category', 'examType', 'title', 'student', 'examPaper', 'schoolLevel', 'gradeLabel',
       'level', 'totalQuestions', 'correctCount', 'score',
       'examDate', 'semester', 'examPeriod',
-      'schoolName', 'chapterName', 'memo',
+      'schoolName', 'year', 'chapterName', 'memo',
     ];
 
     for (const f of fields) {

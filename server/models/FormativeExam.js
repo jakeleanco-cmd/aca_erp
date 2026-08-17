@@ -53,6 +53,8 @@ const formativeExamSchema = new mongoose.Schema(
     examPeriod: { type: String, default: '', trim: true },
     /** 학교명 (학교기출 시 사용) */
     schoolName: { type: String, default: '', trim: true },
+    /** 기출년도 (학교기출 시 사용) */
+    year: { type: Number },
     /** 단원명 */
     chapterName: { type: String, default: '', trim: true },
     /** 메모 */
