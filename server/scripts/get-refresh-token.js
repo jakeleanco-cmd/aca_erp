@@ -7,7 +7,10 @@
  *     브라우저에서 직접 로그인하여 새 토큰을 발급받기 위함.
  *     로컬에 임시 HTTP 서버를 띄워 리디렉션 콜백을 자동 수신한다.
  */
-require('dotenv').config({ path: require('path').join(__dirname, '..', '..', '.env') });
+const path = require('path');
+const dotenv = require('dotenv');
+dotenv.config({ path: path.join(__dirname, '..', '..', '.env.local') });
+dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
 
 const http = require('http');
 const { google } = require('googleapis');

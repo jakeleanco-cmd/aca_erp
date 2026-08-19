@@ -1,7 +1,9 @@
 const { google } = require('googleapis');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+const dotenv = require('dotenv');
+dotenv.config({ path: path.join(__dirname, '../../.env.local') });
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const getDriveClient = () => {
   const oauth2Client = new google.auth.OAuth2(
