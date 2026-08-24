@@ -30,6 +30,10 @@ const examPaperSchema = new mongoose.Schema(
     semester: { type: String, enum: ['', '1학기', '2학기', '기타'], default: '' },
     /** 고사 구분: 중간 | 기말 | 기타 */
     examTerm: { type: String, enum: ['', '중간', '기말', '기타'], default: '' },
+    /** 기출년도 (학교기출 시 사용, 예: 2022 또는 22) */
+    year: { type: Number, default: null },
+    /** 학교명 (학교기출 시 사용, 예: 고덕중, 배재중) */
+    schoolName: { type: String, default: '', trim: true },
     /** 수준 */
     level: { type: String, default: '', trim: true },
     /** 총 문항수 (기본값) */

@@ -212,7 +212,7 @@ export default function MidtermPrepMatrixTab({ studentId, student }) {
       correctCount: null,
       score: null,
       schoolName: '',
-      year: CURRENT_YEAR,
+      year: null,
       totalQuestions: null,
       memo: '',
       paperId: null
@@ -224,6 +224,9 @@ export default function MidtermPrepMatrixTab({ studentId, student }) {
 
   const handleEditRecord = (record) => {
     const isSchool = record.examType === '학교기출';
+    let editYear = record.year;
+    if (editYear && editYear > 2000) editYear = editYear - 2000;
+
     setActiveCell({ 
       chapterName: record.chapterName || record.title, 
       examType: record.examType, 
@@ -235,7 +238,7 @@ export default function MidtermPrepMatrixTab({ studentId, student }) {
       correctCount: record.correctCount,
       score: record.score,
       schoolName: record.schoolName,
-      year: record.year,
+      year: editYear,
       totalQuestions: record.totalQuestions,
       memo: record.memo,
       paperId: record.examPaper?._id || record.examPaper || null
@@ -752,7 +755,10 @@ export default function MidtermPrepMatrixTab({ studentId, student }) {
               );
             }
 
-            const typePapers = papers.filter(p => p.examType === type);
+            const typePapers = papers
+              .filter(p => p.examType === type)
+              .sort((a, b) => (a.title || '').localeCompare(b.title || '', 'ko-KR', { numeric: true }));
+
             if (typePapers.length === 0) return null;
 
             return (
@@ -1000,14 +1006,36 @@ export default function MidtermPrepMatrixTab({ studentId, student }) {
           {activeCell?.examType === '학교기출' && (
             <Form.Item name="paperId" label="기출 시험지 연결 (선택)" style={{ marginBottom: 12 }}>
               <Select 
-                placeholder="시험지 선택 (선택 시 총 문항수 등 자동 연동)" 
+                placeholder="시험지 선택 (선택 시 기출년도, 학교명, 총 문항수 자동 연동)" 
                 allowClear 
                 onChange={(val) => {
+                  if (!val) return;
                   const targetPaper = papers.find(p => p._id === val);
                   if (targetPaper) {
+                    // 1. 기출년도 추출 (예: 2022 -> 22, 또는 파일명/제목에서 '22년' 추출)
+                    let parsedYear = targetPaper.year;
+                    if (parsedYear && parsedYear > 2000) {
+                      parsedYear = parsedYear - 2000;
+                    }
+                    if (!parsedYear) {
+                      const yMatch = targetPaper.title.match(/(\d{2,4})년/);
+                      if (yMatch) {
+                        let y = parseInt(yMatch[1], 10);
+                        parsedYear = y > 2000 ? y - 2000 : y;
+                      }
+                    }
+
+                    // 2. 학교명 추출
+                    let parsedSchool = targetPaper.schoolName;
+                    if (!parsedSchool) {
+                      const sMatch = targetPaper.title.match(/([가-힣]+(?:중|여중|고|여고|초))/);
+                      if (sMatch) parsedSchool = sMatch[1];
+                    }
+
                     form.setFieldsValue({
-                      totalQuestions: targetPaper.totalQuestions,
-                      schoolName: targetPaper.title.split('_')[2] || targetPaper.title.split('_')[3] || ''
+                      year: parsedYear || undefined,
+                      schoolName: parsedSchool || '',
+                      totalQuestions: targetPaper.totalQuestions || undefined
                     });
                   }
                 }}

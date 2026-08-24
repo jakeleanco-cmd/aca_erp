@@ -6,11 +6,14 @@ const ExamPaper = require('../models/ExamPaper');
 const DATA_ROOT = path.join(__dirname, '../data/내신연습');
 
 // 헬퍼: 파일명에서 정보 추출 (NFC 정규화 필수)
-function parseFileInfo(filename) {
+function parseFileInfo(filename, examType = '') {
   const normName = filename.normalize('NFC');
+  const nameWithoutExt = normName.replace(/\.[^/.]+$/, "");
   const info = {
-    title: normName.replace(/\.[^/.]+$/, ""), // 확장자 제거
-    totalQuestions: 0
+    title: nameWithoutExt, // 기본값: 확장자 제외 파일명 전체
+    totalQuestions: 0,
+    year: null,
+    schoolName: ''
   };
 
   // 문항 수 추출: [20문제]
@@ -19,8 +22,27 @@ function parseFileInfo(filename) {
     info.totalQuestions = parseInt(qMatch[1], 10);
   }
 
-  // 앞부분의 [유형] 태그 제거하여 깔끔한 제목 만들기
-  info.title = info.title.replace(/^\[.*?\]_/, '').replace(/_\[\d+문제\]$/, '');
+  // 기출년도 추출: 예: 22년, 2022년
+  const yearMatch = normName.match(/(\d{2,4})년/);
+  if (yearMatch) {
+    let y = parseInt(yearMatch[1], 10);
+    if (y < 100) y = 2000 + y;
+    info.year = y;
+  }
+
+  // 학교명 추출: 예: 고덕중, 배재중, 성덕여중, 천호중 등
+  const schoolMatch = normName.match(/([가-힣]+(?:중|여중|고|여고|초))/);
+  if (schoolMatch) {
+    info.schoolName = schoolMatch[1];
+  }
+
+  // 학교기출은 파일명 전체를 그대로 시험지명(title)으로 유지
+  if (examType === '학교기출') {
+    info.title = nameWithoutExt;
+  } else {
+    // 일반 단원평가: 앞부분의 [유형] 태그 및 뒷부분의 _[20문제] 태그 제거하여 단원명으로 추출
+    info.title = nameWithoutExt.replace(/^\[.*?\]_/, '').replace(/_\[\d+문제\]$/, '');
+  }
 
   return info;
 }
@@ -82,7 +104,7 @@ async function syncLocalExams(filter = {}) {
           for (const filename of files) {
             totalCount++;
             const filePath = path.join(typePath, filename);
-            const { title, totalQuestions } = parseFileInfo(filename);
+            const { title, totalQuestions, year, schoolName } = parseFileInfo(filename, examType);
 
             // 중복 체크 (제목, 학년, 학기 기반 - 반드시 정규화된 값으로 체크)
             const existing = await ExamPaper.findOne({ 
@@ -102,8 +124,26 @@ async function syncLocalExams(filter = {}) {
             });
 
             if (existing) {
-              // console.log(`⏩ [Skipped] 이미 존재함: ${grade} ${semNorm} ${title}`);
-              skipCount++;
+              const currentAtt = existing.attachments?.[0];
+              const normOriginalName = filename.normalize('NFC');
+              const isFileNameChanged = currentAtt && currentAtt.originalName !== normOriginalName;
+              const isQuestionsChanged = existing.totalQuestions !== totalQuestions;
+              const isYearChanged = year && existing.year !== year;
+              const isSchoolChanged = schoolName && existing.schoolName !== schoolName;
+
+              if (isFileNameChanged || isQuestionsChanged || isYearChanged || isSchoolChanged) {
+                console.log(`🔄 [Updating] ${grade} ${title} 정보 갱신`);
+                existing.totalQuestions = totalQuestions;
+                if (year) existing.year = year;
+                if (schoolName) existing.schoolName = schoolName;
+                if (currentAtt) {
+                  currentAtt.originalName = normOriginalName;
+                }
+                await existing.save();
+                successCount++;
+              } else {
+                skipCount++;
+              }
               continue;
             }
 
@@ -130,6 +170,8 @@ async function syncLocalExams(filter = {}) {
                 gradeLabel: grade,
                 semester: semNorm,
                 examTerm: termNorm,
+                year,
+                schoolName,
                 totalQuestions,
                 attachments: [{
                   filename: driveResult.name,
@@ -143,7 +185,6 @@ async function syncLocalExams(filter = {}) {
               });
 
               successCount++;
-              // console.log(`✅ [Success] ${title} 등록 완료`);
             } catch (uploadErr) {
               console.error(`❌ [Error] ${filename} 업로드 실패:`, uploadErr.message);
               failedFiles.push({ filename: filename.normalize('NFC'), reason: uploadErr.message });

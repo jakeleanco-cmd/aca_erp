@@ -206,12 +206,34 @@ export default function ExamPaperPage() {
       render: (v) => v || '-',
     },
     {
+      title: '기출년도',
+      dataIndex: 'year',
+      key: 'year',
+      width: 80,
+      align: 'center',
+      render: (v) => {
+        if (!v) return '-';
+        const vStr = String(v);
+        const formatted = vStr.length === 4 ? vStr.slice(2) : vStr;
+        return `${formatted}년`;
+      },
+    },
+    {
+      title: '학교명',
+      dataIndex: 'schoolName',
+      key: 'schoolName',
+      width: 100,
+      align: 'center',
+      render: (v) => v ? <Tag color="cyan" style={{ margin: 0 }}>{v}</Tag> : '-',
+    },
+    {
       title: '시험지명',
       dataIndex: 'title',
       key: 'title',
-      minWidth: 220,
+      minWidth: 200,
+      sorter: (a, b) => (a.title || '').localeCompare(b.title || '', 'ko-KR', { numeric: true }),
       render: (text) => (
-        <Typography.Text strong style={{ display: 'block', minWidth: 200, whiteSpace: 'normal', wordBreak: 'keep-all' }}>
+        <Typography.Text strong style={{ display: 'block', minWidth: 180, whiteSpace: 'normal', wordBreak: 'keep-all' }}>
           {text}
         </Typography.Text>
       ),
@@ -342,8 +364,14 @@ export default function ExamPaperPage() {
           <Input.Search 
             placeholder="시험지 제목 검색"
             allowClear
-            style={{ width: 220 }}
+            style={{ width: 200 }}
             onSearch={(v) => setFilters(f => ({ ...f, title: v }))}
+          />
+          <Input.Search 
+            placeholder="학교명 검색"
+            allowClear
+            style={{ width: 140 }}
+            onSearch={(v) => setFilters(f => ({ ...f, schoolName: v }))}
           />
           <Button 
             size="small" 
@@ -354,7 +382,8 @@ export default function ExamPaperPage() {
               gradeLabel: '',
               semester: '', 
               examTerm: '', 
-              title: '' 
+              title: '',
+              schoolName: ''
             })}
           >
             초기화
@@ -368,7 +397,7 @@ export default function ExamPaperPage() {
         columns={columns}
         dataSource={papers}
         size="small"
-        scroll={{ x: 1000 }}
+        scroll={{ x: 1100 }}
         tableLayout="fixed"
         pagination={{ pageSize: 15 }}
         rowSelection={{
@@ -432,6 +461,19 @@ export default function ExamPaperPage() {
                   { label: '기말', value: '기말' },
                   { label: '기타', value: '기타' },
                 ]} placeholder="선택" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={12}>
+            <Col xs={12} sm={12}>
+              <Form.Item name="year" label="기출년도" extra="학교기출 시 입력 (예: 2023 또는 23)">
+                <InputNumber style={{ width: '100%' }} placeholder="예: 2023" />
+              </Form.Item>
+            </Col>
+            <Col xs={12} sm={12}>
+              <Form.Item name="schoolName" label="학교명" extra="학교기출 시 입력 (예: 고덕중)">
+                <Input placeholder="예: 고덕중" />
               </Form.Item>
             </Col>
           </Row>
