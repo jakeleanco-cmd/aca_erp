@@ -270,4 +270,68 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
+/**
+ * 개별 고지서 삭제 (미납/납부완료 모두 가능 - 관리자 판단)
+ */
+router.delete('/:id', async (req, res) => {
+  try {
+    const bill = await MonthlyBill.findById(req.params.id);
+    if (!bill) {
+      return res.status(404).json({ message: '고지를 찾을 수 없습니다.' });
+    }
+    await bill.deleteOne();
+    return res.json({ message: '고지가 삭제되었습니다.' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: '삭제에 실패했습니다.' });
+  }
+});
+
+/**
+ * 개별 고지서 수정 (금액) - PUT
+ */
+router.put('/:id', async (req, res) => {
+  try {
+    const { amount } = req.body;
+    if (amount === undefined || isNaN(Number(amount))) {
+      return res.status(400).json({ message: '올바른 금액을 입력해주세요.' });
+    }
+    const bill = await MonthlyBill.findById(req.params.id);
+    if (!bill) {
+      return res.status(404).json({ message: '고지를 찾을 수 없습니다.' });
+    }
+    bill.amount = Number(amount);
+    await bill.save();
+    const populated = await MonthlyBill.findById(bill._id).populate('student').lean();
+    return res.json(populated);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: '수정에 실패했습니다.' });
+  }
+});
+
+/**
+ * 개별 고지 추가 (POST /)
+ */
+router.post('/', async (req, res) => {
+  try {
+    const { yearMonth, studentId, amount } = req.body;
+    if (!yearMonth || !studentId || amount === undefined) {
+      return res.status(400).json({ message: '필수 값이 누락되었습니다.' });
+    }
+    const bill = new MonthlyBill({
+      yearMonth,
+      student: studentId,
+      amount: Number(amount),
+      status: '미납',
+    });
+    await bill.save();
+    const populated = await MonthlyBill.findById(bill._id).populate('student').lean();
+    return res.status(201).json(populated);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: '고지 추가에 실패했습니다.' });
+  }
+});
+
 module.exports = router;
