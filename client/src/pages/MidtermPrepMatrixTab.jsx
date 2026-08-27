@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Table, Button, Modal, Form, Input, Select, InputNumber,
   Space, Typography, Tag, Popconfirm, message, DatePicker, Upload, Spin, Row, Col, Card,
-  Progress, Statistic, List
+  Progress, Statistic, List, Radio
 } from 'antd';
 import { 
   PlusOutlined, EditOutlined, 
@@ -45,6 +45,7 @@ export default function MidtermPrepMatrixTab({ studentId, student }) {
   const [filterGrade, setFilterGrade] = useState(student?.gradeLabel || '중2');
   const [filterSemester, setFilterSemester] = useState('1학기');
   const [filterTerm, setFilterTerm] = useState('중간');
+  const [selectedRegion, setSelectedRegion] = useState(''); // '' (전체), '강동구', '강남구', '서초구', '송파구'
 
   // Data
   const [loading, setLoading] = useState(false);
@@ -607,14 +608,35 @@ export default function MidtermPrepMatrixTab({ studentId, student }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {MIDTERM_PREP_EXAM_TYPES.map((type, idx) => {
             if (type === '학교기출') {
-              const schoolRecords = records.filter(r => r.examType === '학교기출');
+              const allSchoolRecords = records.filter(r => r.examType === '학교기출');
+              const schoolRecords = selectedRegion
+                ? allSchoolRecords.filter(r => {
+                    const paperRegion = r.examPaper?.region;
+                    return paperRegion === selectedRegion || (selectedRegion === '강동구' && (r.schoolName?.includes('고덕') || r.schoolName?.includes('배재') || r.schoolName?.includes('명일') || r.schoolName?.includes('한영') || r.schoolName?.includes('강동') || r.schoolName?.includes('강일') || r.schoolName?.includes('천호') || r.schoolName?.includes('성덕') || r.schoolName?.includes('신명') || r.schoolName?.includes('상일') || r.schoolName?.includes('한신') || r.schoolName?.includes('동북'))) || (selectedRegion === '강남구' && (r.schoolName?.includes('수서') || r.schoolName?.includes('중동') || r.schoolName?.includes('휘문') || r.schoolName?.includes('단대') || r.schoolName?.includes('대청') || r.schoolName?.includes('진선') || r.schoolName?.includes('숙명') || r.schoolName?.includes('대왕') || r.schoolName?.includes('언남')));
+                  })
+                : allSchoolRecords;
 
               return (
                 <Card 
                   key={type} 
                   title={
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                      <Typography.Title level={5} style={{ margin: 0 }}>{idx + 1}. {type}</Typography.Title>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <Typography.Title level={5} style={{ margin: 0 }}>{idx + 1}. {type}</Typography.Title>
+                        <Radio.Group 
+                          size="small" 
+                          value={selectedRegion} 
+                          onChange={(e) => setSelectedRegion(e.target.value)}
+                          optionType="button"
+                          buttonStyle="solid"
+                        >
+                          <Radio.Button value="">전체 지역</Radio.Button>
+                          <Radio.Button value="강동구">강동구</Radio.Button>
+                          <Radio.Button value="강남구">강남구</Radio.Button>
+                          <Radio.Button value="서초구">서초구</Radio.Button>
+                          <Radio.Button value="송파구">송파구</Radio.Button>
+                        </Radio.Group>
+                      </div>
                       <Button 
                         type="primary" 
                         size="small" 
@@ -636,9 +658,30 @@ export default function MidtermPrepMatrixTab({ studentId, student }) {
                     bordered
                     columns={[
                       { 
+                        title: '지역구',
+                        width: 90,
+                        align: 'center',
+                        render: (_, rec) => {
+                          const r = rec.examPaper?.region;
+                          if (r) {
+                            const color = r === '강동구' ? 'geekblue' : r === '강남구' ? 'purple' : r === '서초구' ? 'orange' : r === '송파구' ? 'green' : 'default';
+                            return <Tag color={color} style={{ margin: 0 }}>{r}</Tag>;
+                          }
+                          const s = rec.schoolName || '';
+                          if (s.includes('고덕') || s.includes('배재') || s.includes('명일') || s.includes('한영') || s.includes('강동') || s.includes('강일') || s.includes('천호') || s.includes('성덕') || s.includes('신명') || s.includes('상일') || s.includes('한신') || s.includes('동북')) {
+                            return <Tag color="geekblue" style={{ margin: 0 }}>강동구</Tag>;
+                          }
+                          if (s.includes('수서') || s.includes('중동') || s.includes('휘문') || s.includes('단대') || s.includes('대청') || s.includes('진선') || s.includes('숙명') || s.includes('대왕') || s.includes('언남')) {
+                            return <Tag color="purple" style={{ margin: 0 }}>강남구</Tag>;
+                          }
+                          return <Tag style={{ margin: 0 }}>기타</Tag>;
+                        }
+                      },
+                      { 
                         title: '기출년도', 
                         dataIndex: 'year', 
-                        width: 100,
+                        width: 90,
+                        align: 'center',
                         render: (v) => {
                           if (!v) return '-';
                           const vStr = String(v);
@@ -649,7 +692,7 @@ export default function MidtermPrepMatrixTab({ studentId, student }) {
                       { 
                         title: '학교명', 
                         dataIndex: 'schoolName',
-                        width: 150,
+                        width: 130,
                         render: (v) => <Typography.Text strong>{v || '-'}</Typography.Text>
                       },
                       { 

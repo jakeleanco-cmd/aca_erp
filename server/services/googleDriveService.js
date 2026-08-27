@@ -33,7 +33,7 @@ const getDriveContext = () => {
     throw new Error('GOOGLE_DRIVE_FOLDER_ID 환경 변수가 설정되지 않았습니다.');
   }
 
-  // 1. OAuth2 Refresh Token 방식 (개인 구글 드라이브 용량 사용 시 최우선)
+  // 1. OAuth2 Refresh Token 방식 (개인 구글 드라이브 용량 사용 - 사용자 토큰이 유효할 때 최우선)
   const clientId = process.env.GOOGLE_DRIVE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
   const refreshToken = process.env.GOOGLE_DRIVE_REFRESH_TOKEN;
@@ -48,7 +48,7 @@ const getDriveContext = () => {
     };
   }
 
-  // 2. Service Account 방식 (Google Workspace 공유 드라이브 환경 등)
+  // 2. Service Account 방식 (Google Workspace / Service Account 키 fallback)
   const keyJson = process.env.GOOGLE_DRIVE_KEY_JSON;
   if (keyJson) {
     let credentials;
@@ -205,8 +205,50 @@ async function uploadWithCleanup(file) {
   }
 }
 
+/**
+ * 구글 드라이브 파일 목록 조회 (폴더 내 파일)
+ */
+async function listFiles({ query = '', pageToken = null, pageSize = 30 } = {}) {
+  const { drive, folderId } = getDriveContext();
+  
+  // 지정된 폴더 하위의 휴지통에 가지 않은 파일들만 조회
+  let q = `'${folderId}' in parents and trashed = false`;
+  if (query) {
+    const escapedQuery = query.replace(/'/g, "\\'");
+    q += ` and name contains '${escapedQuery}'`;
+  }
+
+  const response = await drive.files.list({
+    q,
+    pageSize,
+    pageToken: pageToken || undefined,
+    fields: 'nextPageToken, files(id, name, mimeType, size, createdTime, modifiedTime, webViewLink, webContentLink, iconLink, thumbnailLink)',
+    orderBy: 'modifiedTime desc',
+  });
+
+  return response.data;
+}
+
+/**
+ * 구글 드라이브 스토리지 용량 정보 조회
+ */
+async function getStorageQuota() {
+  const { drive } = getDriveContext();
+  try {
+    const response = await drive.about.get({
+      fields: 'storageQuota, user',
+    });
+    return response.data;
+  } catch (error) {
+    console.warn('[Google Drive] 용량 조회 실패 (권한 제한일 수 있음):', error.message);
+    return null;
+  }
+}
+
 module.exports = {
   uploadFile,
   deleteFile,
   uploadWithCleanup,
+  listFiles,
+  getStorageQuota,
 };

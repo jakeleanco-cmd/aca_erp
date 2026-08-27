@@ -56,7 +56,7 @@ router.post('/sync-local', async (req, res) => {
  */
 router.get('/', async (req, res) => {
   try {
-    const { category, examType, schoolLevel, gradeLabel, semester, examTerm, title, schoolName, year } = req.query;
+    const { category, examType, schoolLevel, gradeLabel, semester, examTerm, title, schoolName, year, region } = req.query;
     const filter = {};
     if (category) filter.category = category;
     if (examType) filter.examType = examType;
@@ -64,6 +64,7 @@ router.get('/', async (req, res) => {
     if (gradeLabel) filter.gradeLabel = gradeLabel;
     if (semester) filter.semester = semester;
     if (examTerm) filter.examTerm = examTerm;
+    if (region) filter.region = region;
     if (schoolName) filter.schoolName = { $regex: schoolName, $options: 'i' };
     if (year) filter.year = Number(year);
     if (title) filter.title = { $regex: title, $options: 'i' };
@@ -80,7 +81,7 @@ router.get('/', async (req, res) => {
  */
 router.post('/', upload.array('files', 5), async (req, res) => {
   try {
-    const { title, category, examType, schoolLevel, gradeLabel, semester, examTerm, level, totalQuestions, memo, year, schoolName } = req.body;
+    const { title, category, examType, schoolLevel, gradeLabel, semester, examTerm, level, totalQuestions, memo, year, schoolName, region } = req.body;
     
     // 구글 드라이브 업로드 처리
     const attachments = [];
@@ -101,6 +102,7 @@ router.post('/', upload.array('files', 5), async (req, res) => {
       title, category, examType, schoolLevel, gradeLabel, semester, examTerm, level,
       year: year !== undefined && year !== '' ? Number(year) : null,
       schoolName: schoolName || '',
+      region: region || '',
       totalQuestions: Number(totalQuestions || 0),
       memo,
       attachments
@@ -120,7 +122,7 @@ router.put('/:id', upload.array('files', 5), async (req, res) => {
     const paper = await ExamPaper.findById(req.params.id);
     if (!paper) return res.status(404).json({ message: '찾을 수 없음' });
 
-    const { title, category, examType, schoolLevel, gradeLabel, semester, examTerm, level, totalQuestions, memo, existingFiles, year, schoolName } = req.body;
+    const { title, category, examType, schoolLevel, gradeLabel, semester, examTerm, level, totalQuestions, memo, existingFiles, year, schoolName, region } = req.body;
 
     let parsedExisting = [];
     if (existingFiles) {
@@ -157,6 +159,7 @@ router.put('/:id', upload.array('files', 5), async (req, res) => {
     paper.examTerm = examTerm !== undefined ? examTerm : paper.examTerm;
     paper.year = year !== undefined && year !== '' ? Number(year) : (year === '' ? null : paper.year);
     paper.schoolName = schoolName !== undefined ? schoolName : paper.schoolName;
+    paper.region = region !== undefined ? region : paper.region;
     paper.level = level !== undefined ? level : paper.level;
     paper.totalQuestions = totalQuestions !== undefined ? Number(totalQuestions) : paper.totalQuestions;
     paper.memo = memo !== undefined ? memo : paper.memo;

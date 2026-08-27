@@ -5,15 +5,42 @@ const ExamPaper = require('../models/ExamPaper');
 
 const DATA_ROOT = path.join(__dirname, '../data/내신연습');
 
-// 헬퍼: 파일명에서 정보 추출 (NFC 정규화 필수)
-function parseFileInfo(filename, examType = '') {
+// 주요 학교별 지역구 매핑 사전 (폴더 구분이 없는 경우 자동 판별 보조)
+const SCHOOL_REGION_MAP = {
+  // 강동구
+  '고덕중': '강동구', '배재중': '강동구', '명일중': '강동구', '한영중': '강동구',
+  '강동중': '강동구', '강명중': '강동구', '강빛중': '강동구', '강일중': '강동구',
+  '동신중': '강동구', '상일여중': '강동구', '상일중': '강동구', '성내중': '강동구',
+  '성덕여중': '강동구', '신명중': '강동구', '신암중': '강동구', '천일중': '강동구',
+  '천호중': '강동구', '한신중': '강동구', '동북중': '강동구', '둔촌중': '강동구',
+  
+  // 강남구
+  '수서중': '강남구', '중동중': '강남구', '휘문중': '강남구', '단대부중': '강남구',
+  '대청중': '강남구', '대치중': '강남구', '도곡중': '강남구', '역삼중': '강남구',
+  '은성중': '강남구', '진선여중': '강남구', '숙명여중': '강남구', '대왕중': '강남구',
+  '언남중': '강남구', '구룡중': '강남구', '대명중': '강남구', '압구정중': '강남구',
+  '신사중': '강남구', '청담중': '강남구', '개원중': '강남구', '개포중': '강남구',
+
+  // 서초구
+  '서초중': '서초구', '원촌중': '서초구', '방배중': '서초구', '경원중': '서초구',
+  '신동중': '서초구', '반포중': '서초구', '신반포중': '서초구', '영동중': '서초구',
+  '서일중': '서초구', '서운중': '서초구', '이수중': '서초구',
+
+  // 송파구
+  '잠실중': '송파구', '신천중': '송파구', '잠신중': '송파구', '송파중': '송파구',
+  '보성중': '송파구', '가락중': '송파구', '방이중': '송파구', '오륜중': '송파구',
+};
+
+// 헬퍼: 파일명 및 경로에서 정보 추출 (NFC 정규화 필수)
+function parseFileInfo(filename, examType = '', subfolderName = '') {
   const normName = filename.normalize('NFC');
   const nameWithoutExt = normName.replace(/\.[^/.]+$/, "");
   const info = {
     title: nameWithoutExt, // 기본값: 확장자 제외 파일명 전체
     totalQuestions: 0,
     year: null,
-    schoolName: ''
+    schoolName: '',
+    region: ''
   };
 
   // 문항 수 추출: [20문제]
@@ -34,6 +61,13 @@ function parseFileInfo(filename, examType = '') {
   const schoolMatch = normName.match(/([가-힣]+(?:중|여중|고|여고|초))/);
   if (schoolMatch) {
     info.schoolName = schoolMatch[1];
+  }
+
+  // 지역구 판별 (1. 하위 폴더명 -> 2. 학교명 매핑)
+  if (subfolderName && ['강동구', '강남구', '서초구', '송파구'].includes(subfolderName)) {
+    info.region = subfolderName;
+  } else if (info.schoolName && SCHOOL_REGION_MAP[info.schoolName]) {
+    info.region = SCHOOL_REGION_MAP[info.schoolName];
   }
 
   // 학교기출은 파일명 전체를 그대로 시험지명(title)으로 유지
@@ -99,12 +133,37 @@ async function syncLocalExams(filter = {}) {
           const typeFolder = rawTypeFolder.normalize('NFC');
           const typePath = path.join(termPath, rawTypeFolder);
           const examType = parseTypeName(typeFolder);
-          const files = fs.readdirSync(typePath).filter(f => f.endsWith('.pdf'));
+          
+          // 폴더 내 파일 및 하위 지역 폴더(강동구, 강남구 등) 탐색
+          const entries = fs.readdirSync(typePath, { withFileTypes: true }).filter(e => !e.name.startsWith('.'));
+          const fileItems = [];
 
-          for (const filename of files) {
+          for (const ent of entries) {
+            const entName = ent.name.normalize('NFC');
+            const fullEntPath = path.join(typePath, ent.name);
+            if (ent.isDirectory()) {
+              // 하위 지역 폴더 (예: 4-1_학교기출/강동구/... 또는 4-1_학교기출/강남구/...)
+              const subFiles = fs.readdirSync(fullEntPath).filter(f => f.endsWith('.pdf'));
+              for (const subF of subFiles) {
+                fileItems.push({
+                  filename: subF.normalize('NFC'),
+                  filePath: path.join(fullEntPath, subF),
+                  subfolder: entName,
+                });
+              }
+            } else if (ent.name.endsWith('.pdf')) {
+              fileItems.push({
+                filename: entName,
+                filePath: fullEntPath,
+                subfolder: '',
+              });
+            }
+          }
+
+          for (const item of fileItems) {
             totalCount++;
-            const filePath = path.join(typePath, filename);
-            const { title, totalQuestions, year, schoolName } = parseFileInfo(filename, examType);
+            const { filename, filePath, subfolder } = item;
+            const { title, totalQuestions, year, schoolName, region } = parseFileInfo(filename, examType, subfolder);
 
             // 중복 체크 (제목, 학년, 학기 기반 - 반드시 정규화된 값으로 체크)
             const existing = await ExamPaper.findOne({ 
@@ -130,12 +189,14 @@ async function syncLocalExams(filter = {}) {
               const isQuestionsChanged = existing.totalQuestions !== totalQuestions;
               const isYearChanged = year && existing.year !== year;
               const isSchoolChanged = schoolName && existing.schoolName !== schoolName;
+              const isRegionChanged = region && existing.region !== region;
 
-              if (isFileNameChanged || isQuestionsChanged || isYearChanged || isSchoolChanged) {
-                console.log(`🔄 [Updating] ${grade} ${title} 정보 갱신`);
+              if (isFileNameChanged || isQuestionsChanged || isYearChanged || isSchoolChanged || isRegionChanged) {
+                console.log(`🔄 [Updating] ${grade} ${title} 정보 갱신 (지역: ${region || '미지정'})`);
                 existing.totalQuestions = totalQuestions;
                 if (year) existing.year = year;
                 if (schoolName) existing.schoolName = schoolName;
+                if (region) existing.region = region;
                 if (currentAtt) {
                   currentAtt.originalName = normOriginalName;
                 }
@@ -147,10 +208,9 @@ async function syncLocalExams(filter = {}) {
               continue;
             }
 
-            console.log(`📤 [Uploading] ${grade} > ${semNorm} > ${termNorm} > ${filename.normalize('NFC')}`);
+            console.log(`📤 [Uploading] ${grade} > ${semNorm} > ${termNorm} > ${filename.normalize('NFC')} (${region || '기타'})`);
 
             // 구글 드라이브 업로드
-            // skipDecoding: true 를 추가하여 로컬 UTF-8 파일명이 깨지지 않게 함
             const mockFile = {
               originalname: filename.normalize('NFC'),
               mimetype: 'application/pdf',
@@ -172,6 +232,7 @@ async function syncLocalExams(filter = {}) {
                 examTerm: termNorm,
                 year,
                 schoolName,
+                region: region || '',
                 totalQuestions,
                 attachments: [{
                   filename: driveResult.name,

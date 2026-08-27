@@ -22,6 +22,7 @@ import ExamSheetsPage from './pages/ExamSheetsPage.jsx';
 import ExamPaperPage from './pages/ExamPaperPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
 import LeanmathPage from './pages/LeanmathPage.jsx';
+import GoogleDrivePage from './pages/GoogleDrivePage.jsx';
 
 function PrivateRoute({ children }) {
   const token = useAuthStore((s) => s.token);
@@ -97,6 +98,7 @@ export default function App() {
             <Route path="exam-papers" element={<ExamPaperPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="leanmath" element={<LeanmathPage />} />
+            <Route path="google-drive" element={<GoogleDrivePage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

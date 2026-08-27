@@ -14,6 +14,7 @@ import {
   MobileOutlined,
   DesktopOutlined,
   DatabaseOutlined,
+  CloudOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../store/authStore';
 import { useUiStore } from '../store/uiStore';
@@ -27,6 +28,7 @@ const menuItems = [
   { key: '/leanmath', icon: <DatabaseOutlined />, label: '린매쓰' },
   { key: '/exam-sheets', icon: <FileTextOutlined />, label: '성적' },
   { key: '/exam-papers', icon: <FolderOpenOutlined />, label: '시험지' },
+  { key: '/google-drive', icon: <CloudOutlined />, label: '드라이브' },
   { key: '/textbooks', icon: <BookOutlined />, label: '교재' },
   { key: '/billing', icon: <DollarOutlined />, label: '수납' },
   { key: '/admins', icon: <UserOutlined />, label: '관리' },
