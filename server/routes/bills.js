@@ -90,6 +90,9 @@ router.post('/generate', async (req, res) => {
       student: s._id,
       amount: s.monthlyTuition,
       status: '미납',
+      // 학생 정보에서 현금영수증 관련 데이터 스냅샷
+      cashReceiptUse: s.cashReceiptUse || '사용',
+      externalReceiptId: s.cashReceiptPhone || '',
     }));
 
     if (docs.length === 0) {
@@ -137,6 +140,9 @@ router.post('/generate-single', async (req, res) => {
       student: student._id,
       amount: student.monthlyTuition,
       status: '미납',
+      // 학생 정보에서 현금영수증 관련 데이터 스냅샷
+      cashReceiptUse: student.cashReceiptUse || '사용',
+      externalReceiptId: student.cashReceiptPhone || '',
     });
 
     await bill.save();
@@ -240,6 +246,30 @@ router.post('/:id/issue-receipt', async (req, res) => {
 });
 
 /**
+ * 현금영수증 발행 취소: receiptIssued를 false로 되돌림
+ * 왜: 잘못 발행완료 기록한 경우 되돌릴 수 있어야 함
+ */
+router.post('/:id/cancel-receipt', async (req, res) => {
+  try {
+    const bill = await MonthlyBill.findById(req.params.id);
+    if (!bill) {
+      return res.status(404).json({ message: '고지를 찾을 수 없습니다.' });
+    }
+    if (!bill.receiptIssued) {
+      return res.status(400).json({ message: '현금영수증이 발행되지 않은 건입니다.' });
+    }
+    bill.receiptIssued = false;
+    bill.receiptIssuedAt = null;
+    await bill.save();
+    const populated = await MonthlyBill.findById(bill._id).populate('student').lean();
+    return res.json(populated);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: '발행 취소에 실패했습니다.' });
+  }
+});
+
+/**
  * 고지된 금액 직접 수정 (미납 건만 가능)
  */
 router.patch('/:id', async (req, res) => {
@@ -292,7 +322,7 @@ router.delete('/:id', async (req, res) => {
  */
 router.put('/:id', async (req, res) => {
   try {
-    const { amount } = req.body;
+    const { amount, externalReceiptId, cashReceiptUse } = req.body;
     if (amount === undefined || isNaN(Number(amount))) {
       return res.status(400).json({ message: '올바른 금액을 입력해주세요.' });
     }
@@ -301,6 +331,14 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ message: '고지를 찾을 수 없습니다.' });
     }
     bill.amount = Number(amount);
+    // 현금영수증 번호 업데이트 (값이 전달된 경우에만)
+    if (externalReceiptId !== undefined) {
+      bill.externalReceiptId = String(externalReceiptId).trim();
+    }
+    // 현금영수증 사용여부 업데이트
+    if (cashReceiptUse !== undefined) {
+      bill.cashReceiptUse = cashReceiptUse;
+    }
     await bill.save();
     const populated = await MonthlyBill.findById(bill._id).populate('student').lean();
     return res.json(populated);
@@ -319,11 +357,15 @@ router.post('/', async (req, res) => {
     if (!yearMonth || !studentId || amount === undefined) {
       return res.status(400).json({ message: '필수 값이 누락되었습니다.' });
     }
+    // 학생 정보에서 현금영수증 관련 데이터를 가져와 스냅샷으로 저장
+    const student = await Student.findById(studentId).lean();
     const bill = new MonthlyBill({
       yearMonth,
       student: studentId,
       amount: Number(amount),
       status: '미납',
+      cashReceiptUse: student?.cashReceiptUse || '사용',
+      externalReceiptId: student?.cashReceiptPhone || '',
     });
     await bill.save();
     const populated = await MonthlyBill.findById(bill._id).populate('student').lean();

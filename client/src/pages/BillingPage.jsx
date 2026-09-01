@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
   Table, Button, DatePicker, message, Space, Tag,
-  Typography, Popconfirm, Select, Form, InputNumber, Modal,
+  Typography, Popconfirm, Select, Form, InputNumber, Modal, Input,
 } from 'antd';
-import { CloseCircleOutlined, MessageOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { CloseCircleOutlined, MessageOutlined, EditOutlined, DeleteOutlined, SearchOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import client from '../api/client';
 import BillMessageModal from '../components/BillMessageModal';
@@ -15,6 +15,7 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState([]);
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('all');
+  const [studentSearch, setStudentSearch] = useState('');
   const [billModalVisible, setBillModalVisible] = useState(false);
   const [editingBill, setEditingBill] = useState(null);
   const [students, setStudents] = useState([]);
@@ -25,9 +26,14 @@ export default function BillingPage() {
   const yearMonth = month.format('YYYY-MM');
 
   const filteredRows = rows.filter((r) => {
-    if (paymentMethodFilter === 'all') return true;
-    if (paymentMethodFilter === '미결제') return !r.paymentMethod;
-    return r.paymentMethod === paymentMethodFilter;
+    // 결제수단 필터
+    if (paymentMethodFilter !== 'all') {
+      if (paymentMethodFilter === '미결제' && r.paymentMethod) return false;
+      if (paymentMethodFilter !== '미결제' && r.paymentMethod !== paymentMethodFilter) return false;
+    }
+    // 학생 이름 검색 필터
+    if (studentSearch && !(r.student?.name || '').includes(studentSearch)) return false;
+    return true;
   });
 
   const load = async () => {
@@ -108,10 +114,17 @@ export default function BillingPage() {
     }
   };
 
-  const payCash = async (id) => {
+  const payCash = async (row) => {
     try {
-      await client.post('/bills/' + id + '/pay-cash');
+      await client.post('/bills/' + row._id + '/pay-cash');
       message.success('현금 수납 처리되었습니다.');
+      // 현금영수증 사용 학생이면 발행 필요 안내
+      if (row.cashReceiptUse !== '미사용') {
+        message.warning({
+          content: `${row.student?.name || '학생'}님은 현금영수증 발행이 필요합니다. (${row.externalReceiptId || '번호 미등록'})`,
+          duration: 5,
+        });
+      }
       await load();
     } catch (err) {
       message.error(err.response?.data?.message || '처리에 실패했습니다.');
@@ -138,6 +151,16 @@ export default function BillingPage() {
     }
   };
 
+  const cancelReceipt = async (row) => {
+    try {
+      await client.post('/bills/' + row._id + '/cancel-receipt');
+      message.success('현금영수증 발행이 취소되었습니다.');
+      await load();
+    } catch (err) {
+      message.error(err.response?.data?.message || '발행 취소에 실패했습니다.');
+    }
+  };
+
   const deleteBill = async (id) => {
     try {
       await client.delete('/bills/' + id);
@@ -158,7 +181,12 @@ export default function BillingPage() {
   const openEditBill = async (record) => {
     setEditingBill(record);
     await loadStudents();
-    form.setFieldsValue({ studentId: record.student?._id, amount: record.amount });
+    form.setFieldsValue({
+      studentId: record.student?._id,
+      amount: record.amount,
+      externalReceiptId: record.externalReceiptId || '',
+      cashReceiptUse: record.cashReceiptUse || '사용',
+    });
     setBillModalVisible(true);
   };
 
@@ -166,7 +194,11 @@ export default function BillingPage() {
     try {
       const vals = await form.validateFields();
       if (editingBill) {
-        await client.put('/bills/' + editingBill._id, { amount: vals.amount });
+        await client.put('/bills/' + editingBill._id, {
+          amount: vals.amount,
+          externalReceiptId: vals.externalReceiptId,
+          cashReceiptUse: vals.cashReceiptUse,
+        });
         message.success('고지가 수정되었습니다.');
       } else {
         await client.post('/bills', { yearMonth, studentId: vals.studentId, amount: vals.amount });
@@ -227,11 +259,25 @@ export default function BillingPage() {
     {
       title: '현금영수증',
       key: 'rc',
-      width: 110,
-      render: (_, r) =>
-        r.receiptIssued ? (
-          <span style={{ fontSize: 12 }}>{r.receiptIssuedAt ? dayjs(r.receiptIssuedAt).format('YYYY-MM-DD') : '발행'}</span>
-        ) : '-',
+      width: 150,
+      render: (_, r) => {
+        // 현금영수증 사용여부 태그
+        const useTag = r.cashReceiptUse === '미사용'
+          ? <Tag color="default">미사용</Tag>
+          : <Tag color="blue">사용</Tag>;
+        // 현금영수증 번호 (학생 정보에서 복사된 값)
+        const phoneNum = r.externalReceiptId || '-';
+        // 발행 여부
+        const issued = r.receiptIssued
+          ? <span style={{ fontSize: 11, color: '#52c41a' }}>{r.receiptIssuedAt ? dayjs(r.receiptIssuedAt).format('MM-DD') + ' 발행' : '발행완료'}</span>
+          : null;
+        return (
+          <Space direction="vertical" size={0} style={{ lineHeight: 1.4 }}>
+            <Space size={4}>{useTag}<span style={{ fontSize: 12 }}>{phoneNum}</span></Space>
+            {issued}
+          </Space>
+        );
+      },
     },
     {
       title: '작업',
@@ -245,11 +291,46 @@ export default function BillingPage() {
           {r.status === '미납' && (
             <>
               <Button size="small" type="primary" onClick={() => payCard(r._id)}>카드</Button>
-              <Button size="small" onClick={() => payCash(r._id)}>현금</Button>
+              {/* 현금영수증 사용 학생은 확인 후 현금 수납 처리 */}
+              {r.cashReceiptUse !== '미사용' ? (
+                <Popconfirm
+                  title="현금영수증 발행 필요"
+                  description={`현금영수증 번호: ${r.externalReceiptId || '미등록'}\n현금 수납 처리하시겠습니까?`}
+                  onConfirm={() => payCash(r)}
+                  okText="네, 수납"
+                  cancelText="취소"
+                >
+                  <Button size="small">현금</Button>
+                </Popconfirm>
+              ) : (
+                <Button size="small" onClick={() => payCash(r)}>현금</Button>
+              )}
             </>
           )}
-          {r.status === '납부완료' && r.paymentMethod === '현금' && !r.receiptIssued && (
-            <Button size="small" onClick={() => issueReceipt(r)}>현금영수증</Button>
+          {/* 현금 납부완료 + 현금영수증 사용 + 미발행 → 발행완료 기록 버튼 표시 */}
+          {r.status === '납부완료' && r.paymentMethod === '현금' && r.cashReceiptUse !== '미사용' && !r.receiptIssued && (
+            <Popconfirm
+              title="현금영수증 발행완료 기록"
+              description="현금영수증을 실제로 발행한 후 이 버튼을 눌러주세요."
+              onConfirm={() => issueReceipt(r)}
+              okText="발행 완료"
+              cancelText="취소"
+            >
+              <Button size="small" type="dashed" icon={<CheckCircleOutlined />}>발행완료</Button>
+            </Popconfirm>
+          )}
+          {/* 현금영수증 발행된 건 → 발행취소 버튼 표시 */}
+          {r.status === '납부완료' && r.paymentMethod === '현금' && r.receiptIssued && (
+            <Popconfirm
+              title="현금영수증 발행 취소"
+              description="발행 기록을 취소하시겠습니까?"
+              onConfirm={() => cancelReceipt(r)}
+              okText="네, 취소"
+              cancelText="아니오"
+              okButtonProps={{ danger: true }}
+            >
+              <Button size="small" danger type="text">발행취소</Button>
+            </Popconfirm>
           )}
           <Button size="small" type="text" icon={<EditOutlined />} onClick={() => openEditBill(r)} />
           <Popconfirm title="정말 삭제하시겠습니까?" onConfirm={() => deleteBill(r._id)}>
@@ -286,6 +367,14 @@ export default function BillingPage() {
             { value: '미결제', label: '미결제' },
           ]}
         />
+        <Input
+          placeholder="학생 이름 검색"
+          prefix={<SearchOutlined />}
+          value={studentSearch}
+          onChange={(e) => setStudentSearch(e.target.value)}
+          allowClear
+          style={{ width: 160 }}
+        />
       </Space>
 
       <div style={{ marginBottom: 20, padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexWrap: 'wrap', gap: '24px' }}>
@@ -308,7 +397,7 @@ export default function BillingPage() {
         「고지 생성」은 해당 월에 아직 고지가 없는 재원 학생에게만 월수강료를 복사해 고지서를 만듭니다. 현금 수납 후 「현금영수증 발행」으로 발행 이력을 남깁니다.
       </Typography.Paragraph>
 
-      <Table rowKey="_id" loading={loading} columns={columns} dataSource={filteredRows} pagination={{ pageSize: 30 }} scroll={{ x: 750 }} size="small" />
+      <Table rowKey="_id" loading={loading} columns={columns} dataSource={filteredRows} pagination={{ pageSize: 30 }} scroll={{ x: 850 }} size="small" />
 
       <Modal title={editingBill ? '고지 수정' : '고지 추가'} open={billModalVisible} onOk={handleBillSave} onCancel={() => setBillModalVisible(false)} destroyOnClose>
         <Form form={form} layout="vertical">
@@ -318,6 +407,16 @@ export default function BillingPage() {
           <Form.Item name="amount" label="금액" rules={[{ required: true, message: '금액을 입력하세요' }]}>
             <InputNumber min={0} style={{ width: '100%' }} />
           </Form.Item>
+          {editingBill && (
+            <>
+              <Form.Item name="cashReceiptUse" label="현금영수증 사용여부">
+                <Select options={[{ value: '사용', label: '사용' }, { value: '미사용', label: '미사용' }]} />
+              </Form.Item>
+              <Form.Item name="externalReceiptId" label="현금영수증 번호">
+                <Input placeholder="현금영수증 번호를 입력하세요" />
+              </Form.Item>
+            </>
+          )}
         </Form>
       </Modal>
 

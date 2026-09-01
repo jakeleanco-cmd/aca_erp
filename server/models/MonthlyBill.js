@@ -12,8 +12,10 @@ const monthlyBillSchema = new mongoose.Schema(
     paidAt: { type: Date, default: null },
     receiptIssued: { type: Boolean, default: false },
     receiptIssuedAt: { type: Date, default: null },
-    /** 향후 PG/국세청 연동 시 외부 식별자 */
+    /** 향후 PG/국세청 연동 시 외부 식별자 (학생의 cashReceiptPhone에서 스냅샷) */
     externalReceiptId: { type: String, default: '', trim: true },
+    /** 학생 정보에서 복사해온 현금영수증 사용 여부 스냅샷 */
+    cashReceiptUse: { type: String, enum: ['사용', '미사용'], default: '사용' },
   },
   { timestamps: true }
 );
