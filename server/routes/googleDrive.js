@@ -1,6 +1,7 @@
 const express = require('express');
 const { requireAuth } = require('../middleware/auth');
-const { listFiles, deleteFile, getStorageQuota } = require('../services/googleDriveService');
+const { listFiles, deleteFile, getStorageQuota, FOLDER_TYPES } = require('../services/googleDriveService');
+const { migrateDriveFiles } = require('../services/googleDriveMigrationService');
 
 const router = express.Router();
 
@@ -8,21 +9,39 @@ const router = express.Router();
 router.use(requireAuth);
 
 /**
- * 구글 드라이브 파일 목록 조회
+ * 구글 드라이브 파일 목록 조회 (폴더 필터 지원)
  */
 router.get('/files', async (req, res) => {
   try {
-    const { query, pageToken, pageSize } = req.query;
+    const { query, pageToken, pageSize, folderType } = req.query;
     const data = await listFiles({
       query: query || '',
       pageToken: pageToken || null,
       pageSize: pageSize ? Number(pageSize) : 30,
+      folderType: folderType || null,
     });
     res.json(data);
   } catch (error) {
     console.error('[Google Drive Route] 파일 목록 조회 실패:', error.message);
     res.status(500).json({ 
       message: '구글 드라이브 파일 목록을 불러오지 못했습니다.', 
+      error: error.message 
+    });
+  }
+});
+
+/**
+ * 기존 파일 용도별 폴더 마이그레이션 실행 API
+ */
+router.post('/migrate-folders', async (req, res) => {
+  try {
+    const { dryRun = false } = req.body;
+    const result = await migrateDriveFiles({ dryRun });
+    res.json({ ok: true, result });
+  } catch (error) {
+    console.error('[Google Drive Route] 폴더 마이그레이션 실패:', error.message);
+    res.status(500).json({ 
+      message: '폴더 마이그레이션에 실패했습니다.', 
       error: error.message 
     });
   }

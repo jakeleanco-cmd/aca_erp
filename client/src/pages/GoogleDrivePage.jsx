@@ -14,6 +14,7 @@ import {
   Statistic,
   Progress,
   Tooltip,
+  Tabs,
 } from 'antd';
 import {
   CloudOutlined,
@@ -27,6 +28,8 @@ import {
   CheckCircleOutlined,
   SearchOutlined,
   FolderOpenOutlined,
+  FolderOutlined,
+  SyncOutlined,
 } from '@ant-design/icons';
 import client from '../api/client';
 
@@ -79,16 +82,22 @@ export default function GoogleDrivePage() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeFolder, setActiveFolder] = useState('all');
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [quota, setQuota] = useState(null);
   const [quotaLoading, setQuotaLoading] = useState(false);
+  const [migrating, setMigrating] = useState(false);
 
-  // 드라이브 파일 목록 조회
-  const loadFiles = async (query = searchQuery) => {
+  // 드라이브 파일 목록 조회 (폴더 필터 지원)
+  const loadFiles = async (query = searchQuery, folder = activeFolder) => {
     setLoading(true);
     try {
       const { data } = await client.get('/google-drive/files', {
-        params: { query: query.trim(), pageSize: 100 },
+        params: { 
+          query: query.trim(), 
+          pageSize: 100,
+          folderType: folder === 'all' ? undefined : folder,
+        },
       });
       setFiles(data.files || []);
     } catch (error) {
@@ -96,6 +105,23 @@ export default function GoogleDrivePage() {
       message.error(error.response?.data?.message || '구글 드라이브 파일 목록을 불러오지 못했습니다.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 기존 파일 폴더 자동 마이그레이션
+  const handleMigrate = async () => {
+    setMigrating(true);
+    try {
+      const { data } = await client.post('/google-drive/migrate-folders');
+      if (data.ok) {
+        message.success(`마이그레이션 완료: ${data.result?.successCount || 0}개 파일 이동`);
+        loadFiles();
+        loadQuota();
+      }
+    } catch (error) {
+      message.error(error.response?.data?.message || '마이그레이션 실패');
+    } finally {
+      setMigrating(false);
     }
   };
 
@@ -115,9 +141,9 @@ export default function GoogleDrivePage() {
   };
 
   useEffect(() => {
-    loadFiles();
+    loadFiles(searchQuery, activeFolder);
     loadQuota();
-  }, []);
+  }, [activeFolder]);
 
   // 단일 파일 삭제
   const handleDelete = async (fileId, fileName) => {
@@ -148,6 +174,22 @@ export default function GoogleDrivePage() {
     }
   };
 
+  // 폴더별 태그 색상 반환
+  const getFolderTag = (folderName) => {
+    switch (folderName) {
+      case '기출시험지':
+        return <Tag color="cyan"><FolderOutlined /> 기출시험지</Tag>;
+      case '답안지':
+        return <Tag color="purple"><FolderOutlined /> 답안지</Tag>;
+      case '형성평가':
+        return <Tag color="green"><FolderOutlined /> 형성평가</Tag>;
+      case '기타':
+        return <Tag color="orange"><FolderOutlined /> 기타</Tag>;
+      default:
+        return <Tag color="default"><FolderOutlined /> {folderName || '루트'}</Tag>;
+    }
+  };
+
   // 테이블 컬럼 정의
   const columns = [
     {
@@ -166,6 +208,14 @@ export default function GoogleDrivePage() {
           </Space>
         );
       },
+    },
+    {
+      title: '폴더',
+      dataIndex: 'folderName',
+      key: 'folderName',
+      width: 120,
+      align: 'center',
+      render: (folderName) => getFolderTag(folderName),
     },
     {
       title: '유형',
@@ -260,19 +310,42 @@ export default function GoogleDrivePage() {
   const limitBytes = Number(quota?.limit || 0);
   const usagePercent = limitBytes > 0 ? Math.round((usageBytes / limitBytes) * 100) : 0;
 
+  // 폴더별 탭 아이템 정의
+  const tabItems = [
+    { key: 'all', label: '전체 파일' },
+    { key: '기출시험지', label: '📁 기출시험지' },
+    { key: '답안지', label: '📁 답안지' },
+    { key: '형성평가', label: '📁 형성평가' },
+    { key: '기타', label: '📁 기타' },
+  ];
+
   return (
     <div style={{ paddingBottom: 40 }}>
       {/* 상단 헤더 & 설명 */}
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <CloudOutlined style={{ fontSize: 22, color: 'var(--primary-vibrant)' }} />
-          <Typography.Title level={4} style={{ margin: 0 }}>
-            구글 클라우드 파일 관리
-          </Typography.Title>
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <CloudOutlined style={{ fontSize: 22, color: 'var(--primary-vibrant)' }} />
+            <Typography.Title level={4} style={{ margin: 0 }}>
+              구글 클라우드 파일 관리
+            </Typography.Title>
+          </div>
+          <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+            용도별(기출시험지, 답안지, 형성평가) 전용 폴더로 안전하게 분류 보관되는 구글 드라이브 클라우드 저장소입니다.
+          </Typography.Text>
         </div>
-        <Typography.Text type="secondary" style={{ fontSize: 13 }}>
-          시험지 및 평가자료가 안전하게 보관되는 구글 드라이브 클라우드 저장소를 직접 관리합니다.
-        </Typography.Text>
+
+        <Popconfirm
+          title="기존 파일을 용도별 폴더로 자동 분류하시겠습니까?"
+          description="루트 폴더에 있는 파일들을 기출시험지, 답안지, 형성평가 폴더로 자동 이동시킵니다."
+          okText="마이그레이션 실행"
+          cancelText="취소"
+          onConfirm={handleMigrate}
+        >
+          <Button icon={<SyncOutlined spin={migrating} />} loading={migrating}>
+            폴더 자동 정리(마이그레이션)
+          </Button>
+        </Popconfirm>
       </div>
 
       {/* 요약 통계 카드 */}
@@ -323,6 +396,14 @@ export default function GoogleDrivePage() {
         )}
       </Row>
 
+      {/* 폴더 탭 */}
+      <Tabs
+        activeKey={activeFolder}
+        onChange={(key) => setActiveFolder(key)}
+        items={tabItems}
+        style={{ marginBottom: 8 }}
+      />
+
       {/* 검색 및 액션 바 */}
       <Card size="small" style={{ marginBottom: 16, borderRadius: 10 }} className="glass-effect">
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
@@ -334,12 +415,12 @@ export default function GoogleDrivePage() {
               style={{ maxWidth: 300, width: '100%' }}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onSearch={(val) => loadFiles(val)}
+              onSearch={(val) => loadFiles(val, activeFolder)}
             />
             <Button
               icon={<ReloadOutlined />}
               onClick={() => {
-                loadFiles();
+                loadFiles(searchQuery, activeFolder);
                 loadQuota();
               }}
               loading={loading || quotaLoading}

@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const ExamPaper = require('../models/ExamPaper');
 const { requireAuth } = require('../middleware/auth');
-const { uploadWithCleanup, deleteFile } = require('../services/googleDriveService');
+const { uploadWithCleanup, deleteFile, FOLDER_TYPES } = require('../services/googleDriveService');
 const { syncLocalExams } = require('../services/examMigrationService');
 
 const router = express.Router();
@@ -86,7 +86,7 @@ router.post('/', upload.array('files', 5), async (req, res) => {
     // 구글 드라이브 업로드 처리
     const attachments = [];
     for (const file of (req.files || [])) {
-      const driveData = await uploadWithCleanup(file);
+      const driveData = await uploadWithCleanup(file, { folderType: FOLDER_TYPES.EXAM_PAPER });
       attachments.push({
         filename: file.filename,
         originalName: file.originalname,
@@ -135,7 +135,7 @@ router.put('/:id', upload.array('files', 5), async (req, res) => {
     const newFiles = [];
     for (const file of (req.files || [])) {
       try {
-        const driveData = await uploadWithCleanup(file);
+        const driveData = await uploadWithCleanup(file, { folderType: FOLDER_TYPES.EXAM_PAPER });
         newFiles.push({
           filename: file.filename,
           originalName: file.originalname,

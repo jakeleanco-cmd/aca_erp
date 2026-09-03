@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const FormativeExam = require('../models/FormativeExam');
 const { requireAuth } = require('../middleware/auth');
-const { uploadWithCleanup, deleteFile } = require('../services/googleDriveService');
+const { uploadWithCleanup, deleteFile, FOLDER_TYPES } = require('../services/googleDriveService');
 const {
   FORMATIVE_CATEGORIES,
   FORMATIVE_EXAM_TYPES,
@@ -111,10 +111,10 @@ router.post('/', upload.array('files', 10), async (req, res) => {
       schoolName, year, chapterName, memo,
     } = req.body;
 
-    // 구글 드라이브 업로드 처리 
+    // 구글 드라이브 업로드 처리 (형성평가 폴더로 분류 저장)
     const attachments = [];
     for (const file of (req.files || [])) {
-      const driveData = await uploadWithCleanup(file);
+      const driveData = await uploadWithCleanup(file, { folderType: FOLDER_TYPES.FORMATIVE_EXAM });
       attachments.push({
         filename: file.filename,
         originalName: file.originalname,
@@ -190,11 +190,11 @@ router.put('/:id', upload.array('files', 10), async (req, res) => {
       parsedExistingFiles.includes(att.filename)
     );
 
-    // 새 파일 구글 드라이브 업로드 
+    // 새 파일 구글 드라이브 업로드 (형성평가 폴더)
     const newAttachments = [];
     for (const file of (req.files || [])) {
       try {
-        const driveData = await uploadWithCleanup(file);
+        const driveData = await uploadWithCleanup(file, { folderType: FOLDER_TYPES.FORMATIVE_EXAM });
         newAttachments.push({
           filename: file.filename,
           originalName: file.originalname,
