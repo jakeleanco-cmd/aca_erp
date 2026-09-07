@@ -1,81 +1,14 @@
 const { google } = require('googleapis');
 const fs = require('fs');
+require('dotenv').config();
 
 /**
- * 구글 드라이브 서비스 (Service Account 방식)
- * - OAuth2 방식의 refresh_token 만료 문제를 근본적으로 해결하기 위해 Service Account를 사용합니다.
- * - Service Account는 만료 없이 영구적으로 사용 가능하며, 별도의 사용자 인증이 필요 없습니다.
- * - 환경 변수 GOOGLE_DRIVE_KEY_JSON에 Service Account의 JSON 키 내용을 넣어주세요.
+ * 구글 드라이브 서비스 (OAuth2 방식)
+ * - OAuth2 Refresh Token을 사용하여 구글 드라이브에 인증합니다.
  */
-
-/**
- * PEM 형식의 Private Key를 안전하게 정규화
- * - .env 또는 Vercel 환경 변수에서 개행 문자가 손상되거나 축약된 경우에도 완벽한 PEM 형식으로 복구합니다.
- */
-const formatPrivateKey = (rawKey) => {
-  if (!rawKey) return '';
-  // 헤더, 푸터, 개행, 공백 제거 후 순수 base64 문자열 추출
-  const body = rawKey
-    .replace(/-----BEGIN PRIVATE KEY-----/g, '')
-    .replace(/-----END PRIVATE KEY-----/g, '')
-    .replace(/\\n/g, '')
-    .replace(/\s+/g, '');
-
-  // 64글자 단위 개행 추가 (표준 PEM 규격)
-  const formattedBody = body.match(/.{1,64}/g)?.join('\n') || body;
-  return `-----BEGIN PRIVATE KEY-----\n${formattedBody}\n-----END PRIVATE KEY-----\n`;
-};
 
 // OAuth2 토큰 만료 상태를 메모리에 캐싱하여 반복적인 실패 요청 방지
 let isOAuthTokenExpired = false;
-
-/**
- * Service Account 기반의 드라이브 컨텍스트 생성
- */
-const getServiceAccountContext = (folderId) => {
-  const keyJson = process.env.GOOGLE_DRIVE_KEY_JSON;
-  if (!keyJson) return null;
-
-  let credentials;
-  try {
-    if (typeof keyJson === 'object') {
-      credentials = keyJson;
-    } else {
-      try {
-        credentials = JSON.parse(keyJson);
-      } catch (e) {
-        const fixed = keyJson.replace(
-          /("private_key"\s*:\s*")([\s\S]*?)("(?:\s*,|\s*}))/g,
-          (match, p1, p2, p3) => {
-            const escapedContent = p2
-              .replace(/\\n/g, '\n')
-              .replace(/\r?\n/g, '\\n');
-            return p1 + escapedContent + p3;
-          }
-        );
-        credentials = JSON.parse(fixed);
-      }
-    }
-  } catch (e) {
-    console.error('[Google Drive] GOOGLE_DRIVE_KEY_JSON 파싱 실패:', e.message);
-    return null;
-  }
-
-  if (credentials && credentials.private_key) {
-    credentials.private_key = formatPrivateKey(credentials.private_key);
-  }
-
-  const auth = new google.auth.GoogleAuth({
-    credentials,
-    scopes: ['https://www.googleapis.com/auth/drive'],
-  });
-
-  return {
-    drive: google.drive({ version: 'v3', auth }),
-    folderId,
-    authType: 'ServiceAccount',
-  };
-};
 
 /**
  * OAuth2 Refresh Token 기반의 드라이브 컨텍스트 생성
@@ -113,10 +46,7 @@ const isTokenExpiredError = (error) => {
 };
 
 /**
- * 드라이브 API 호출 공통 실행 함수:
- * - 1순위: OAuth2 시도 (토큰이 만료되지 않은 경우)
- * - 만약 OAuth2에서 invalid_grant(토큰 만료)가 발생하면, 즉시 Service Account로 fallback하여 재시도
- * - 2순위: Service Account 사용
+ * 드라이브 API 호출 공통 실행 함수 (OAuth2 전용)
  */
 const runWithDrive = async (operation) => {
   const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
@@ -124,31 +54,22 @@ const runWithDrive = async (operation) => {
     throw new Error('GOOGLE_DRIVE_FOLDER_ID 환경 변수가 설정되지 않았습니다.');
   }
 
-  // 1. OAuth2 시도 (만료 플래그가 안 켜져 있는 경우)
-  if (!isOAuthTokenExpired) {
-    const oauthContext = getOAuth2Context(folderId);
-    if (oauthContext) {
-      try {
-        return await operation(oauthContext.drive, oauthContext.folderId, 'OAuth2');
-      } catch (err) {
-        if (isTokenExpiredError(err)) {
-          console.warn('[Google Drive] OAuth2 Refresh Token 만료 감지 (invalid_grant). Service Account로 자동 전환합니다.');
-          isOAuthTokenExpired = true;
-        } else {
-          // 토큰 만료 외의 에러는 그대로 throw
-          throw err;
-        }
-      }
+  const oauthContext = getOAuth2Context(folderId);
+  if (!oauthContext) {
+    throw new Error('사용 가능한 구글 드라이브 인증 정보(OAuth2)가 없습니다. REFRESH_TOKEN 등을 확인해주세요.');
+  }
+
+  try {
+    return await operation(oauthContext.drive, oauthContext.folderId, 'OAuth2');
+  } catch (err) {
+    if (isTokenExpiredError(err)) {
+      console.warn('[Google Drive] OAuth2 Refresh Token 만료 감지 (invalid_grant). 다시 발급 받아야 합니다.');
+      throw new Error('Google Drive 토큰이 만료되었습니다. 다시 로그인하여 갱신해 주세요.');
+    } else if (err?.response?.data?.error?.errors?.[0]?.reason === 'storageQuotaExceeded') {
+      console.warn('[Google Drive] 저장소 한도 초과 오류 감지.');
     }
+    throw err;
   }
-
-  // 2. Service Account로 실행 (OAuth2가 없거나 만료되었을 때)
-  const saContext = getServiceAccountContext(folderId);
-  if (saContext) {
-    return await operation(saContext.drive, saContext.folderId, 'ServiceAccount');
-  }
-
-  throw new Error('사용 가능한 구글 드라이브 인증 정보가 없습니다. Service Account(GOOGLE_DRIVE_KEY_JSON) 또는 유효한 REFRESH_TOKEN을 확인해주세요.');
 };
 
 // 용도별 표준 폴더명 상수 정의
@@ -261,15 +182,22 @@ async function uploadFile(file, options = {}) {
     console.log(`[Google Drive] 업로드 시작: ${decodedName}`);
 
     const response = await drive.files.create({
-      requestBody: {
-        name: decodedName,
-        parents: [targetFolderId],
-      },
-      media: {
-        mimeType: file.mimetype,
-        body: fs.createReadStream(file.path),
-      },
-      fields: 'id, name, webViewLink, webContentLink',
+        requestBody: {
+          name: decodedName,
+          parents: [targetFolderId],
+          // 공유 드라이브(Shared Drive) 사용 시 필요한 옵션
+          // GOOGLE_SHARED_DRIVE_ID 환경 변수에 ID를 지정하면 해당 드라이브에 업로드합니다.
+        },
+        media: {
+          mimeType: file.mimetype,
+          body: fs.createReadStream(file.path),
+        },
+        // 공유 드라이브 지원 옵션
+        supportsAllDrives: true,
+        // driveId 가 설정돼 있으면 해당 공유 드라이브에 저장합니다.
+        ...(process.env.GOOGLE_SHARED_DRIVE_ID && { driveId: process.env.GOOGLE_SHARED_DRIVE_ID }),
+        fields: 'id, name, webViewLink, webContentLink',
+      
     });
 
     console.log(`[Google Drive] 업로드 성공: ${response.data.id} (폴더: ${folderType || '루트'})`);
