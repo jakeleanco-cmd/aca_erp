@@ -222,11 +222,12 @@ async function syncLocalExams(filter = {}) {
               const driveResult = await uploadFile(mockFile);
 
               // DB 저장
+              const determinedSchoolLevel = grade.startsWith('고') ? '고등' : '중등';
               await ExamPaper.create({
                 title,
                 category: '내신준비평가',
                 examType,
-                schoolLevel: '중등',
+                schoolLevel: determinedSchoolLevel,
                 gradeLabel: grade,
                 semester: semNorm,
                 examTerm: termNorm,
@@ -260,8 +261,11 @@ async function syncLocalExams(filter = {}) {
   // 필터가 있으면 해당 범위만, 없으면 전체 대상으로 Prune
   let prunedCount = 0;
   try {
-    const pruneFilter = { category: '내신준비평가', schoolLevel: '중등' };
-    if (gradeLabel) pruneFilter.gradeLabel = gradeLabel;
+    const pruneFilter = { category: '내신준비평가' };
+    if (gradeLabel) {
+      pruneFilter.gradeLabel = gradeLabel;
+      pruneFilter.schoolLevel = gradeLabel.startsWith('고') ? '고등' : '중등';
+    }
     if (semester) pruneFilter.semester = semester;
     if (examTerm) pruneFilter.examTerm = examTerm;
     const dbPapers = await ExamPaper.find(pruneFilter);
